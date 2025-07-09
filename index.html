@@ -276,6 +276,13 @@
             width: 29%;
         }
 
+        /* NEW: Rule to truncate the summary column */
+        #data-table td:nth-child(3) {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .command-cell-wrapper {
             display: flex;
             justify-content: space-between;
@@ -770,7 +777,6 @@
                     }
 
                 } else if (optionGroup.type === 'select') {
-                    // UPDATED: Reverted to the simpler version for the final fix
                     inputElement = document.createElement('select');
                     inputElement.dataset.optionType = optionGroup.label;
 
@@ -858,6 +864,8 @@
 
                 const summaryCell = row.insertCell();
                 summaryCell.textContent = item.summary;
+                summaryCell.title = item.summary; // Add this line for the hover tooltip
+
                 
                 const commandsCell = row.insertCell();
                 
