@@ -294,7 +294,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             '!bset tweakunits ',
         ];
 
-         // Define command prefixes for the "NuttyB Evolving Commanders" group (Mandatory/Visible Checkbox)
+         // Define command prefixes for the "NuttyB Evolving Commanders" group (Optional Checkbox)
          const evolvingCommandersPrefixes = [
              '!bset tweakunits1 ',
              '!bset tweakunits2 ',
@@ -321,6 +321,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             'T3 Builders', // Corresponds to !bset tweakdefs8
             'Unit Launchers', // Corresponds to !bset tweakdefs9
             'LRPC rebalance v2', // Corresponds to !bset tweakunits6
+            'Legion NuttyB Evolving Commander', // Added back for default selection logic
+            'Armada NuttyB Evolving Commander', // Added back for default selection logic
+            'Cortex NuttyB Evolving Commander', // Added back for default selection logic
         ];
 
 
@@ -363,7 +366,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             const lines = text.trim().split('\n');
             const groupedOptions = {
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
+                // Changed type back to checkbox, default to true, disabled to false
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
                 extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }] }, // Add "None" option with empty shortLabel
@@ -390,7 +394,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                         let shortLabel = "";
                         if (label === "Mini Bosses") {
                             shortLabel = "[Mini Bosses]";
-                        } else if (label === "Experimental Wave Changes") {
+                        } else if (label === "EXPERMENTIAL WAVE CHANGES") {
                             shortLabel = "[Expo Waves]";
                         }
                         groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
@@ -442,11 +446,15 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                         addedToForm = true;
                     }
 
-                    // Check if part of Evolving Commanders group (Mandatory/Visible Checkbox)
+                    // Check if part of Evolving Commanders group (Optional Checkbox)
                     const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (!addedToForm && isEvolvingCommander) {
-                         status = "Mandatory/Visible";
+                         status = "Optional"; // Status is Optional
                          groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                         // Check if this specific evolving commander should make the group default selected
+                         if (defaultSelectedLabels.includes(label)) {
+                             groupedOptions.evolvingCommanders.default = true; // Set the group default to true if any of its components are default selected
+                         }
                          addedToForm = true;
                     }
 
@@ -482,6 +490,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.mainTweaks);
             }
+             // Add the Evolving Commanders group if it has command blocks (now optional checkbox)
              if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.evolvingCommanders);
              }
@@ -556,8 +565,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                                  if (optionGroup.label === "Extra Raptors") {
                                      extraRaptorsPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Raptor Health") {
+                                     // Add Raptor Health first, then Queen Health
                                      raptorHealthPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Queen Health") {
+                                      // Add Queen Health second
                                       queenHealthPart = selectedChoice.shortLabel;
                                  }
                              }
