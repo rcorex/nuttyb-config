@@ -351,8 +351,8 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "" }] }, // Add "None" option by default
-                tweakdefs2: { label: "Raptor HP", type: "select", choices: [] },
-                tweakdefs1: { label: "Queen HP", type: "select", choices: [] },
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
                 otherCheckboxes: { type: "checkboxes", options: [] } // For all other checkboxes
             };
 
@@ -367,23 +367,9 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     let status = "Optional"; // Default status
                     let addedToForm = false; // Flag to check if added to a form group
 
-                    // Check if part of Main Tweaks group
-                    const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
-                    if (isMainTweak) {
-                        status = "Mandatory/Visible";
-                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
-                        addedToForm = true;
-                    }
+                    // --- Prioritize specific groups first ---
 
-                    // Check if part of Evolving Commanders group
-                    const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
-                    if (isEvolvingCommander) {
-                         status = "Mandatory/Visible";
-                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
-                         addedToForm = true;
-                    }
-
-                    // Check if part of Extra Raptors group
+                    // Check if part of Extra Raptors group (Optional Select)
                     const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (isExtraRaptor) {
                         status = "Optional/Grouped";
@@ -395,16 +381,46 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                         addedToForm = true;
                     }
 
+                    // Check if part of tweakdefs1 group (Optional Select)
+                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs1')) {
+                         status = "Optional/Grouped";
+                         groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock });
+                         addedToForm = true;
+                    }
+
+                    // Check if part of tweakdefs2 group (Optional Select)
+                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs2')) {
+                         status = "Optional/Grouped";
+                         groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock });
+                         addedToForm = true;
+                    }
+
+                    // Check if part of Main Tweaks group (Mandatory/Visible Checkbox)
+                    const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToForm && isMainTweak) {
+                        status = "Mandatory/Visible";
+                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
+                        addedToForm = true;
+                    }
+
+                    // Check if part of Evolving Commanders group (Mandatory/Visible Checkbox)
+                    const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToForm && isEvolvingCommander) {
+                         status = "Mandatory/Visible";
+                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                         addedToForm = true;
+                    }
+
 
                     // Check if hidden
                     const isHidden = hiddenLabels.includes(label);
-                     if (isHidden) {
+                     if (!addedToForm && isHidden) {
                          status = "Hidden";
                          addedToForm = true; // Don't add hidden items to the form
                      }
 
                     // Check if default selected (only applies to Optional, non-mandatory, non-hidden, and not part of a specific group)
-                    const isDefaultSelected = !isMainTweak && !isEvolvingCommander && !isExtraRaptor && !isHidden && defaultSelectedLabels.includes(label);
+                    const isDefaultSelected = !addedToForm && defaultSelectedLabels.includes(label);
                      if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional and not in a specific group
                          status = "Default Selected";
                      }
