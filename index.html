@@ -555,8 +555,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
         // 4. Function to generate the command string and lobby name
         function generateCommands() {
-            let generatedCommandsArray = []; // Array to store each command line
-            generatedCommandsArray.push(baseCommands.trim()); // Start with base commands
+            let coreCommands = []; // Array to store each command line (excluding rename for now)
+            coreCommands.push(baseCommands.trim()); // Start with base commands
 
             let extraRaptorsPart = "";
             let raptorHealthPart = ""; // Separate parts for clarity
@@ -571,14 +571,14 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                     if (element.checked) {
                         const commandBlocks = JSON.parse(element.dataset.commandBlocks);
                         commandBlocks.forEach(block => {
-                            generatedCommandsArray.push(block.trim());
+                            coreCommands.push(block.trim());
                         });
                     }
                 } else if (element.tagName === 'SELECT') {
                     const selectedOption = element.options[element.selectedIndex];
                     if (selectedOption.value) { // Check if a valid option is selected (not an empty value)
                          const commandBlock = selectedOption.value.trim();
-                         generatedCommandsArray.push(commandBlock);
+                         coreCommands.push(commandBlock);
 
                          // Capture short labels for the rename command
                          const optionGroup = formOptionsConfig.find(group => group.label === element.dataset.optionType);
@@ -588,10 +588,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                                  if (optionGroup.label === "Extra Raptors") {
                                      extraRaptorsPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Raptor Health") {
-                                     // Add Raptor Health first, then Queen Health
+                                     // Add Raptor Health part
                                      raptorHealthPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Queen Health") {
-                                      // Add Queen Health second
+                                      // Add Queen Health part
                                       queenHealthPart = selectedChoice.shortLabel;
                                  }
                              }
@@ -611,7 +611,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                 }
             });
 
-            // Construct the full rename command
+            // --- Construct the rename command ---
             let renameCommand = `$rename [Mod] NuttyB Raptors`;
             let renameParts = [];
 
@@ -633,36 +633,44 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                  renameParts.push(`[${combinedHealthPart}]`); // Add brackets around the combined health part
             }
 
-
             if (renameParts.length > 0) {
                 renameCommand += ' ' + renameParts.join(''); // Join parts directly with no space between them
             }
 
             renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
 
-            generatedCommandsArray.push(renameCommand); // Add the rename command to the array
+            // --- Splitting logic adjusted to prioritize rename in section 1 if it fits ---
+            let section1Commands = [];
+            let section2Commands = [];
+            let currentLengthSection1 = 0;
 
-            // Now, split the array of commands into sections
-            let section1Text = "";
-            let section2Text = "";
-            let currentLength = 0;
-
-            for (let i = 0; i < generatedCommandsArray.length; i++) {
-                const command = generatedCommandsArray[i];
-                // Add 1 for the newline character that will separate commands
-                if (currentLength + command.length + 1 <= MAX_SECTION_LENGTH) {
-                    section1Text += (section1Text ? '\n' : '') + command;
-                    currentLength += command.length + 1;
+            // Iterate through core commands first
+            for (let i = 0; i < coreCommands.length; i++) {
+                const command = coreCommands[i];
+                // Check if adding this command AND the rename command (plus separators) will exceed the limit
+                // This is the key change to prioritize rename in section 1
+                if (currentLengthSection1 + command.length + 1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
+                    section1Commands.push(command);
+                    currentLengthSection1 += command.length + 1;
                 } else {
-                    section2Text += (section2Text ? '\n' : '') + command;
+                    section2Commands.push(command);
                 }
             }
 
+            // After all other commands are placed, add the rename command
+            // If section1Commands is not full with the remaining commands, add rename to section 1.
+            // Otherwise, add it to section 2.
+            if (section1Commands.length > 0 && (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH)) {
+                section1Commands.push(renameCommand);
+            } else {
+                section2Commands.push(renameCommand);
+            }
+
+
             return {
-                fullText: generatedCommandsArray.join('\n'), // Keep this for completeness, though not directly used for textareas
                 lobbyName: renameCommand,
-                section1: section1Text,
-                section2: section2Text
+                section1: section1Commands.join('\n'),
+                section2: section2Commands.join('\n')
             };
         }
 
