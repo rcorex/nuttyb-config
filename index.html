@@ -234,18 +234,22 @@
             background-color: #2c2c2c;
         }
 
+        /* UPDATED: New column widths for 4 columns */
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 25%;
+            width: 20%; /* Label */
         }
          #data-table th:nth-child(2),
          #data-table td:nth-child(2) {
-             width: 15%;
+             width: 15%; /* Status */
          }
-
+         #data-table th:nth-child(3),
+         #data-table td:nth-child(3) {
+             width: 20%; /* Summary */
+         }
          #data-table th:last-child,
         #data-table td:last-child {
-            width: 60%;
+            width: 45%; /* Command Blocks */
         }
 
 
@@ -285,9 +289,7 @@
 
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
-            <!-- UPDATED: Renamed "Data Table" to "Data" -->
             <button class="tab-button" data-tab="data">Data</button>
-            <!-- UPDATED: Renamed "Help" to "Links" and changed data-tab -->
             <button class="tab-button" data-tab="links">Links</button>
         </div>
 
@@ -311,7 +313,7 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and Paste both parts to the lobby independently</p>
+                <p>Copy and Paste both parts to the lobby separately</p>
 
                 <div class="command-output-section">
                     <h3>Part 1</h3>
@@ -339,17 +341,19 @@
                     <tr>
                         <th>Option Label</th>
                         <th>Status</th>
+                        <!-- UPDATED: Added Summary column header -->
+                        <th>Summary</th>
                         <th>Command Blocks</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Table rows will be generated here by JavaScript -->
-                     <tr><td colspan="3">Loading data...</td></tr>
+                    <!-- UPDATED: Colspan increased to 4 -->
+                     <tr><td colspan="4">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- UPDATED: Changed ID from "help-tab" to "links-tab" -->
         <div id="links-tab" class="tab-content">
             <!-- Content will be loaded here by JavaScript -->
             <p>Loading links...</p>
@@ -499,12 +503,11 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 // Update messages for both columns if loading fails
                 leftColumn.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
                 rightColumn.innerHTML = ''; // Clear right column if error
-                dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
+                dataTableBody.innerHTML = '<tr><td colspan="4" style="color: red;">Failed to load data.</td></tr>';
                  lobbyNameDisplay.textContent = 'Error loading data.';
             }
         }
         
-        // UPDATED: Renamed function and changed file/ID references
         async function loadLinksContent() {
             const linksContentEl = document.getElementById('links-tab');
             try {
@@ -518,6 +521,31 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             } catch (error) {
                 console.error("Could not load links content:", error);
                 linksContentEl.innerHTML = '<p style="color: red;">Failed to load content. Make sure the <strong>links.md</strong> file exists in the same directory.</p>';
+            }
+        }
+
+        // NEW: Helper function to decode base64url strings
+        function decodeBase64Url(base64Url) {
+            if (!base64Url) return '';
+            try {
+                // Replace URL-safe characters with standard Base64 characters
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                // Add padding if it was removed
+                const padding = base64.length % 4;
+                if (padding) {
+                    base64 += '===='.slice(padding);
+                }
+                // Decode the base64 string
+                const decodedData = atob(base64);
+                // To be safe with special characters, decode from UTF-8
+                const utf8Decoder = new TextDecoder('utf-8');
+                const decodedUtf8 = utf8Decoder.decode(
+                    Uint8Array.from(decodedData, c => c.charCodeAt(0))
+                );
+                return decodedUtf8;
+            } catch (e) {
+                console.error(`Base64URL decoding failed for: ${base64Url}`, e);
+                return 'Error decoding data';
             }
         }
 
@@ -541,6 +569,18 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 if (parts.length >= 2) {
                     const label = parts[0].trim();
                     const commandBlock = parts[1].trim();
+                    
+                    // --- NEW: Logic to decode and get summary ---
+                    let summary = '';
+                    if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
+                        const commandParts = commandBlock.split(' ');
+                        if (commandParts.length >= 3) {
+                            const encodedData = commandParts[2];
+                            const decodedText = decodeBase64Url(encodedData);
+                            // Get just the first line of the decoded text
+                            summary = decodedText.split('\n')[0].trim();
+                        }
+                    }
 
                     let status = "Optional"; // Default status
                     let addedToFormGroup = false; // Flag to check if added to a specific, named form group
@@ -568,18 +608,16 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     // Check if part of tweakdefs1 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
-                         // --- CORRECTED LOGIC FOR QHP ---
-                         const match = label.match(/(\d+\.?\d*x)/); // Look for a number followed by 'x'
+                         const match = label.match(/(\d+\.?\d*x)/); 
                          let shortLabel = "";
                          if (match && match[1]) {
                              shortLabel = match[1].replace(/\./g, '_') + ' QHP';
                          } else {
-                             // Fallback for labels without 'x', e.g., "Epic (1.3x health)"
                              const parenMatch = label.match(/\((.*?)\)/);
                              if (parenMatch && parenMatch[1]) {
                                  shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
                              } else {
-                                 shortLabel = label; // Last resort fallback
+                                 shortLabel = label;
                              }
                          }
                          groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
@@ -589,18 +627,16 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     // Check if part of tweakdefs2 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
-                         // --- CORRECTED LOGIC FOR HP ---
-                         const match = label.match(/(\d+\.?\d*x)/); // Look for a number followed by 'x'
+                         const match = label.match(/(\d+\.?\d*x)/); 
                          let shortLabel = "";
                          if (match && match[1]) {
                              shortLabel = match[1].replace(/\./g, '_') + ' HP';
                          } else {
-                             // Fallback for labels without 'x', e.g., "Epic (1.3x health)"
                              const parenMatch = label.match(/\((.*?)\)/);
                              if (parenMatch && parenMatch[1]) {
                                  shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' HP';
                              } else {
-                                 shortLabel = label; // Last resort fallback
+                                 shortLabel = label;
                              }
                          }
                          groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
@@ -619,30 +655,26 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     // Check if part of Evolving Commanders group (Optional Checkbox)
                     const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (!addedToFormGroup && isEvolvingCommander) {
-                         status = "Optional"; // Status is Optional
+                         status = "Optional";
                          groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
-                         // Check if this specific evolving commander should make the group default selected
                          if (defaultSelectedLabels.includes(label)) {
-                             groupedOptions.evolvingCommanders.default = true; // Set the group default to true if any of its components are default selected
+                             groupedOptions.evolvingCommanders.default = true;
                          }
                          addedToFormGroup = true;
                     }
 
-
                     // Check if hidden
                     const isHidden = hiddenLabels.includes(label);
-                     if (isHidden) { // isHidden bypasses addedToFormGroup as it's not rendered
+                     if (isHidden) {
                          status = "Hidden";
                      }
 
-
-                    // Add to raw data list for the table (all items, including hidden and those in groups)
-                    rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
-
+                    // UPDATED: Add summary to the data object
+                    rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status, summary: summary });
 
                     // Add to otherCheckboxes if not added to any specific group and not hidden
                     if (!addedToFormGroup && !isHidden) {
-                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); // Add column property
+                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' });
                     }
                 }
             });
@@ -656,21 +688,17 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
             }
-            if (groupedOptions.tweakdefs2.choices.length > 0) {
+            if (groupedOptions.tweakdefs2.choices.length > 0) { // Raptor Health
                 formOptionsConfig.push(groupedOptions.tweakdefs2);
             }
-            if (groupedOptions.tweakdefs1.choices.length > 0) {
+            if (groupedOptions.tweakdefs1.choices.length > 0) { // Queen Health
                 formOptionsConfig.push(groupedOptions.tweakdefs1);
             }
-            if (groupedOptions.extraRaptors.choices.length > 1) {
+            if (groupedOptions.extraRaptors.choices.length > 1) { // Extras
                 formOptionsConfig.push(groupedOptions.extraRaptors);
             }
-
-            // Now add the individual "other" checkboxes. They will be marked with a 'column' property later.
-            // For now, formOptionsConfig is structured to dictate the *order* of rendering,
-            // and `renderOptions` will decide which *physical column* it goes into.
+            
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
-
 
             // Set default selected choice for select groups
              formOptionsConfig.forEach(group => {
@@ -682,7 +710,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                              }
                          });
                      } else {
-                         // Otherwise, ensure the first option (which is "None" for Extra Raptors) is selected by default
                          group.choices[0].selected = true;
                      }
                  }
@@ -799,10 +826,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             leftColumn.innerHTML = '';
             rightColumn.innerHTML = '';
 
-            // Add initial loading message (if desired, or remove if fast enough)
-            // leftColumn.innerHTML = '<p>Loading configuration data...</p>';
-
-
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
                 let inputElement; // This will hold either the input or select element
@@ -871,7 +894,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     .then(() => {
                         event.target.textContent = 'Copied!';
                         setTimeout(() => {
-                            // Revert button text, stripping "Copied!" and re-adding "Section X"
                             event.target.textContent = `Copy ${targetId.replace('command-output-','Part ').trim()}`;
                         }, 2000);
                     })
@@ -895,11 +917,15 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 labelCell.textContent = item.label;
 
                 const statusCell = row.insertCell();
-                statusCell.textContent = item.status; // Display the status
+                statusCell.textContent = item.status;
+
+                // --- NEW: Add the summary cell ---
+                const summaryCell = row.insertCell();
+                summaryCell.textContent = item.summary;
 
                 const commandsCell = row.insertCell();
                 const pre = document.createElement('pre');
-                pre.textContent = item.commandBlock; // Display the single command block
+                pre.textContent = item.commandBlock;
                 commandsCell.appendChild(pre);
             });
 
@@ -909,6 +935,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
              baseLabelCell.textContent = "Base Commands";
              const baseStatusCell = baseRow.insertCell();
              baseStatusCell.textContent = "Always Included";
+             
+             // --- NEW: Add an empty cell for alignment in the base commands row ---
+             baseRow.insertCell();
+
              const baseCommandsCell = baseRow.insertCell();
              const basePre = document.createElement('pre');
              basePre.textContent = baseCommands.trim();
@@ -917,8 +947,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         // 8. Function to handle tab switching
         function switchTab(event) {
-            // UPDATED: This function is generic and requires no changes.
-            // It uses `event.target.dataset.tab` which we updated in the HTML.
             const targetTabId = event.target.dataset.tab + '-tab';
 
             // Remove 'active' class from all buttons and content
@@ -931,12 +959,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
             // If switching to the data tab, populate the table (or ensure it's populated)
             if (event.target.dataset.tab === 'data') {
-                // Only populate if data is loaded
-                if (rawOptionsData.length > 0) { // Check raw data length
+                if (rawOptionsData.length > 0) {
                      populateDataTable();
                 } else {
-                     // Data is still loading or failed, show message
-                     dataTableBody.innerHTML = '<tr><td colspan="3">Loading data...</td></tr>';
+                     dataTableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>';
                 }
             }
         }
@@ -950,7 +976,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
         // Load data and initialize the app when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadConfigData();
-            loadLinksContent(); // UPDATED: call the new function
+            loadLinksContent();
         });
 
     </script>
