@@ -103,6 +103,13 @@
         #right-column label:hover {
             background-color: #333; /* Adds a subtle hover effect to the whole option */
         }
+        
+        /* NEW: Flexbox layout for select/dropdown labels to ensure vertical alignment */
+        .select-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
         /* Style for Checkboxes */
         input[type="checkbox"] {
@@ -223,7 +230,6 @@
             padding: 8px;
             text-align: left;
             vertical-align: top;
-            /* word-wrap: break-word; */ /* Removed to allow flexbox truncation */
             font-family: monospace;
         }
 
@@ -235,7 +241,6 @@
             background-color: #2c2c2c;
         }
 
-        /* UPDATED: Column widths for 4 columns */
         #data-table th:first-child,
         #data-table td:first-child {
             width: 30%; /* Option Label */
@@ -253,7 +258,6 @@
             width: 30%; /* Command Blocks */
         }
 
-        /* NEW: Styles for the copy button and its wrapper in the table */
         .command-cell-wrapper {
             display: flex;
             justify-content: space-between;
@@ -814,6 +818,9 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     }
 
                 } else if (optionGroup.type === 'select') {
+                    // UPDATED: Use Flexbox for alignment
+                    label.classList.add('select-label');
+
                     inputElement = document.createElement('select');
                     inputElement.dataset.optionType = optionGroup.label;
 
@@ -826,7 +833,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                         inputElement.appendChild(optionElement);
                     });
 
-                    label.textContent = optionGroup.label + ': ';
+                    const labelText = document.createElement('span');
+                    labelText.textContent = optionGroup.label + ': ';
+
+                    label.appendChild(labelText);
                     label.appendChild(inputElement);
 
                     inputElement.addEventListener('change', updateOutput);
@@ -867,7 +877,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             });
         });
 
-        // UPDATED: Added event listener for per-row copy buttons
         dataTableBody.addEventListener('click', function(event) {
             if (event.target.matches('.copy-row-button')) {
                 const button = event.target;
@@ -903,7 +912,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 const summaryCell = row.insertCell();
                 summaryCell.textContent = item.summary;
                 
-                // UPDATED: Create cell with wrapper, text, and button
                 const commandsCell = row.insertCell();
                 
                 const wrapper = document.createElement('div');
