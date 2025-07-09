@@ -92,12 +92,12 @@
              margin-right: 5px;
          }
 
-         /* Apply width 100% to select elements within the columns */
+         /* Allow select elements to size based on content, remove full width */
          #left-column label select,
          #right-column label select {
-             width: 100%; /* Make select elements take full width of their parent label */
-             box-sizing: border-box; /* Include padding/border in width */
-             margin-left: 0; /* Remove previous indent */
+             /* Removed: width: 100%; */
+             box-sizing: border-box; /* Keep this for consistent box model */
+             margin-left: 0; /* Keep this to prevent unintended indent */
          }
 
         .command-output-section {
@@ -202,7 +202,7 @@
 
     <div class="container">
         <h1>NuttyB Raptors Settings Generator</h1>
-        <p>Inspired by <a href="https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit" target="_blank">The Paste Machine</a>.</p>
+        <p>Inspired by <a href="https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit" target="_blank">The Paste Machine</a></p>
 
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
@@ -210,7 +210,7 @@
         </div>
 
         <div id="config-tab" class="tab-content active">
-             <p>Select your desired settings and copy the generated text into the lobby.</p>
+             <p>Select your desired settings and copy the generated commands into the lobby.</p>
             <div class="settings-container">
                 <h2>Game Options</h2>
                 <!-- New container for two-column layout -->
@@ -229,17 +229,18 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
+                <p>Copy and Paste both parts separately.</p>
 
                 <div class="command-output-section">
-                    <h3>Section 1 (Max 50000 chars)</h3>
+                    <h3>Part 1</h3>
                     <textarea id="command-output-1" rows="8" readonly></textarea>
-                    <button class="copy-button" data-target="command-output-1">Copy Section 1</button>
+                    <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
                 </div>
 
                 <div class="command-output-section">
-                    <h3>Section 2 (Remaining Commands)</h3>
+                    <h3>Part 2 (Remaining Commands)</h3>
                     <textarea id="command-output-2" rows="8" readonly></textarea>
-                    <button class="copy-button" data-target="command-output-2">Copy Section 2</button>
+                    <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
                 </div>
 
                 <div class="lobby-name-output">
