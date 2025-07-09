@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NuttyB Raptors Configurator</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -254,6 +255,26 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        
+        /* Links Tab Specific Styles (optional, for better formatting) */
+        #links-tab h2, #links-tab h3 {
+            margin-top: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        #links-tab code {
+            background-color: #333;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        #links-tab ul {
+            padding-left: 20px;
+        }
+        #links-tab li {
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -264,7 +285,10 @@
 
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
-            <button class="tab-button" data-tab="data">Data Table</button>
+            <!-- UPDATED: Renamed "Data Table" to "Data" -->
+            <button class="tab-button" data-tab="data">Data</button>
+            <!-- UPDATED: Renamed "Help" to "Links" and changed data-tab -->
+            <button class="tab-button" data-tab="links">Links</button>
         </div>
 
         <div id="config-tab" class="tab-content active">
@@ -323,6 +347,12 @@
                      <tr><td colspan="3">Loading data...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- UPDATED: Changed ID from "help-tab" to "links-tab" -->
+        <div id="links-tab" class="tab-content">
+            <!-- Content will be loaded here by JavaScript -->
+            <p>Loading links...</p>
         </div>
     </div>
 
@@ -473,6 +503,24 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                  lobbyNameDisplay.textContent = 'Error loading data.';
             }
         }
+        
+        // UPDATED: Renamed function and changed file/ID references
+        async function loadLinksContent() {
+            const linksContentEl = document.getElementById('links-tab');
+            try {
+                const response = await fetch('links.md'); // Fetch the new markdown file
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const markdownText = await response.text();
+                // Use the 'marked' library (loaded from CDN) to convert markdown to HTML
+                linksContentEl.innerHTML = marked.parse(markdownText);
+            } catch (error) {
+                console.error("Could not load links content:", error);
+                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content. Make sure the <strong>links.md</strong> file exists in the same directory.</p>';
+            }
+        }
+
 
         // Function to parse the text data
         function parseConfigData(text) {
@@ -869,6 +917,8 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         // 8. Function to handle tab switching
         function switchTab(event) {
+            // UPDATED: This function is generic and requires no changes.
+            // It uses `event.target.dataset.tab` which we updated in the HTML.
             const targetTabId = event.target.dataset.tab + '-tab';
 
             // Remove 'active' class from all buttons and content
@@ -898,7 +948,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
 
         // Load data and initialize the app when the page loads
-        document.addEventListener('DOMContentLoaded', loadConfigData);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfigData();
+            loadLinksContent(); // UPDATED: call the new function
+        });
 
     </script>
 </body>
