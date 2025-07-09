@@ -79,17 +79,21 @@
             min-width: 250px; /* Ensure columns don't get too narrow */
         }
 
-        #options-form label {
-            display: block;
-            margin-bottom: 8px;
+        /* Ensure each option label is a block and has enough margin */
+        #left-column label,
+        #right-column label {
+            display: block; /* Already set, but good to re-confirm */
+            margin-bottom: 12px; /* Increased margin for better separation */
             cursor: pointer;
         }
 
-         #options-form label input[type="checkbox"] {
+         #left-column label input[type="checkbox"],
+         #right-column label input[type="checkbox"] {
              margin-right: 5px;
          }
 
-         #options-form select {
+         #left-column label select,
+         #right-column label select {
              margin-left: 5px; /* Indent dropdowns slightly */
          }
 
@@ -224,13 +228,13 @@
 
                 <div class="command-output-section">
                     <h3>Section 1 (Max 50000 chars)</h3>
-                    <textarea id="command-output-1" rows="15" readonly></textarea>
+                    <textarea id="command-output-1" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-1">Copy Section 1</button>
                 </div>
 
                 <div class="command-output-section">
                     <h3>Section 2 (Remaining Commands)</h3>
-                    <textarea id="command-output-2" rows="15" readonly></textarea>
+                    <textarea id="command-output-2" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-2">Copy Section 2</button>
                 </div>
 
@@ -317,7 +321,7 @@
 !unit_restrictions_nonukes 0
 !draft_mode disabled
 !unit_restrictions_notacnukes 0
-$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/sheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 !unit_market 0
 !evocom 0
 !nowasting all
@@ -669,12 +673,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             // After all other commands are placed, add the rename command
             // If section1Commands is not full with the remaining commands, add rename to section 1.
             // Otherwise, add it to section 2.
-            if (section1Commands.length > 0 && (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH)) {
+            if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) { // Check if it fits in section 1
                 section1Commands.push(renameCommand);
-            } else if (section1Commands.length === 0) { // If section 1 is empty, put rename there. This handles cases where only baseCommands are present.
-                 section1Commands.push(renameCommand);
-            }
-            else { // Section 1 is too long, push it to section 2
+            } else { // If not, it goes to section 2
                 section2Commands.push(renameCommand);
             }
 
@@ -692,8 +693,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             leftColumn.innerHTML = '';
             rightColumn.innerHTML = '';
 
-            // Add loading message back if you want, or just remove if JS is fast
+            // Add initial loading message (if desired, or remove if fast enough)
             // leftColumn.innerHTML = '<p>Loading configuration data...</p>';
+
 
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
