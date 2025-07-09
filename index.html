@@ -169,6 +169,7 @@
                 <h2>Game Options</h2>
                 <div id="options-form">
                     <!-- Options will be rendered here by JavaScript -->
+                    <p>Loading configuration data...</p>
                 </div>
             </div>
 
@@ -191,19 +192,88 @@
                 </thead>
                 <tbody>
                     <!-- Table rows will be generated here by JavaScript -->
+                     <tr><td colspan="2">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Load the data file first -->
-    <script src="data.js"></script>
-
     <script>
         // JavaScript code goes here
 
-        // The data variables (baseCommands, finalTweakUnits6, optionsConfig)
-        // are now available because data.js is loaded above this script block.
+        // Define base commands and the final command block separately,
+        // as they don't seem to be in the tab-separated data format provided.
+        const baseCommands = `
+!preset coop
+!teamsize 12
+!autobalance off
+!assistdronesbuildpowermultiplier 1
+!assistdronesenabled enabled
+!commanderbuildersbuildpower 1000
+!commanderbuildersenabled enabled
+!commanderbuildersrange 1000
+!disablemapdamage 1
+!experimentalextraunits 1
+!experimentallegionfaction 1
+!experimentalshields bounceeverything
+!map Full Metal Plate
+!addbox 80 82 115 117 2
+!clearbox 1
+!maxunits 10000
+!multiplier_builddistance 1.5
+!multiplier_buildpower 1
+!multiplier_buildtimecost 1
+!multiplier_energyconversion 1
+!multiplier_energycost 1
+!multiplier_energyproduction 1
+!multiplier_losrange 1
+!multiplier_maxdamage 1
+!multiplier_maxvelocity 1
+!multiplier_metalcost 1
+!multiplier_metalextraction 1
+!multiplier_radarrange 1
+!multiplier_resourceincome 1
+!multiplier_shieldpower 1
+!multiplier_shieldpower 2
+!multiplier_turnrate 1
+!multiplier_weapondamage 1
+!raptor_difficulty epic
+!raptor_firstwavesboost 7
+!raptor_graceperiodmult 2.7
+!raptor_queentimemult 1.3
+!raptor_spawncountmult 3
+!raptor_spawntimemult 1
+!releasecandidates 1
+!startenergy 10000
+!startenergystorage 10000
+!startmetal 10000
+!startmetalstorage 10000
+!scavunitsforplayers 1
+!forceallunits 1
+!unit_restrictions_noair 0
+!unit_restrictions_noendgamelrpc 0
+!unit_restrictions_noextractors 1
+!unit_restrictions_nolrpc 0
+!unit_restrictions_nonukes 0
+!draft_mode disabled
+!unit_restrictions_notacnukes 0
+$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+!unit_market 0
+!evocom 0
+!nowasting all
+!bSet unit_restrictions_nonukes 1
+!bSet raptor_queen_count 8
+!balance
+$rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
+`;
+
+        // This command block appears after the options in your sample text.
+        // Assuming it's always included.
+         const finalTweakUnits6 = "!bset tweakunits6 LS1OdXR0eUIgbHJwYyByZWJhbGFuY2UgdjINCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWJydGhhPXtoZWFsdGg9MTMwMDAsd2VhcG9uZGVmcz17QVJNQlJUSEFfTUFJTj17ZGFtYWdlPXtjb21tYW5kZXJzPTQ4MCxkZWZhdWx0PTMzMDAwfSxhcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD04MDAwLHJhbmdlPTI0MDAscmVsb2FkdGltZT05LHR1cm5yYXRlPTIwMDAwfX19LGNvcmludD17aGVhbHRoPTEzMDAwLHdlYXBvbmRlZnM9e0NPUklOVF9NQUlOPXtkYW1hZ2U9e2NvbW1hbmRlcnM9NDgwLGRlZmF1bHQ9ODUwMDB9LGFyZWFvZmVmZmVjdD0yMzAsZWRnZWVmZmVjdGl2ZW5lc3M9MC42LGVuZXJneXBlcnNob3Q9MTUwMDAscmFuZ2U9MjcwMCxyZWxvYWR0aW1lPTE4fX19LGxlZ2xycGM9e2hlYWx0aD0xMzAwMCx3ZWFwb25kZWZzPXtMRUdMUlBDX01BSU49e2RhbWFnZT17Y29tbWFuZGVycz00ODAsZGVmYXVsdD00NTAwfSxlbmVyZ3lwZXJzaG90PTIwMDAscmFuZ2U9MjAwMCxyZWxvYWR0aW1lPTIsdHVybnJhdGU9MzAwMDB9fX19";
+
+
+        // Variable to hold the parsed options data
+        let optionsConfig = [];
 
         // 3. Get references to the HTML elements
         const optionsForm = document.getElementById('options-form');
@@ -212,6 +282,71 @@
         const dataTableBody = document.querySelector('#data-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
+
+
+        // Function to fetch and parse the configuration data
+        async function loadConfigData() {
+            try {
+                // *** UPDATED FILE NAME HERE ***
+                const response = await fetch('tweakdata.txt');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const text = await response.text();
+                parseConfigData(text);
+                renderOptions();
+                // populateDataTable(); // Populate table only when the tab is clicked
+            } catch (error) {
+                console.error("Could not load configuration data:", error);
+                optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
+                dataTableBody.innerHTML = '<tr><td colspan="2" style="color: red;">Failed to load data.</td></tr>';
+            }
+        }
+
+        // Function to parse the text data into the optionsConfig structure
+        function parseConfigData(text) {
+            const lines = text.trim().split('\n');
+            const optionsMap = new Map(); // Use a Map to group command blocks by label
+
+            lines.forEach(line => {
+                const parts = line.split('\t');
+                if (parts.length >= 2) {
+                    const label = parts[0].trim();
+                    const commandBlock = parts[1].trim();
+
+                    if (optionsMap.has(label)) {
+                        optionsMap.get(label).commandBlocks.push(commandBlock);
+                    } else {
+                        // Assuming all options from the text file are checkboxes for now
+                        optionsMap.set(label, {
+                            label: label,
+                            type: "checkbox", // Default to checkbox based on the format
+                            commandBlocks: [commandBlock]
+                        });
+                    }
+                }
+            });
+
+            // Convert the Map values into the optionsConfig array, preserving order from the file
+            optionsConfig = Array.from(optionsMap.values());
+
+             // You might want to add specific handling here if certain labels
+             // should correspond to radio buttons or select menus instead of checkboxes.
+             // For example:
+             /*
+             const healthOptions = ["QHP Epic (1.3x health)", "QHP Epic (1.5x health)", ...];
+             const modeOptions = ["Mode: No Rush", "Mode: Standard", ...]; // Assuming a Standard mode exists
+
+             optionsConfig = optionsConfig.map(option => {
+                 if (healthOptions.includes(option.label)) {
+                     option.type = "radio"; // Or a select group
+                 } else if (modeOptions.includes(option.label)) {
+                     option.type = "radio"; // Or a select group
+                 }
+                 return option;
+             });
+             */
+        }
 
 
         // 4. Function to generate the command string
@@ -240,6 +375,8 @@
 
         // 5. Function to render the options form
         function renderOptions() {
+            optionsForm.innerHTML = ''; // Clear loading message
+
             optionsConfig.forEach(option => {
                 const label = document.createElement('label');
                 let input;
@@ -337,7 +474,13 @@
 
             // If switching to the data tab, populate the table (or ensure it's populated)
             if (event.target.dataset.tab === 'data') {
-                populateDataTable();
+                // Only populate if data is loaded
+                if (optionsConfig.length > 0) {
+                     populateDataTable();
+                } else {
+                     // Data is still loading or failed, show message
+                     dataTableBody.innerHTML = '<tr><td colspan="2">Loading data...</td></tr>';
+                }
             }
         }
 
@@ -347,11 +490,8 @@
         });
 
 
-        // Initialize the form and output when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            renderOptions();
-            // populateDataTable(); // Populate table on load, or only when tab is clicked
-        });
+        // Load data and initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', loadConfigData);
 
     </script>
 </body>
