@@ -568,9 +568,11 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                          }
                          // For other selects, if "None" or empty is selected, ensure healthPart is not affected by that group
                          if (element.dataset.optionType === "Raptor Health") {
-                             healthPart = healthPart.replace(/.*? HP\s*/, '').trim(); // Remove Raptor HP part if present
+                             // Remove the Raptor HP part if it exists in healthPart
+                             healthPart = healthPart.replace(/.*? HP\s*/, '').trim();
                          } else if (element.dataset.optionType === "Queen Health") {
-                             healthPart = healthPart.replace(/\s*.*? QHP/, '').trim(); // Remove Queen QHP part if present
+                             // Remove the Queen QHP part if it exists in healthPart
+                             healthPart = healthPart.replace(/\s*.*? QHP/, '').trim();
                          }
                     }
                 }
@@ -578,12 +580,19 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
             // Construct the full rename command
             let renameCommand = `$rename [Mod] NuttyB Raptors`;
+            let renameParts = [];
+
             if (extraRaptorsPart) {
-                renameCommand += ` ${extraRaptorsPart}`;
+                renameParts.push(extraRaptorsPart); // extraRaptorsPart already includes brackets like "[Mini Bosses]"
             }
             if (healthPart) {
-                renameCommand += ` [${healthPart}]`;
+                renameParts.push(`[${healthPart}]`); // healthPart is like "1_3x HP 1_3x QHP", needs brackets
             }
+
+            if (renameParts.length > 0) {
+                renameCommand += ' ' + renameParts.join(''); // Join parts directly with no space between them
+            }
+
             renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
 
             generatedText += '\n' + renameCommand;
