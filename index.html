@@ -81,21 +81,30 @@
              margin-left: 5px; /* Indent dropdowns slightly */
          }
 
-        #command-output {
+        .command-output-section {
+            margin-bottom: 15px; /* Space between sections */
+        }
+
+        .command-output-section h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .command-output-section textarea {
             width: 100%;
-            box-sizing: border-box; /* Include padding/border in width */
+            box-sizing: border-box;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-family: monospace;
-            white-space: pre-wrap; /* Wrap long lines */
-            word-wrap: break-word; /* Break words if necessary */
-            resize: vertical; /* Allow vertical resizing */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            resize: vertical;
         }
 
-        #copy-button {
+        .copy-button { /* Changed ID to class for multiple buttons */
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 5px; /* Adjust margin as it's below textarea */
             padding: 10px 15px;
             background-color: #5cb85c;
             color: white;
@@ -106,16 +115,16 @@
             transition: background-color 0.3s ease;
         }
 
-        #copy-button:hover {
+        .copy-button:hover {
             background-color: #4cae4c;
         }
 
-        #copy-button:active {
+        .copy-button:active {
             background-color: #398439;
         }
 
         .lobby-name-output {
-            margin-top: 15px;
+            margin-top: 20px; /* More space above lobby name */
             padding: 10px;
             border: 1px dashed #ccc;
             background-color: #e9e9e9;
@@ -192,8 +201,18 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <textarea id="command-output" rows="20" readonly></textarea>
-                <button id="copy-button">Copy Commands</button>
+
+                <div class="command-output-section">
+                    <h3>Section 1 (Max 50000 chars)</h3>
+                    <textarea id="command-output-1" rows="15" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-1">Copy Section 1</button>
+                </div>
+
+                <div class="command-output-section">
+                    <h3>Section 2 (Remaining Commands)</h3>
+                    <textarea id="command-output-2" rows="15" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-2">Copy Section 2</button>
+                </div>
 
                 <div class="lobby-name-output">
                     <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
@@ -334,12 +353,15 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
         // 3. Get references to the HTML elements
         const optionsForm = document.getElementById('options-form');
-        const commandOutput = document.getElementById('command-output');
-        const copyButton = document.getElementById('copy-button');
+        const commandOutput1 = document.getElementById('command-output-1'); // Section 1
+        const commandOutput2 = document.getElementById('command-output-2'); // Section 2
+        const copyButtons = document.querySelectorAll('.copy-button'); // Select all copy buttons
         const dataTableBody = document.querySelector('#data-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const lobbyNameDisplay = document.getElementById('lobby-name-display'); // Reference to the lobby name display area
+
+        const MAX_SECTION_LENGTH = 50000; // Define the maximum character length for Section 1
 
 
         // Function to fetch and parse the configuration data
@@ -533,7 +555,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
         // 4. Function to generate the command string and lobby name
         function generateCommands() {
-            let generatedText = baseCommands.trim(); // Start with base commands
+            let generatedCommandsArray = []; // Array to store each command line
+            generatedCommandsArray.push(baseCommands.trim()); // Start with base commands
 
             let extraRaptorsPart = "";
             let raptorHealthPart = ""; // Separate parts for clarity
@@ -548,14 +571,14 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                     if (element.checked) {
                         const commandBlocks = JSON.parse(element.dataset.commandBlocks);
                         commandBlocks.forEach(block => {
-                            generatedText += '\n' + block.trim();
+                            generatedCommandsArray.push(block.trim());
                         });
                     }
                 } else if (element.tagName === 'SELECT') {
                     const selectedOption = element.options[element.selectedIndex];
                     if (selectedOption.value) { // Check if a valid option is selected (not an empty value)
                          const commandBlock = selectedOption.value.trim();
-                         generatedText += '\n' + commandBlock;
+                         generatedCommandsArray.push(commandBlock);
 
                          // Capture short labels for the rename command
                          const optionGroup = formOptionsConfig.find(group => group.label === element.dataset.optionType);
@@ -617,10 +640,30 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
             renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
 
-            generatedText += '\n' + renameCommand;
+            generatedCommandsArray.push(renameCommand); // Add the rename command to the array
 
-            // Return both the full text and the rename command
-            return { fullText: generatedText.trim(), lobbyName: renameCommand };
+            // Now, split the array of commands into sections
+            let section1Text = "";
+            let section2Text = "";
+            let currentLength = 0;
+
+            for (let i = 0; i < generatedCommandsArray.length; i++) {
+                const command = generatedCommandsArray[i];
+                // Add 1 for the newline character that will separate commands
+                if (currentLength + command.length + 1 <= MAX_SECTION_LENGTH) {
+                    section1Text += (section1Text ? '\n' : '') + command;
+                    currentLength += command.length + 1;
+                } else {
+                    section2Text += (section2Text ? '\n' : '') + command;
+                }
+            }
+
+            return {
+                fullText: generatedCommandsArray.join('\n'), // Keep this for completeness, though not directly used for textareas
+                lobbyName: renameCommand,
+                section1: section1Text,
+                section2: section2Text
+            };
         }
 
         // 5. Function to render the options form
@@ -681,28 +724,31 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
         // Function to update the output textarea and lobby name display
         function updateOutput() {
             const generatedData = generateCommands();
-            commandOutput.value = generatedData.fullText;
+            commandOutput1.value = generatedData.section1; // Assign to section 1
+            commandOutput2.value = generatedData.section2; // Assign to section 2
             lobbyNameDisplay.textContent = generatedData.lobbyName;
         }
 
         // 6. Add copy functionality
-        copyButton.addEventListener('click', () => {
-            commandOutput.select(); // Select the text area content
-            // Use the modern Clipboard API
-            navigator.clipboard.writeText(commandOutput.value)
-                .then(() => {
-                    // Optional: Provide user feedback (e.g., change button text temporarily)
-                    copyButton.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyButton.textContent = 'Copy Commands';
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                    // Fallback for older browsers or errors (e.g., execCommand)
-                    alert('Could not copy text. Please copy manually.');
-                });
+        copyButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const targetId = event.target.dataset.target;
+                const targetTextArea = document.getElementById(targetId);
+                targetTextArea.select(); // Select the text area content
+                navigator.clipboard.writeText(targetTextArea.value)
+                    .then(() => {
+                        event.target.textContent = 'Copied!';
+                        setTimeout(() => {
+                            event.target.textContent = `Copy ${event.target.textContent.replace('Copied!','Section ').trim()}`; // Revert button text
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Could not copy text. Please copy manually.');
+                    });
+            });
         });
+
 
         // 7. Function to populate the data table
         function populateDataTable() {
