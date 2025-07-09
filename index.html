@@ -224,6 +224,7 @@
             text-align: left;
             vertical-align: top;
             word-wrap: break-word;
+            font-family: monospace;
         }
 
         #data-table th {
@@ -234,22 +235,18 @@
             background-color: #2c2c2c;
         }
 
-        /* UPDATED: New column widths for 4 columns */
+        /* UPDATED: New column widths for 3 columns */
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 20%; /* Label */
+            width: 30%; /* Option Label */
         }
-         #data-table th:nth-child(2),
-         #data-table td:nth-child(2) {
-             width: 15%; /* Status */
-         }
-         #data-table th:nth-child(3),
-         #data-table td:nth-child(3) {
-             width: 20%; /* Summary */
-         }
-         #data-table th:last-child,
+        #data-table th:nth-child(2),
+        #data-table td:nth-child(2) {
+            width: 20%; /* Status */
+        }
+        #data-table th:last-child,
         #data-table td:last-child {
-            width: 45%; /* Command Blocks */
+            width: 50%; /* Summary */
         }
 
 
@@ -313,7 +310,7 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and Paste both parts to the lobby separately</p>
+                <p>Copy and paste all parts to the lobby separately</p>
 
                 <div class="command-output-section">
                     <h3>Part 1</h3>
@@ -335,21 +332,20 @@
 
         <div id="data-tab" class="tab-content">
             <h2>Configuration Data</h2>
-            <p>This table shows the raw command blocks associated with each option, including their status.</p>
+            <p>This table shows a summary for each configurable option.</p>
             <table id="data-table">
                 <thead>
                     <tr>
+                        <!-- UPDATED: Added Status header back -->
                         <th>Option Label</th>
                         <th>Status</th>
-                        <!-- UPDATED: Added Summary column header -->
                         <th>Summary</th>
-                        <th>Command Blocks</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Table rows will be generated here by JavaScript -->
-                    <!-- UPDATED: Colspan increased to 4 -->
-                     <tr><td colspan="4">Loading data...</td></tr>
+                    <!-- UPDATED: Colspan changed to 3 -->
+                     <tr><td colspan="3">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -497,13 +493,12 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 const text = await response.text();
                 parseConfigData(text);
                 renderOptions();
-                // populateDataTable(); // Populate table only when the tab is clicked
             } catch (error) {
                 console.error("Could not load configuration data:", error);
-                // Update messages for both columns if loading fails
                 leftColumn.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
-                rightColumn.innerHTML = ''; // Clear right column if error
-                dataTableBody.innerHTML = '<tr><td colspan="4" style="color: red;">Failed to load data.</td></tr>';
+                rightColumn.innerHTML = '';
+                // UPDATED: Colspan changed to 3
+                dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
                  lobbyNameDisplay.textContent = 'Error loading data.';
             }
         }
@@ -511,12 +506,11 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
         async function loadLinksContent() {
             const linksContentEl = document.getElementById('links-tab');
             try {
-                const response = await fetch('links.md'); // Fetch the new markdown file
+                const response = await fetch('links.md');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const markdownText = await response.text();
-                // Use the 'marked' library (loaded from CDN) to convert markdown to HTML
                 linksContentEl.innerHTML = marked.parse(markdownText);
             } catch (error) {
                 console.error("Could not load links content:", error);
@@ -524,20 +518,15 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             }
         }
 
-        // NEW: Helper function to decode base64url strings
         function decodeBase64Url(base64Url) {
             if (!base64Url) return '';
             try {
-                // Replace URL-safe characters with standard Base64 characters
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                // Add padding if it was removed
                 const padding = base64.length % 4;
                 if (padding) {
                     base64 += '===='.slice(padding);
                 }
-                // Decode the base64 string
                 const decodedData = atob(base64);
-                // To be safe with special characters, decode from UTF-8
                 const utf8Decoder = new TextDecoder('utf-8');
                 const decodedUtf8 = utf8Decoder.decode(
                     Uint8Array.from(decodedData, c => c.charCodeAt(0))
@@ -558,11 +547,11 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
-                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, // Add "None" option with empty shortLabel
-                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } // This is a virtual group for sorting, actual items will be separate
+                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
+                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
 
-            rawOptionsData = []; // Clear previous data
+            rawOptionsData = [];
 
             lines.forEach(line => {
                 const parts = line.split('\t');
@@ -570,24 +559,19 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     const label = parts[0].trim();
                     const commandBlock = parts[1].trim();
                     
-                    // --- NEW: Logic to decode and get summary ---
                     let summary = '';
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) {
                             const encodedData = commandParts[2];
                             const decodedText = decodeBase64Url(encodedData);
-                            // Get just the first line of the decoded text
                             summary = decodedText.split('\n')[0].trim();
                         }
                     }
 
-                    let status = "Optional"; // Default status
-                    let addedToFormGroup = false; // Flag to check if added to a specific, named form group
+                    let status = "Optional";
+                    let addedToFormGroup = false;
 
-                    // --- Prioritize specific groups first ---
-
-                    // Check if part of Extra Raptors group (Optional Select)
                     const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (isExtraRaptor) {
                         status = "Optional/Grouped";
@@ -598,14 +582,12 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                             shortLabel = "[Expo Waves]";
                         }
                         groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
-                        // Set default selected option for this dropdown
-                        if (commandBlock.startsWith('!bset tweakdefs4')) { // Mini Bosses is the default
+                        if (commandBlock.startsWith('!bset tweakdefs4')) {
                              groupedOptions.extraRaptors.defaultValue = commandBlock;
                         }
                         addedToFormGroup = true;
                     }
 
-                    // Check if part of tweakdefs1 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
                          const match = label.match(/(\d+\.?\d*x)/); 
@@ -624,7 +606,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                          addedToFormGroup = true;
                     }
 
-                    // Check if part of tweakdefs2 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
                          const match = label.match(/(\d+\.?\d*x)/); 
@@ -643,8 +624,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                          addedToFormGroup = true;
                     }
 
-
-                    // Check if part of Main Tweaks group (Mandatory/Visible Checkbox)
                     const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (!addedToFormGroup && isMainTweak) {
                         status = "Mandatory/Visible";
@@ -652,7 +631,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                         addedToFormGroup = true;
                     }
 
-                    // Check if part of Evolving Commanders group (Optional Checkbox)
                     const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (!addedToFormGroup && isEvolvingCommander) {
                          status = "Optional";
@@ -663,44 +641,38 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                          addedToFormGroup = true;
                     }
 
-                    // Check if hidden
                     const isHidden = hiddenLabels.includes(label);
                      if (isHidden) {
                          status = "Hidden";
                      }
 
-                    // UPDATED: Add summary to the data object
                     rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status, summary: summary });
 
-                    // Add to otherCheckboxes if not added to any specific group and not hidden
                     if (!addedToFormGroup && !isHidden) {
                          groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' });
                     }
                 }
             });
 
-            // Build the final formOptionsConfig array - this determines rendering order
             formOptionsConfig = [];
-            // Add the fixed groups to the left column explicitly
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.mainTweaks);
             }
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
             }
-            if (groupedOptions.tweakdefs2.choices.length > 0) { // Raptor Health
+            if (groupedOptions.tweakdefs2.choices.length > 0) {
                 formOptionsConfig.push(groupedOptions.tweakdefs2);
             }
-            if (groupedOptions.tweakdefs1.choices.length > 0) { // Queen Health
+            if (groupedOptions.tweakdefs1.choices.length > 0) {
                 formOptionsConfig.push(groupedOptions.tweakdefs1);
             }
-            if (groupedOptions.extraRaptors.choices.length > 1) { // Extras
+            if (groupedOptions.extraRaptors.choices.length > 1) {
                 formOptionsConfig.push(groupedOptions.extraRaptors);
             }
             
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
 
-            // Set default selected choice for select groups
              formOptionsConfig.forEach(group => {
                  if (group.type === 'select' && group.choices.length > 0) {
                      if (group.defaultValue) {
@@ -719,14 +691,13 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         // 4. Function to generate the command string and lobby name
         function generateCommands() {
-            let coreCommands = []; // Array to store each command line (excluding rename for now)
-            coreCommands.push(baseCommands.trim()); // Start with base commands
+            let coreCommands = [];
+            coreCommands.push(baseCommands.trim());
 
             let extraRaptorsPart = "";
-            let raptorHealthPart = ""; // Separate parts for clarity
+            let raptorHealthPart = "";
             let queenHealthPart = "";
 
-            // Iterate through the form elements to get selected options
             const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
 
             formElements.forEach(element => {
@@ -739,7 +710,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     }
                 } else if (element.tagName === 'SELECT') {
                     const selectedOption = element.options[element.selectedIndex];
-                    if (selectedOption.value) { // Check if a valid option is selected
+                    if (selectedOption.value) {
                          const commandBlock = selectedOption.value.trim();
                          coreCommands.push(commandBlock);
 
@@ -760,7 +731,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 }
             });
 
-            // --- Construct the rename command ---
             let renameCommand = `$rename [Mod] NuttyB Raptors`;
             let renameParts = [];
 
@@ -787,14 +757,11 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
             renameCommand += `[No Mex]`;
 
-            // --- CORRECTED SPLITTING LOGIC ---
             let section1Commands = [];
             let section2Commands = [];
             let currentLengthSection1 = 0;
 
-            // 1. First, split all the CORE commands without considering the rename command.
             for (const command of coreCommands) {
-                // Check if adding the next command would exceed the limit (+1 for newline character)
                 if (currentLengthSection1 + command.length + 1 <= MAX_SECTION_LENGTH) {
                     section1Commands.push(command);
                     currentLengthSection1 += command.length + 1;
@@ -803,12 +770,9 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 }
             }
 
-            // 2. Now, after all other commands are split, add the rename command to the very end.
             if (section2Commands.length > 0) {
-                // If there are any commands in Part 2, the rename command MUST go at the end of Part 2.
                 section2Commands.push(renameCommand);
             } else {
-                // Otherwise, all commands fit in Part 1, so add it to the end of Part 1.
                 section1Commands.push(renameCommand);
             }
 
@@ -822,13 +786,12 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         // 5. Function to render the options form
         function renderOptions() {
-            // Clear both columns before rendering
             leftColumn.innerHTML = '';
             rightColumn.innerHTML = '';
 
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
-                let inputElement; // This will hold either the input or select element
+                let inputElement;
 
                 if (optionGroup.type === 'checkbox') {
                     inputElement = document.createElement('input');
@@ -840,14 +803,13 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     label.appendChild(inputElement);
                     label.appendChild(document.createTextNode(' ' + optionGroup.label));
 
-                    // Add event listener only if not disabled
                     if (!inputElement.disabled) {
                         inputElement.addEventListener('change', updateOutput);
                     }
 
                 } else if (optionGroup.type === 'select') {
-                    inputElement = document.createElement('select'); // It's a select, not an input
-                    inputElement.dataset.optionType = optionGroup.label; // Identify the group
+                    inputElement = document.createElement('select');
+                    inputElement.dataset.optionType = optionGroup.label;
 
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
@@ -855,16 +817,14 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                         optionElement.textContent = choice.label;
                         optionElement.selected = choice.selected || false;
                         optionElement.dataset.shortLabel = choice.shortLabel || "";
-                        inputElement.appendChild(optionElement); // Append option to select
+                        inputElement.appendChild(optionElement);
                     });
 
-                    label.textContent = optionGroup.label + ': '; // Label for the dropdown group
-                    label.appendChild(inputElement); // Append select to label
+                    label.textContent = optionGroup.label + ': ';
+                    label.appendChild(inputElement);
 
-                    // Add event listener
                     inputElement.addEventListener('change', updateOutput);
                 }
-                // Determine which column to append to
                 if (optionGroup.column === 'right') {
                     rightColumn.appendChild(label);
                 } else {
@@ -872,24 +832,21 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 }
             });
 
-            // Initial generation
             updateOutput();
         }
 
-        // Function to update the output textarea and lobby name display
         function updateOutput() {
             const generatedData = generateCommands();
-            commandOutput1.value = generatedData.section1; // Assign to section 1
-            commandOutput2.value = generatedData.section2; // Assign to section 2
+            commandOutput1.value = generatedData.section1;
+            commandOutput2.value = generatedData.section2;
             lobbyNameDisplay.textContent = generatedData.lobbyName;
         }
 
-        // 6. Add copy functionality
         copyButtons.forEach(button => {
             button.addEventListener('click', (event) => {
                 const targetId = event.target.dataset.target;
                 const targetTextArea = document.getElementById(targetId);
-                targetTextArea.select(); // Select the text area content
+                targetTextArea.select();
                 navigator.clipboard.writeText(targetTextArea.value)
                     .then(() => {
                         event.target.textContent = 'Copied!';
@@ -907,73 +864,50 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         // 7. Function to populate the data table
         function populateDataTable() {
-            dataTableBody.innerHTML = ''; // Clear existing rows
+            dataTableBody.innerHTML = ''; 
 
-            // Use the rawOptionsData which is a flat list of all options
-            rawOptionsData.forEach(item => {
+            const visibleOptions = rawOptionsData.filter(item => item.status !== 'Hidden');
+
+            visibleOptions.forEach(item => {
                 const row = dataTableBody.insertRow();
 
                 const labelCell = row.insertCell();
                 labelCell.textContent = item.label;
 
+                // UPDATED: Added status cell back
                 const statusCell = row.insertCell();
                 statusCell.textContent = item.status;
 
-                // --- NEW: Add the summary cell ---
                 const summaryCell = row.insertCell();
                 summaryCell.textContent = item.summary;
-
-                const commandsCell = row.insertCell();
-                const pre = document.createElement('pre');
-                pre.textContent = item.commandBlock;
-                commandsCell.appendChild(pre);
             });
-
-             // Add the base commands to the table as well
-             const baseRow = dataTableBody.insertRow();
-             const baseLabelCell = baseRow.insertCell();
-             baseLabelCell.textContent = "Base Commands";
-             const baseStatusCell = baseRow.insertCell();
-             baseStatusCell.textContent = "Always Included";
-             
-             // --- NEW: Add an empty cell for alignment in the base commands row ---
-             baseRow.insertCell();
-
-             const baseCommandsCell = baseRow.insertCell();
-             const basePre = document.createElement('pre');
-             basePre.textContent = baseCommands.trim();
-             baseCommandsCell.appendChild(basePre);
         }
 
         // 8. Function to handle tab switching
         function switchTab(event) {
             const targetTabId = event.target.dataset.tab + '-tab';
 
-            // Remove 'active' class from all buttons and content
             tabButtons.forEach(button => button.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
 
-            // Add 'active' class to the clicked button and corresponding content
             event.target.classList.add('active');
             document.getElementById(targetTabId).classList.add('active');
 
-            // If switching to the data tab, populate the table (or ensure it's populated)
             if (event.target.dataset.tab === 'data') {
                 if (rawOptionsData.length > 0) {
                      populateDataTable();
                 } else {
-                     dataTableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>';
+                     // UPDATED: Colspan changed to 3
+                     dataTableBody.innerHTML = '<tr><td colspan="3">Loading data...</td></tr>';
                 }
             }
         }
 
-        // Add event listeners to tab buttons
         tabButtons.forEach(button => {
             button.addEventListener('click', switchTab);
         });
 
 
-        // Load data and initialize the app when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadConfigData();
             loadLinksContent();
