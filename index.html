@@ -114,6 +114,15 @@
             background-color: #398439;
         }
 
+        .lobby-name-output {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            background-color: #e9e9e9;
+            font-family: monospace;
+            word-break: break-all; /* Break long names */
+        }
+
         /* Data Table Styles */
         #data-table {
             width: 100%;
@@ -185,6 +194,10 @@
                 <h2>Generated Commands</h2>
                 <textarea id="command-output" rows="20" readonly></textarea>
                 <button id="copy-button">Copy Commands</button>
+
+                <div class="lobby-name-output">
+                    <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
+                </div>
             </div>
         </div>
 
@@ -265,14 +278,14 @@
 !unit_restrictions_nonukes 0
 !draft_mode disabled
 !unit_restrictions_notacnukes 0
-$welcome-message Settings made with Raptor Configurator https://rcorex.github.io/nuttyb-config/
+$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 !unit_market 0
 !evocom 0
 !nowasting all
 !bSet unit_restrictions_nonukes 1
 !bSet raptor_queen_count 8
 !balance
-`;
+`; // Removed the old $rename command from baseCommands
 
         // Define command prefixes for the "NuttyB Main Tweaks" group (Mandatory/Visible Checkbox)
         const mainTweaksPrefixes = [
@@ -323,6 +336,7 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
         const dataTableBody = document.querySelector('#data-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
+        const lobbyNameDisplay = document.getElementById('lobby-name-display'); // Reference to the lobby name display area
 
 
         // Function to fetch and parse the configuration data
@@ -340,6 +354,7 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                 console.error("Could not load configuration data:", error);
                 optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
                 dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
+                 lobbyNameDisplay.textContent = 'Error loading data.';
             }
         }
 
@@ -351,7 +366,7 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
-                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "" }] }, // Add "None" option by default
+                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }] }, // Add "None" option with empty shortLabel
                 otherCheckboxes: { type: "checkboxes", options: [] } // For all other checkboxes
             };
 
@@ -372,7 +387,13 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                     const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (isExtraRaptor) {
                         status = "Optional/Grouped";
-                        groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock });
+                        let shortLabel = "";
+                        if (label === "Mini Bosses") {
+                            shortLabel = "[Mini Bosses]";
+                        } else if (label === "EXPERMENTIAL WAVE CHANGES") {
+                            shortLabel = "[Expo Waves]";
+                        }
+                        groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                         // Set default selected option for this dropdown
                         if (commandBlock.startsWith('!bset tweakdefs4')) { // Mini Bosses is the default
                              groupedOptions.extraRaptors.defaultValue = commandBlock;
@@ -383,16 +404,33 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                     // Check if part of tweakdefs1 group (Optional Select)
                     if (!addedToForm && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
-                         groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock });
+                         // Extract health part from label like "QHP Epic (1.3x health)" -> "1_3x QHP"
+                         const match = label.match(/\((.*?)\)/);
+                         let shortLabel = "";
+                         if (match && match[1]) {
+                             shortLabel = match[1].replace(/\./g, '_') + ' QHP';
+                         } else {
+                             shortLabel = label.replace(/\./g, '_').replace(/QHP.*$/, 'QHP').trim(); // Fallback
+                         }
+                         groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToForm = true;
                     }
 
                     // Check if part of tweakdefs2 group (Optional Select)
                     if (!addedToForm && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
-                         groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock });
+                         // Extract health part from label like "HP Epic (1.3x health)" -> "1_3x HP"
+                         const match = label.match(/\((.*?)\)/);
+                         let shortLabel = "";
+                         if (match && match[1]) {
+                             shortLabel = match[1].replace(/\./g, '_') + ' HP';
+                         } else {
+                              shortLabel = label.replace(/\./g, '_').replace(/HP.*$/, 'HP').trim(); // Fallback
+                         }
+                         groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToForm = true;
                     }
+
 
                     // Check if part of Main Tweaks group (Mandatory/Visible Checkbox)
                     const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
@@ -482,9 +520,12 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
         }
 
 
-        // 4. Function to generate the command string
+        // 4. Function to generate the command string and lobby name
         function generateCommands() {
             let generatedText = baseCommands.trim(); // Start with base commands
+
+            let extraRaptorsPart = "";
+            let healthPart = "";
 
             // Iterate through the form elements to get selected options
             const formElements = optionsForm.querySelectorAll('input[type="checkbox"], select');
@@ -503,11 +544,52 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                     if (selectedOption.value) { // Check if a valid option is selected (not an empty value)
                          const commandBlock = selectedOption.value.trim();
                          generatedText += '\n' + commandBlock;
+
+                         // Capture short labels for the rename command
+                         const optionGroup = formOptionsConfig.find(group => group.label === element.dataset.optionType);
+                         if (optionGroup) {
+                             const selectedChoice = optionGroup.choices.find(choice => choice.value === selectedOption.value);
+                             if (selectedChoice && selectedChoice.shortLabel !== undefined) { // Check for undefined to allow empty string
+                                 if (optionGroup.label === "Extra Raptors") {
+                                     extraRaptorsPart = selectedChoice.shortLabel;
+                                 } else if (optionGroup.label === "Raptor Health") {
+                                     // Add Raptor Health first, then Queen Health
+                                     healthPart = selectedChoice.shortLabel + (healthPart ? ` ${healthPart}` : '');
+                                 } else if (optionGroup.label === "Queen Health") {
+                                      // Add Queen Health second
+                                      healthPart = (healthPart ? `${healthPart} ` : '') + selectedChoice.shortLabel;
+                                 }
+                             }
+                         }
+                    } else {
+                         // Handle the "None" option for Extra Raptors specifically
+                         if (element.dataset.optionType === "Extra Raptors") {
+                             extraRaptorsPart = ""; // Ensure it's empty if "None" is selected
+                         }
+                         // For other selects, if "None" or empty is selected, ensure healthPart is not affected by that group
+                         if (element.dataset.optionType === "Raptor Health") {
+                             healthPart = healthPart.replace(/.*? HP\s*/, '').trim(); // Remove Raptor HP part if present
+                         } else if (element.dataset.optionType === "Queen Health") {
+                             healthPart = healthPart.replace(/\s*.*? QHP/, '').trim(); // Remove Queen QHP part if present
+                         }
                     }
                 }
             });
 
-            return generatedText.trim(); // Trim any leading/trailing whitespace
+            // Construct the full rename command
+            let renameCommand = `$rename [Mod] NuttyB Raptors`;
+            if (extraRaptorsPart) {
+                renameCommand += ` ${extraRaptorsPart}`;
+            }
+            if (healthPart) {
+                renameCommand += ` [${healthPart}]`;
+            }
+            renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
+
+            generatedText += '\n' + renameCommand;
+
+            // Return both the full text and the rename command
+            return { fullText: generatedText.trim(), lobbyName: renameCommand };
         }
 
         // 5. Function to render the options form
@@ -547,6 +629,8 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
                         optionElement.value = choice.value; // Store the command block as the value
                         optionElement.textContent = choice.label; // Display the label to the user
                         optionElement.selected = choice.selected || false; // Set selected state
+                        // Store shortLabel on the option element for easy access in generateCommands
+                        optionElement.dataset.shortLabel = choice.shortLabel || "";
                         select.appendChild(optionElement);
                     });
 
@@ -563,9 +647,11 @@ $welcome-message Settings made with Raptor Configurator https://rcorex.github.io
             updateOutput();
         }
 
-        // Function to update the output textarea
+        // Function to update the output textarea and lobby name display
         function updateOutput() {
-            commandOutput.value = generateCommands();
+            const generatedData = generateCommands();
+            commandOutput.value = generatedData.fullText;
+            lobbyNameDisplay.textContent = generatedData.lobbyName;
         }
 
         // 6. Add copy functionality
