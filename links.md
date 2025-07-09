@@ -15,16 +15,19 @@ Here are some important links related to NuttyB Raptors and Beyond All Reason.
 *   **[Discord Channel for NuttyB](https://discord.com/channels/549281623154229250/1168959237641216131)**
     *   Official Discord channel for NuttyB tweaks.
 
-*   **[NuttyB Github](https://github.com/Backbash/NuttyB-Raptors)**
-    *   The official source code repository for NuttyB tweaks used in this configurator.
-
-*   **[The Paste Machine](https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit#gid=0)**
-    *   The spreadsheet that inspired this configurator.
-
 *   **[NuttyB Raptors Guide for Noobs](https://docs.google.com/document/d/11FfEiKAjp0NSKTwvmywqUNefrOqVapnW5e3o5azSmXY/edit?tab=t.0)**
     *   A simple guide for how to play for new players.
 
 *   **[Beyond All Reason Website](https://www.beyondallreason.info/)**
     *   The main site for the game. Game replays can be downloaded here.
 
----
+## Sources
+
+*   **[NuttyB Configurator Github](https://rcorex.github.io/nuttyb-config/)**
+    *   The source code repository for this configurator.
+
+*   **[NuttyB Tweaks Github](https://github.com/Backbash/NuttyB-Raptors)**
+    *   The official source code repository for NuttyB tweaks used in this configurator.
+
+*   **[The Paste Machine](https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit#gid=0)**
+    *   The spreadsheet that inspired this configurator.
