@@ -1,16 +1,30 @@
 # Useful Links & Resources
 
-Here are some important links related to the game and this configuration.
+Here are some important links related to NuttyB Raptors and Beyond All Reason.
 
-## Community & Gameplay
+## Widgets
+
+*   **[Raptor Stats Panel with Aggro](https://gist.github.com/tetrisface/2f99f5a5b179e3ac42e7e63825880713)**
+    *   Replace stock Raptor Stats widget. Shows more info like aggro and queen resistances.
+ 
+*   **[Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)**
+    *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
+
+## Community and Guides
 
 *   **[Discord Channel for NuttyB](https://discord.com/channels/549281623154229250/1168959237641216131)**
     *   Official Discord channel for NuttyB tweaks.
 
-*   **[The Original Paste Machine](https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit#gid=0)**
-    *   The spreadsheet that inspired this configurator. It contains the most detailed information on all tweaks and commands.
+*   **[NuttyB Github](https://github.com/Backbash/NuttyB-Raptors)**
+    *   The official source code repository for NuttyB tweaks used in this configurator.
+
+*   **[The Paste Machine](https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit#gid=0)**
+    *   The spreadsheet that inspired this configurator.
+
+*   **[NuttyB Raptors Guide for Noobs](https://docs.google.com/document/d/11FfEiKAjp0NSKTwvmywqUNefrOqVapnW5e3o5azSmXY/edit?tab=t.0)**
+    *   A simple guide for how to play for new players.
 
 *   **[Beyond All Reason Website](https://www.beyondallreason.info/)**
-    *   The main site for the game, with downloads, guides, and news.
+    *   The main site for the game. Game replays can be downloaded here.
 
 ---
