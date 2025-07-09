@@ -147,11 +147,9 @@
             color: #f0f0f0;
             border: 1px solid #777;
             border-radius: 4px;
-            /* --- UPDATED: Key changes for height alignment --- */
-            padding: 2px 6px; /* Reduced vertical padding */
-            font-size: 0.9em; /* Slightly smaller font to fit better */
-            vertical-align: middle; /* Aligns with the checkbox and text */
-            /* --- End of updates --- */
+            padding: 2px 6px; 
+            font-size: 0.9em; 
+            vertical-align: middle; 
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -240,19 +238,19 @@
 
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 30%; /* Option Label */
+            width: 30%;
         }
         #data-table th:nth-child(2),
         #data-table td:nth-child(2) {
-            width: 15%; /* Status */
+            width: 15%;
         }
         #data-table th:nth-child(3),
         #data-table td:nth-child(3) {
-            width: 25%; /* Summary */
+            width: 25%;
         }
         #data-table th:last-child,
         #data-table td:last-child {
-            width: 30%; /* Command Blocks */
+            width: 30%;
         }
 
         .command-cell-wrapper {
@@ -292,7 +290,6 @@
             overflow: visible;
         }
         
-        /* Links Tab Specific Styles (optional, for better formatting) */
         #links-tab h2, #links-tab h3 {
             margin-top: 20px;
             border-bottom: 1px solid #444;
@@ -387,67 +384,7 @@
     <script>
         // JavaScript code goes here
 
-        const baseCommands = `
-!preset coop
-!teamsize 12
-!autobalance off
-!assistdronesbuildpowermultiplier 1
-!assistdronesenabled enabled
-!commanderbuildersbuildpower 1000
-!commanderbuildersenabled enabled
-!commanderbuildersrange 1000
-!disablemapdamage 1
-!experimentalextraunits 1
-!experimentallegionfaction 1
-!experimentalshields bounceeverything
-!map Full Metal Plate
-!addbox 80 82 115 117 2
-!clearbox 1
-!maxunits 10000
-!multiplier_builddistance 1.5
-!multiplier_buildpower 1
-!multiplier_buildtimecost 1
-!multiplier_energyconversion 1
-!multiplier_energycost 1
-!multiplier_energyproduction 1
-!multiplier_losrange 1
-!multiplier_maxdamage 1
-!multiplier_maxvelocity 1
-!multiplier_metalcost 1
-!multiplier_metalextraction 1
-!multiplier_radarrange 1
-!multiplier_resourceincome 1
-!multiplier_shieldpower 1
-!multiplier_shieldpower 2
-!multiplier_turnrate 1
-!multiplier_weapondamage 1
-!raptor_difficulty epic
-!raptor_firstwavesboost 7
-!raptor_graceperiodmult 2.7
-!raptor_queentimemult 1.3
-!raptor_spawncountmult 3
-!raptor_spawntimemult 1
-!releasecandidates 1
-!startenergy 10000
-!startenergystorage 10000
-!startmetal 10000
-!startmetalstorage 10000
-!scavunitsforplayers 1
-!forceallunits 1
-!unit_restrictions_noair 0
-!unit_restrictions_noendgamelrpc 0
-!unit_restrictions_nolrpc 0
-!unit_restrictions_nonukes 0
-!draft_mode disabled
-!unit_restrictions_notacnukes 0
-$welcome-message Settings made with NuttyB Configurator https://rcorex.github.io/nuttyb-config/
-!unit_market 0
-!evocom 0
-!nowasting all
-!bSet unit_restrictions_nonukes 1
-!bSet raptor_queen_count 8
-!balance
-`; 
+        // UPDATED: baseCommands constant removed from here
 
         const mainTweaksPrefixes = [
             '!bset tweakdefs ',
@@ -481,6 +418,8 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             'Cortex NuttyB Evolving Commander',
         ];
 
+        // UPDATED: Global variables to hold fetched data
+        let baseCommandsText = '';
         let rawOptionsData = [];
         let formOptionsConfig = [];
 
@@ -496,23 +435,24 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
         const lobbyNameDisplay = document.getElementById('lobby-name-display');
 
         const MAX_SECTION_LENGTH = 50000;
-
-        async function loadConfigData() {
-            try {
-                const response = await fetch('tweakdata.txt');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const text = await response.text();
-                parseConfigData(text);
-                renderOptions();
-            } catch (error) {
-                console.error("Could not load configuration data:", error);
-                leftColumn.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
-                rightColumn.innerHTML = '';
-                dataTableBody.innerHTML = '<tr><td colspan="4" style="color: red;">Failed to load data.</td></tr>';
-                 lobbyNameDisplay.textContent = 'Error loading data.';
+        
+        // NEW: Function to fetch base commands from external file
+        async function loadBaseCommands() {
+            const response = await fetch('basecommands.txt');
+            if (!response.ok) {
+                throw new Error(`Could not load basecommands.txt: ${response.statusText}`);
             }
+            baseCommandsText = await response.text();
+        }
+
+        // UPDATED: loadConfigData no longer calls renderOptions
+        async function loadConfigData() {
+            const response = await fetch('tweakdata.txt');
+            if (!response.ok) {
+                throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
+            }
+            const text = await response.text();
+            parseConfigData(text);
         }
         
         async function loadLinksContent() {
@@ -700,7 +640,8 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
         function generateCommands() {
             let coreCommands = [];
-            coreCommands.push(baseCommands.trim());
+            // UPDATED: Use the fetched base commands text
+            coreCommands.push(baseCommandsText.trim());
 
             let extraRaptorsPart = "";
             let raptorHealthPart = "";
@@ -815,7 +756,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     }
 
                 } else if (optionGroup.type === 'select') {
-                    // UPDATED: Reverted to the simpler version
                     inputElement = document.createElement('select');
                     inputElement.dataset.optionType = optionGroup.label;
 
@@ -947,11 +887,27 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             button.addEventListener('click', switchTab);
         });
 
+        // NEW: Main initialization function to orchestrate loading
+        async function initializeApp() {
+            try {
+                // Load all data concurrently for efficiency
+                await Promise.all([
+                    loadBaseCommands(),
+                    loadConfigData(),
+                    loadLinksContent()
+                ]);
+                // Only render the main form after essential data is loaded
+                renderOptions();
+            } catch (error) {
+                // Handle critical loading failures
+                console.error("Failed to initialize the configurator:", error);
+                const container = document.querySelector('.container');
+                container.innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+            }
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadConfigData();
-            loadLinksContent();
-        });
+        // UPDATED: Start the app when the page is loaded
+        document.addEventListener('DOMContentLoaded', initializeApp);
 
     </script>
 </body>
