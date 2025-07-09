@@ -77,6 +77,10 @@
              margin-right: 5px;
          }
 
+         #options-form select {
+             margin-left: 5px; /* Indent dropdowns slightly */
+         }
+
         #command-output {
             width: 100%;
             box-sizing: border-box; /* Include padding/border in width */
@@ -272,8 +276,9 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
          const finalTweakUnits6 = "!bset tweakunits6 LS1OdXR0eUIgbHJwYyByZWJhbGFuY2UgdjINCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWJydGhhPXtoZWFsdGg9MTMwMDAsd2VhcG9uZGVmcz17QVJNQlJUSEFfTUFJTj17ZGFtYWdlPXtjb21tYW5kZXJzPTQ4MCxkZWZhdWx0PTMzMDAwfSxhcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD04MDAwLHJhbmdlPTI0MDAscmVsb2FkdGltZT05LHR1cm5yYXRlPTIwMDAwfX19LGNvcmludD17aGVhbHRoPTEzMDAwLHdlYXBvbmRlZnM9e0NPUklOVF9NQUlOPXtkYW1hZ2U9e2NvbW1hbmRlcnM9NDgwLGRlZmF1bHQ9ODUwMDB9LGFyZWFvZmVmZmVjdD0yMzAsZWRnZWVmZmVjdGl2ZW5lc3M9MC42LGVuZXJneXBlcnNob3Q9MTUwMDAscmFuZ2U9MjcwMCxyZWxvYWR0aW1lPTE4fX19LGxlZ2xycGM9e2hlYWx0aD0xMzAwMCx3ZWFwb25kZWZzPXtMRUdMUlBDX01BSU49e2RhbWFnZT17Y29tbWFuZGVycz00ODAsZGVmYXVsdD00NTAwfSxlbmVyZ3lwZXJzaG90PTIwMDAscmFuZ2U9MjAwMCxyZWxvYWR0aW1lPTIsdHVybnJhdGU9MzAwMDB9fX19";
 
 
-        // Variable to hold the parsed options data
-        let optionsConfig = [];
+        // Variables to hold the parsed data
+        let rawOptionsData = []; // Flat list for the data table
+        let formOptionsConfig = []; // Grouped data for the options form
 
         // 3. Get references to the HTML elements
         const optionsForm = document.getElementById('options-form');
@@ -303,10 +308,16 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             }
         }
 
-        // Function to parse the text data into the optionsConfig structure
+        // Function to parse the text data
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
-            const optionsMap = new Map(); // Use a Map to group command blocks by label
+            const groupedOptions = {
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
+                other: { type: "checkboxes", options: [] } // For all other checkboxes
+            };
+
+            rawOptionsData = []; // Clear previous data
 
             lines.forEach(line => {
                 const parts = line.split('\t');
@@ -314,38 +325,44 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     const label = parts[0].trim();
                     const commandBlock = parts[1].trim();
 
-                    if (optionsMap.has(label)) {
-                        optionsMap.get(label).commandBlocks.push(commandBlock);
-                    } else {
-                        // Assuming all options from the text file are checkboxes for now
-                        optionsMap.set(label, {
-                            label: label,
-                            type: "checkbox", // Default to checkbox based on the format
-                            commandBlocks: [commandBlock]
-                        });
+                    // Add to raw data list for the table
+                    rawOptionsData.push({ label: label, commandBlock: commandBlock });
+
+                    // Group for the options form
+                    if (commandBlock.startsWith('!bset tweakdefs1')) {
+                        groupedOptions.tweakdefs1.choices.push({ label: label, commandBlock: commandBlock });
+                    } else if (commandBlock.startsWith('!bset tweakdefs2')) {
+                         groupedOptions.tweakdefs2.choices.push({ label: label, commandBlock: commandBlock });
+                    }
+                    else {
+                        // Treat as individual checkbox options
+                         groupedOptions.other.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock] });
                     }
                 }
             });
 
-            // Convert the Map values into the optionsConfig array, preserving order from the file
-            optionsConfig = Array.from(optionsMap.values());
+            // Build the final formOptionsConfig array
+            formOptionsConfig = [];
+            // Add dropdowns if they have choices
+            if (groupedOptions.tweakdefs1.choices.length > 0) {
+                 formOptionsConfig.push(groupedOptions.tweakdefs1);
+            }
+             if (groupedOptions.tweakdefs2.choices.length > 0) {
+                 formOptionsConfig.push(groupedOptions.tweakdefs2);
+            }
+            // Add other individual checkboxes
+            formOptionsConfig = formOptionsConfig.concat(groupedOptions.other.options);
 
-             // You might want to add specific handling here if certain labels
-             // should correspond to radio buttons or select menus instead of checkboxes.
-             // For example:
-             /*
-             const healthOptions = ["QHP Epic (1.3x health)", "QHP Epic (1.5x health)", ...];
-             const modeOptions = ["Mode: No Rush", "Mode: Standard", ...]; // Assuming a Standard mode exists
+            // Optional: Sort formOptionsConfig by label for consistent order
+            formOptionsConfig.sort((a, b) => a.label.localeCompare(b.label));
 
-             optionsConfig = optionsConfig.map(option => {
-                 if (healthOptions.includes(option.label)) {
-                     option.type = "radio"; // Or a select group
-                 } else if (modeOptions.includes(option.label)) {
-                     option.type = "radio"; // Or a select group
+             // For select options, ensure a default is selected if needed, or add a "Choose..." option
+             formOptionsConfig.forEach(group => {
+                 if (group.type === 'select' && group.choices.length > 0) {
+                     // You might want to add a default "Choose..." option or pre-select the first one
+                     // For now, we'll just rely on the browser's default (usually the first option)
                  }
-                 return option;
              });
-             */
         }
 
 
@@ -353,16 +370,23 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         function generateCommands() {
             let generatedText = baseCommands.trim(); // Start with base commands
 
-            // Get all checkboxes within the options form
-            const checkboxes = optionsForm.querySelectorAll('input[type="checkbox"]');
+            // Iterate through the form elements to get selected options
+            const formElements = optionsForm.querySelectorAll('input[type="checkbox"], select');
 
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    // Retrieve command blocks from the data attribute
-                    const commandBlocks = JSON.parse(checkbox.dataset.commandBlocks);
-                    commandBlocks.forEach(block => {
-                        generatedText += '\n' + block.trim(); // Add selected command blocks
-                    });
+            formElements.forEach(element => {
+                if (element.type === 'checkbox') {
+                    if (element.checked) {
+                        const commandBlocks = JSON.parse(element.dataset.commandBlocks);
+                        commandBlocks.forEach(block => {
+                            generatedText += '\n' + block.trim();
+                        });
+                    }
+                } else if (element.tagName === 'SELECT') {
+                    const selectedOption = element.options[element.selectedIndex];
+                    if (selectedOption.value) { // Check if a valid option is selected (not an empty value)
+                         const commandBlock = selectedOption.value.trim();
+                         generatedText += '\n' + commandBlock;
+                    }
                 }
             });
 
@@ -377,24 +401,49 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         function renderOptions() {
             optionsForm.innerHTML = ''; // Clear loading message
 
-            optionsConfig.forEach(option => {
-                const label = document.createElement('label');
-                let input;
-
-                if (option.type === 'checkbox') {
-                    input = document.createElement('input');
+            formOptionsConfig.forEach(optionGroup => {
+                if (optionGroup.type === 'checkbox') {
+                    // Render individual checkbox
+                    const label = document.createElement('label');
+                    const input = document.createElement('input');
                     input.type = 'checkbox';
-                    // Store command blocks on the input element as a JSON string
-                    input.dataset.commandBlocks = JSON.stringify(option.commandBlocks);
+                    input.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+
+                    label.appendChild(input);
+                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    optionsForm.appendChild(label);
+
+                    // Add event listener
+                    input.addEventListener('change', updateOutput);
+
+                } else if (optionGroup.type === 'select') {
+                    // Render dropdown (select)
+                    const label = document.createElement('label');
+                    label.textContent = optionGroup.label + ': '; // Label for the dropdown group
+
+                    const select = document.createElement('select');
+                    select.dataset.optionType = optionGroup.label; // Identify the group
+
+                    // Add a default "Choose..." option or similar if desired
+                    // const defaultOption = document.createElement('option');
+                    // defaultOption.value = "";
+                    // defaultOption.textContent = "Choose...";
+                    // select.appendChild(defaultOption);
+
+                    optionGroup.choices.forEach(choice => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = choice.commandBlock; // Store the command block as the value
+                        optionElement.textContent = choice.label; // Display the label to the user
+                        select.appendChild(optionElement);
+                    });
+
+                    label.appendChild(select);
+                    optionsForm.appendChild(label);
+
+                    // Add event listener
+                    select.addEventListener('change', updateOutput);
                 }
-                 // Add logic here for other types like radio or select if needed
-
-                label.appendChild(input);
-                label.appendChild(document.createTextNode(' ' + option.label)); // Add label text
-                optionsForm.appendChild(label);
-
-                // Add event listener to regenerate commands when an option changes
-                input.addEventListener('change', updateOutput);
+                 // Add logic for other types if needed
             });
 
             // Initial generation
@@ -429,15 +478,16 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         function populateDataTable() {
             dataTableBody.innerHTML = ''; // Clear existing rows
 
-            optionsConfig.forEach(option => {
+            // Use the rawOptionsData which is a flat list of all options
+            rawOptionsData.forEach(item => {
                 const row = dataTableBody.insertRow();
 
                 const labelCell = row.insertCell();
-                labelCell.textContent = option.label;
+                labelCell.textContent = item.label;
 
                 const commandsCell = row.insertCell();
                 const pre = document.createElement('pre');
-                pre.textContent = option.commandBlocks.join('\n\n'); // Join multiple blocks with double newline
+                pre.textContent = item.commandBlock; // Display the single command block
                 commandsCell.appendChild(pre);
             });
 
@@ -475,7 +525,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             // If switching to the data tab, populate the table (or ensure it's populated)
             if (event.target.dataset.tab === 'data') {
                 // Only populate if data is loaded
-                if (optionsConfig.length > 0) {
+                if (rawOptionsData.length > 0) { // Check raw data length
                      populateDataTable();
                 } else {
                      // Data is still loading or failed, show message
