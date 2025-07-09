@@ -1,2 +1,2 @@
 # NuttyB Configurator
-NuttyB Raptor Configuration Generator
+NuttyB Raptor Configuration Generator for Beyond All Reason
