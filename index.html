@@ -275,18 +275,24 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
 `;
 
-        // Define command prefixes for the "NuttyB Main Tweaks" group
+        // Define command prefixes for the "NuttyB Main Tweaks" group (Mandatory/Visible Checkbox)
         const mainTweaksPrefixes = [
             '!bset tweakdefs ',
             '!bset tweakdefs3 ',
             '!bset tweakunits ',
         ];
 
-         // Define command prefixes for the "NuttyB Evolving Commanders" group
+         // Define command prefixes for the "NuttyB Evolving Commanders" group (Mandatory/Visible Checkbox)
          const evolvingCommandersPrefixes = [
              '!bset tweakunits1 ',
              '!bset tweakunits2 ',
              '!bset tweakunits3 ',
+         ];
+
+         // Define command prefixes for the "Extra Raptors" group (Optional Select)
+         const extraRaptorsPrefixes = [
+             '!bset tweakdefs4 ', // Mini Bosses
+             '!bset tweakunits5 ', // EXPERMENTIAL WAVE CHANGES
          ];
 
 
@@ -297,7 +303,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
 
         // Define labels of options to be selected by default (if not mandatory or hidden)
         const defaultSelectedLabels = [
-            'Mini Bosses', // Corresponds to !bset tweakdefs4
+            // 'Mini Bosses', // Now handled by the Extra Raptors dropdown default
             'Cross Faction 70% T2 Tax', // Corresponds to !bset tweakdefs6
             'T3 Eco Builtin', // Corresponds to !bset tweakdefs7
             'T3 Builders', // Corresponds to !bset tweakdefs8
@@ -344,9 +350,10 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             const groupedOptions = {
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
+                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "" }] }, // Add "None" option by default
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
-                other: { type: "checkboxes", options: [] } // For all other checkboxes
+                otherCheckboxes: { type: "checkboxes", options: [] } // For all other checkboxes
             };
 
             rawOptionsData = []; // Clear previous data
@@ -358,19 +365,34 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     const commandBlock = parts[1].trim();
 
                     let status = "Optional"; // Default status
+                    let addedToForm = false; // Flag to check if added to a form group
 
                     // Check if part of Main Tweaks group
                     const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (isMainTweak) {
                         status = "Mandatory/Visible";
                         groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
+                        addedToForm = true;
                     }
 
                     // Check if part of Evolving Commanders group
                     const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
                     if (isEvolvingCommander) {
-                         status = "Mandatory/Visible"; // Could use a different status if desired
+                         status = "Mandatory/Visible";
                          groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                         addedToForm = true;
+                    }
+
+                    // Check if part of Extra Raptors group
+                    const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (isExtraRaptor) {
+                        status = "Optional/Grouped";
+                        groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock });
+                        // Set default selected option for this dropdown
+                        if (commandBlock.startsWith('!bset tweakdefs4')) { // Mini Bosses is the default
+                             groupedOptions.extraRaptors.defaultValue = commandBlock;
+                        }
+                        addedToForm = true;
                     }
 
 
@@ -378,46 +400,41 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     const isHidden = hiddenLabels.includes(label);
                      if (isHidden) {
                          status = "Hidden";
+                         addedToForm = true; // Don't add hidden items to the form
                      }
 
-                    // Check if default selected (only applies to Optional, non-mandatory, non-hidden)
-                    const isDefaultSelected = !isMainTweak && !isEvolvingCommander && !isHidden && defaultSelectedLabels.includes(label);
-                     if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional
+                    // Check if default selected (only applies to Optional, non-mandatory, non-hidden, and not part of a specific group)
+                    const isDefaultSelected = !isMainTweak && !isEvolvingCommander && !isExtraRaptor && !isHidden && defaultSelectedLabels.includes(label);
+                     if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional and not in a specific group
                          status = "Default Selected";
                      }
 
 
-                    // Add to raw data list for the table (only add if not part of a mandatory/visible group to avoid duplicates in table)
-                    // Or, add all and handle display in populateDataTable
+                    // Add to raw data list for the table
                     rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
 
 
-                    // Group for the options form (exclude mandatory/visible groups and hidden)
-                    if (!isMainTweak && !isEvolvingCommander && !isHidden) {
-                        if (commandBlock.startsWith('!bset tweakdefs1')) {
-                            groupedOptions.tweakdefs1.choices.push({ label: label, commandBlock: commandBlock });
-                        } else if (commandBlock.startsWith('!bset tweakdefs2')) {
-                             groupedOptions.tweakdefs2.choices.push({ label: label, commandBlock: commandBlock });
-                        }
-                        else {
-                            // Treat as individual checkbox options
-                             groupedOptions.other.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: isDefaultSelected });
-                        }
+                    // Add to otherCheckboxes if not added to any specific group and not hidden
+                    if (!addedToForm && !isHidden) {
+                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: isDefaultSelected });
                     }
                 }
             });
 
             // Build the final formOptionsConfig array
             formOptionsConfig = [];
-            // Add the Main Tweaks group if it has command blocks
+            // Add the mandatory/visible checkbox groups if they have command blocks
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.mainTweaks);
             }
-             // Add the Evolving Commanders group if it has command blocks
              if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.evolvingCommanders);
              }
-            // Add dropdowns if they have choices
+             // Add the Extra Raptors dropdown if it has choices (beyond the default "None")
+             if (groupedOptions.extraRaptors.choices.length > 1) { // Check if more than just "None" exists
+                 formOptionsConfig.push(groupedOptions.extraRaptors);
+             }
+            // Add dropdowns for tweakdefs1/2 if they have choices
             if (groupedOptions.tweakdefs1.choices.length > 0) {
                  formOptionsConfig.push(groupedOptions.tweakdefs1);
             }
@@ -425,17 +442,26 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                  formOptionsConfig.push(groupedOptions.tweakdefs2);
             }
             // Add other individual checkboxes
-            formOptionsConfig = formOptionsConfig.concat(groupedOptions.other.options);
+            formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
 
             // Optional: Sort formOptionsConfig by label for consistent order (excluding the fixed groups)
             // You might need more complex sorting if you want specific order
-            // For simplicity, we'll just sort the 'other' group before concatenating if needed.
+            // For simplicity, we'll just sort the 'otherCheckboxes' group before concatenating if needed.
 
              // For select options, ensure a default is selected if needed, or add a "Choose..." option
              formOptionsConfig.forEach(group => {
                  if (group.type === 'select' && group.choices.length > 0) {
-                     // You might want to add a default "Choose..." option or pre-select the first one
-                     // For now, we'll just rely on the browser's default (usually the first option)
+                     // If a specific default value is set for the select, use it
+                     if (group.defaultValue) {
+                         group.choices.forEach(choice => {
+                             if (choice.value === group.defaultValue) {
+                                 choice.selected = true;
+                             }
+                         });
+                     } else {
+                         // Otherwise, ensure the first option (which is "None" for Extra Raptors) is selected by default
+                         group.choices[0].selected = true;
+                     }
                  }
              });
         }
@@ -501,17 +527,11 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     const select = document.createElement('select');
                     select.dataset.optionType = optionGroup.label; // Identify the group
 
-                    // Add a default "Choose..." option or similar if desired
-                    // const defaultOption = document.createElement('option');
-                    // defaultOption.value = "";
-                    // defaultOption.textContent = "Choose...";
-                    // select.appendChild(defaultOption);
-
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = choice.commandBlock; // Store the command block as the value
+                        optionElement.value = choice.value; // Store the command block as the value
                         optionElement.textContent = choice.label; // Display the label to the user
-                        // No default selection logic here, browser defaults to first
+                        optionElement.selected = choice.selected || false; // Set selected state
                         select.appendChild(optionElement);
                     });
 
