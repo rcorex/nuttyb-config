@@ -109,6 +109,34 @@
             margin-right: 8px;
             vertical-align: middle;
         }
+        
+        /* --- NEW --- */
+        /* Override default browser styling for the disabled, checked "Main Tweaks" box */
+        input[type="checkbox"]:disabled:checked {
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: #66bb6a; /* Set the background to the desired green */
+            border: 1px solid #777;
+            border-radius: 3px;
+            position: relative;
+            cursor: not-allowed;
+        }
+
+        /* Add a checkmark since we removed the native appearance */
+        input[type="checkbox"]:disabled:checked::after {
+            content: '✓';
+            display: block;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1e1e1e; /* Dark checkmark for contrast */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 0;
+        }
+        /* --- END NEW --- */
+
 
         /* Style for Dropdowns (Selects) */
         select {
