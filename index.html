@@ -140,12 +140,16 @@
 
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 30%; /* Allocate width for the label column */
+            width: 25%; /* Allocate width for the label column */
         }
+         #data-table th:nth-child(2),
+         #data-table td:nth-child(2) {
+             width: 15%; /* Allocate width for the status column */
+         }
 
          #data-table th:last-child,
         #data-table td:last-child {
-            width: 70%; /* Allocate width for the command blocks column */
+            width: 60%; /* Allocate width for the command blocks column */
         }
 
 
@@ -186,17 +190,18 @@
 
         <div id="data-tab" class="tab-content">
             <h2>Configuration Data</h2>
-            <p>This table shows the raw command blocks associated with each option.</p>
+            <p>This table shows the raw command blocks associated with each option, including their status.</p>
             <table id="data-table">
                 <thead>
                     <tr>
                         <th>Option Label</th>
+                        <th>Status</th>
                         <th>Command Blocks</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Table rows will be generated here by JavaScript -->
-                     <tr><td colspan="2">Loading data...</td></tr>
+                     <tr><td colspan="3">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -205,8 +210,8 @@
     <script>
         // JavaScript code goes here
 
-        // Define base commands and the final command block separately,
-        // as they don't seem to be in the tab-separated data format provided.
+        // Define base commands separately, as they don't seem to be in the
+        // tab-separated data format provided.
         const baseCommands = `
 !preset coop
 !teamsize 12
@@ -256,7 +261,6 @@
 !forceallunits 1
 !unit_restrictions_noair 0
 !unit_restrictions_noendgamelrpc 0
-!unit_restrictions_noextractors 1
 !unit_restrictions_nolrpc 0
 !unit_restrictions_nonukes 0
 !draft_mode disabled
@@ -271,14 +275,33 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
 `;
 
-        // This command block appears after the options in your sample text.
-        // Assuming it's always included.
-         const finalTweakUnits6 = "!bset tweakunits6 LS1OdXR0eUIgbHJwYyByZWJhbGFuY2UgdjINCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWJydGhhPXtoZWFsdGg9MTMwMDAsd2VhcG9uZGVmcz17QVJNQlJUSEFfTUFJTj17ZGFtYWdlPXtjb21tYW5kZXJzPTQ4MCxkZWZhdWx0PTMzMDAwfSxhcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD04MDAwLHJhbmdlPTI0MDAscmVsb2FkdGltZT05LHR1cm5yYXRlPTIwMDAwfX19LGNvcmludD17aGVhbHRoPTEzMDAwLHdlYXBvbmRlZnM9e0NPUklOVF9NQUlOPXtkYW1hZ2U9e2NvbW1hbmRlcnM9NDgwLGRlZmF1bHQ9ODUwMDB9LGFyZWFvZmVmZmVjdD0yMzAsZWRnZWVmZmVjdGl2ZW5lc3M9MC42LGVuZXJneXBlcnNob3Q9MTUwMDAscmFuZ2U9MjcwMCxyZWxvYWR0aW1lPTE4fX19LGxlZ2xycGM9e2hlYWx0aD0xMzAwMCx3ZWFwb25kZWZzPXtMRUdMUlBDX01BSU49e2RhbWFnZT17Y29tbWFuZGVycz00ODAsZGVmYXVsdD00NTAwfSxlbmVyZ3lwZXJzaG90PTIwMDAscmFuZ2U9MjAwMCxyZWxvYWR0aW1lPTIsdHVybnJhdGU9MzAwMDB9fX19";
+        // Define command prefixes for the "NuttyB Main Tweaks" group
+        const mainTweaksPrefixes = [
+            '!bset tweakdefs ',
+            '!bset tweakdefs3 ',
+            '!bset tweakunits ',
+        ];
+
+        // Define labels of options to hide
+        const hiddenLabels = [
+            'Slow raptors/scavs', // Corresponds to !bset tweakdefs5
+        ];
+
+        // Define labels of options to be selected by default (if not mandatory or hidden)
+        const defaultSelectedLabels = [
+            'Mini Bosses', // Corresponds to !bset tweakdefs4
+            'Cross Faction 70% T2 Tax', // Corresponds to !bset tweakdefs6
+            'T3 Eco Builtin', // Corresponds to !bset tweakdefs7
+            'T3 Builders', // Corresponds to !bset tweakdefs8
+            'Unit Launchers', // Corresponds to !bset tweakdefs9
+            'LRPC rebalance v2', // Corresponds to !bset tweakunits6
+        ];
 
 
         // Variables to hold the parsed data
         let rawOptionsData = []; // Flat list for the data table
         let formOptionsConfig = []; // Grouped data for the options form
+
 
         // 3. Get references to the HTML elements
         const optionsForm = document.getElementById('options-form');
@@ -292,8 +315,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         // Function to fetch and parse the configuration data
         async function loadConfigData() {
             try {
-                // *** UPDATED FILE NAME HERE ***
-                const response = await fetch('tweakdata.txt');
+                const response = await fetch('tweakdata.txt'); // Fetching from tweakdata.txt
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -304,7 +326,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             } catch (error) {
                 console.error("Could not load configuration data:", error);
                 optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
-                dataTableBody.innerHTML = '<tr><td colspan="2" style="color: red;">Failed to load data.</td></tr>';
+                dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
             }
         }
 
@@ -312,6 +334,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
             const groupedOptions = {
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
                 other: { type: "checkboxes", options: [] } // For all other checkboxes
@@ -325,24 +348,52 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                     const label = parts[0].trim();
                     const commandBlock = parts[1].trim();
 
-                    // Add to raw data list for the table
-                    rawOptionsData.push({ label: label, commandBlock: commandBlock });
+                    let status = "Optional"; // Default status
 
-                    // Group for the options form
-                    if (commandBlock.startsWith('!bset tweakdefs1')) {
-                        groupedOptions.tweakdefs1.choices.push({ label: label, commandBlock: commandBlock });
-                    } else if (commandBlock.startsWith('!bset tweakdefs2')) {
-                         groupedOptions.tweakdefs2.choices.push({ label: label, commandBlock: commandBlock });
+                    // Check if part of Main Tweaks group
+                    const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (isMainTweak) {
+                        status = "Mandatory/Visible";
+                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
                     }
-                    else {
-                        // Treat as individual checkbox options
-                         groupedOptions.other.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock] });
+
+                    // Check if hidden
+                    const isHidden = hiddenLabels.includes(label);
+                     if (isHidden) {
+                         status = "Hidden";
+                     }
+
+                    // Check if default selected (only applies to Optional, non-hidden)
+                    const isDefaultSelected = !isMainTweak && !isHidden && defaultSelectedLabels.includes(label);
+                     if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional
+                         status = "Default Selected";
+                     }
+
+
+                    // Add to raw data list for the table
+                    rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
+
+                    // Group for the options form (exclude main tweaks and hidden)
+                    if (!isMainTweak && !isHidden) {
+                        if (commandBlock.startsWith('!bset tweakdefs1')) {
+                            groupedOptions.tweakdefs1.choices.push({ label: label, commandBlock: commandBlock });
+                        } else if (commandBlock.startsWith('!bset tweakdefs2')) {
+                             groupedOptions.tweakdefs2.choices.push({ label: label, commandBlock: commandBlock });
+                        }
+                        else {
+                            // Treat as individual checkbox options
+                             groupedOptions.other.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: isDefaultSelected });
+                        }
                     }
                 }
             });
 
             // Build the final formOptionsConfig array
             formOptionsConfig = [];
+            // Add the Main Tweaks group if it has command blocks
+            if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
+                 formOptionsConfig.push(groupedOptions.mainTweaks);
+            }
             // Add dropdowns if they have choices
             if (groupedOptions.tweakdefs1.choices.length > 0) {
                  formOptionsConfig.push(groupedOptions.tweakdefs1);
@@ -353,8 +404,9 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             // Add other individual checkboxes
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.other.options);
 
-            // Optional: Sort formOptionsConfig by label for consistent order
-            formOptionsConfig.sort((a, b) => a.label.localeCompare(b.label));
+            // Optional: Sort formOptionsConfig by label for consistent order (excluding the fixed Main Tweaks group)
+            // You might need more complex sorting if you want specific order
+            // For simplicity, we'll just sort the 'other' group before concatenating if needed.
 
              // For select options, ensure a default is selected if needed, or add a "Choose..." option
              formOptionsConfig.forEach(group => {
@@ -375,6 +427,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
 
             formElements.forEach(element => {
                 if (element.type === 'checkbox') {
+                    // Include command blocks if the checkbox is checked (this includes disabled ones)
                     if (element.checked) {
                         const commandBlocks = JSON.parse(element.dataset.commandBlocks);
                         commandBlocks.forEach(block => {
@@ -390,10 +443,6 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 }
             });
 
-            // Add the final !bset tweakunits6 command block
-             generatedText += '\n' + finalTweakUnits6.trim();
-
-
             return generatedText.trim(); // Trim any leading/trailing whitespace
         }
 
@@ -403,18 +452,23 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
 
             formOptionsConfig.forEach(optionGroup => {
                 if (optionGroup.type === 'checkbox') {
-                    // Render individual checkbox
+                    // Render individual checkbox or the mandatory group checkbox
                     const label = document.createElement('label');
                     const input = document.createElement('input');
                     input.type = 'checkbox';
                     input.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    input.checked = optionGroup.default; // Set checked state based on default flag
+                    input.disabled = optionGroup.disabled || false; // Set disabled state
 
                     label.appendChild(input);
                     label.appendChild(document.createTextNode(' ' + optionGroup.label));
                     optionsForm.appendChild(label);
 
-                    // Add event listener
-                    input.addEventListener('change', updateOutput);
+                    // Add event listener only if not disabled
+                    if (!input.disabled) {
+                        input.addEventListener('change', updateOutput);
+                    }
+
 
                 } else if (optionGroup.type === 'select') {
                     // Render dropdown (select)
@@ -434,6 +488,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                         const optionElement = document.createElement('option');
                         optionElement.value = choice.commandBlock; // Store the command block as the value
                         optionElement.textContent = choice.label; // Display the label to the user
+                        // No default selection logic here, browser defaults to first
                         select.appendChild(optionElement);
                     });
 
@@ -485,6 +540,9 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 const labelCell = row.insertCell();
                 labelCell.textContent = item.label;
 
+                const statusCell = row.insertCell();
+                statusCell.textContent = item.status; // Display the status
+
                 const commandsCell = row.insertCell();
                 const pre = document.createElement('pre');
                 pre.textContent = item.commandBlock; // Display the single command block
@@ -494,20 +552,13 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
              // Add the base commands to the table as well
              const baseRow = dataTableBody.insertRow();
              const baseLabelCell = baseRow.insertCell();
-             baseLabelCell.textContent = "Base Commands (Always Included)";
+             baseLabelCell.textContent = "Base Commands";
+             const baseStatusCell = baseRow.insertCell();
+             baseStatusCell.textContent = "Always Included";
              const baseCommandsCell = baseRow.insertCell();
              const basePre = document.createElement('pre');
              basePre.textContent = baseCommands.trim();
              baseCommandsCell.appendChild(basePre);
-
-             // Add the final tweakunits6 command block to the table
-             const finalRow = dataTableBody.insertRow();
-             const finalLabelCell = finalRow.insertCell();
-             finalLabelCell.textContent = "LRPC Rebalance (Always Included)";
-             const finalCommandsCell = finalRow.insertCell();
-             const finalPre = document.createElement('pre');
-             finalPre.textContent = finalTweakUnits6.trim();
-             finalCommandsCell.appendChild(finalPre);
         }
 
         // 8. Function to handle tab switching
@@ -529,7 +580,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                      populateDataTable();
                 } else {
                      // Data is still loading or failed, show message
-                     dataTableBody.innerHTML = '<tr><td colspan="2">Loading data...</td></tr>';
+                     dataTableBody.innerHTML = '<tr><td colspan="3">Loading data...</td></tr>';
                 }
             }
         }
