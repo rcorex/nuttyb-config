@@ -235,26 +235,29 @@
             background-color: #2c2c2c;
         }
 
-        /* UPDATED: New column widths for 3 columns */
+        /* UPDATED: New column widths for 4 columns */
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 30%; /* Option Label */
+            width: 25%; /* Option Label */
         }
         #data-table th:nth-child(2),
         #data-table td:nth-child(2) {
-            width: 20%; /* Status */
+            width: 15%; /* Status */
+        }
+        #data-table th:nth-child(3),
+        #data-table td:nth-child(3) {
+            width: 30%; /* Summary */
         }
         #data-table th:last-child,
         #data-table td:last-child {
-            width: 50%; /* Summary */
+            width: 30%; /* Command Blocks */
         }
 
-
-        #data-table td pre {
-            margin: 0;
-            padding: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        /* UPDATED: Add truncation styles for the command column */
+        #data-table td:last-child {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         /* Links Tab Specific Styles (optional, for better formatting) */
@@ -310,7 +313,7 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and paste all parts to the lobby separately</p>
+                <p>Copy and paste both parts to the lobby separately</p>
 
                 <div class="command-output-section">
                     <h3>Part 1</h3>
@@ -336,16 +339,17 @@
             <table id="data-table">
                 <thead>
                     <tr>
-                        <!-- UPDATED: Added Status header back -->
+                        <!-- UPDATED: Re-added all four columns -->
                         <th>Option Label</th>
                         <th>Status</th>
                         <th>Summary</th>
+                        <th>Command Blocks</th>
                     </tr>
                 </thead>
                 <tbody>
                     <!-- Table rows will be generated here by JavaScript -->
-                    <!-- UPDATED: Colspan changed to 3 -->
-                     <tr><td colspan="3">Loading data...</td></tr>
+                    <!-- UPDATED: Colspan changed to 4 -->
+                     <tr><td colspan="4">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -469,24 +473,24 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
 
         // 3. Get references to the HTML elements
-        const optionsFormColumns = document.getElementById('options-form-columns'); // New reference to the columns container
+        const optionsFormColumns = document.getElementById('options-form-columns');
         const leftColumn = document.getElementById('left-column');
         const rightColumn = document.getElementById('right-column');
-        const commandOutput1 = document.getElementById('command-output-1'); // Section 1
-        const commandOutput2 = document.getElementById('command-output-2'); // Section 2
-        const copyButtons = document.querySelectorAll('.copy-button'); // Select all copy buttons
+        const commandOutput1 = document.getElementById('command-output-1');
+        const commandOutput2 = document.getElementById('command-output-2');
+        const copyButtons = document.querySelectorAll('.copy-button');
         const dataTableBody = document.querySelector('#data-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
-        const lobbyNameDisplay = document.getElementById('lobby-name-display'); // Reference to the lobby name display area
+        const lobbyNameDisplay = document.getElementById('lobby-name-display');
 
-        const MAX_SECTION_LENGTH = 50000; // Define the maximum character length for Section 1
+        const MAX_SECTION_LENGTH = 50000;
 
 
         // Function to fetch and parse the configuration data
         async function loadConfigData() {
             try {
-                const response = await fetch('tweakdata.txt'); // Fetching from tweakdata.txt
+                const response = await fetch('tweakdata.txt');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -497,8 +501,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 console.error("Could not load configuration data:", error);
                 leftColumn.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
                 rightColumn.innerHTML = '';
-                // UPDATED: Colspan changed to 3
-                dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
+                dataTableBody.innerHTML = '<tr><td colspan="4" style="color: red;">Failed to load data.</td></tr>';
                  lobbyNameDisplay.textContent = 'Error loading data.';
             }
         }
@@ -874,12 +877,15 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 const labelCell = row.insertCell();
                 labelCell.textContent = item.label;
 
-                // UPDATED: Added status cell back
                 const statusCell = row.insertCell();
                 statusCell.textContent = item.status;
 
                 const summaryCell = row.insertCell();
                 summaryCell.textContent = item.summary;
+                
+                // UPDATED: Added command cell back
+                const commandsCell = row.insertCell();
+                commandsCell.textContent = item.commandBlock;
             });
         }
 
@@ -897,8 +903,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 if (rawOptionsData.length > 0) {
                      populateDataTable();
                 } else {
-                     // UPDATED: Colspan changed to 3
-                     dataTableBody.innerHTML = '<tr><td colspan="3">Loading data...</td></tr>';
+                     dataTableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>';
                 }
             }
         }
