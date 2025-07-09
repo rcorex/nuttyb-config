@@ -174,7 +174,7 @@
             padding: 8px;
             text-align: left;
             vertical-align: top;
-            /* The problematic 'word-wrap' has been REMOVED from here */
+            word-wrap: break-word;
         }
 
         #data-table th {
@@ -195,18 +195,16 @@
          }
 
          #data-table th:last-child,
-         #data-table td:last-child {
+        #data-table td:last-child {
             width: 60%;
-         }
+        }
 
 
         #data-table td pre {
-            /* This rule now correctly handles the non-wrapping command block */
             margin: 0;
             padding: 0;
-            white-space: nowrap;  /* Prevents the text from wrapping */
-            overflow: hidden;     /* Hides the overflowing text */
-            cursor: text;         /* Provides a text-selection cursor */
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
     </style>
 </head>
