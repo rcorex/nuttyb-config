@@ -1,2 +1,2 @@
-# nuttyb config
+# NuttyB Configurator
 NuttyB Raptor Configuration Generator
