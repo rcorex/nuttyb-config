@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NuttyB Raptors Settings Generator</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        h1, h2 {
+            color: #555;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-container, .output-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        #options-form label {
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+         #options-form label input[type="checkbox"] {
+             margin-right: 5px;
+         }
+
+        #command-output {
+            width: 100%;
+            box-sizing: border-box; /* Include padding/border in width */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap; /* Wrap long lines */
+            word-wrap: break-word; /* Break words if necessary */
+        }
+
+        #copy-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        #copy-button:hover {
+            background-color: #4cae4c;
+        }
+
+        #copy-button:active {
+            background-color: #398439;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>NuttyB Raptors Settings Generator</h1>
+
+        <p>Select your desired settings and copy the generated text into the lobby.</p>
+
+        <div class="settings-container">
+            <h2>Game Options</h2>
+            <div id="options-form">
+                <!-- Options will be rendered here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="output-container">
+            <h2>Generated Commands</h2>
+            <textarea id="command-output" rows="20" readonly></textarea>
+            <button id="copy-button">Copy Commands</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript code goes here
+
+        // 1. Define your base commands (the commands always included)
+        const baseCommands = `
+!preset coop
+!teamsize 12
+!autobalance off
+!assistdronesbuildpowermultiplier 1
+!assistdronesenabled enabled
+!commanderbuildersbuildpower 1000
+!commanderbuildersenabled enabled
+!commanderbuildersrange 1000
+!disablemapdamage 1
+!experimentalextraunits 1
+!experimentallegionfaction 1
+!experimentalshields bounceeverything
+!map Full Metal Plate
+!addbox 80 82 115 117 2
+!clearbox 1
+!maxunits 10000
+!multiplier_builddistance 1.5
+!multiplier_buildpower 1
+!multiplier_buildtimecost 1
+!multiplier_energyconversion 1
+!multiplier_energycost 1
+!multiplier_energyproduction 1
+!multiplier_losrange 1
+!multiplier_maxdamage 1
+!multiplier_maxvelocity 1
+!multiplier_metalcost 1
+!multiplier_metalextraction 1
+!multiplier_radarrange 1
+!multiplier_resourceincome 1
+!multiplier_shieldpower 1
+!multiplier_shieldpower 2
+!multiplier_turnrate 1
+!multiplier_weapondamage 1
+!raptor_difficulty epic
+!raptor_firstwavesboost 7
+!raptor_graceperiodmult 2.7
+!raptor_queentimemult 1.3
+!raptor_spawncountmult 3
+!raptor_spawntimemult 1
+!releasecandidates 1
+!startenergy 10000
+!startenergystorage 10000
+!startmetal 10000
+!startmetalstorage 10000
+!scavunitsforplayers 1
+!forceallunits 1
+!unit_restrictions_noair 0
+!unit_restrictions_noendgamelrpc 0
+!unit_restrictions_noextractors 1
+!unit_restrictions_nolrpc 0
+!unit_restrictions_nonukes 0
+!draft_mode disabled
+!unit_restrictions_notacnukes 0
+$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+!unit_market 0
+!evocom 0
+!nowasting all
+!bSet unit_restrictions_nonukes 1
+!bSet raptor_queen_count 8
+!balance
+$rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
+`;
+
+        // 2. Define your options and their associated command blocks
+        // You MUST fill in the full base64 strings for each command block here.
+        // I have used placeholders like "LS1OdXR0eUI..."
+        const optionsConfig = [
+            {
+                label: "NuttyB Coms",
+                type: "checkbox",
+                commandBlocks: [
+                    "!bset tweakunits1 LS1OdXR0eUIgdjEuNTIgTGVnaW9uIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2xlZ2NvbT17ZW5lcmd5bWFrZT01MCxtZXRhbG1ha2U9NSxoZWFsdGg9NjAwMCxhdXRvaGVhbD00MCxidWlsZG9wdGlvbnM9e1szMl09J2Nvcm5lY3JvJyxbMzNdPSdsZWdkdGwnLFszNF09J2xlZ2R0ZicsWzM1XT0nbGVnZHRyJyxbMzZdPSdsZWdqYW0nfSxjdXN0b21wYXJhbXM9e2V2b2x1dGlvbl9hbm5vdW5jZW1lbnQ9J0xlZ2lvbiBjb21tYW5kZXJzIGhhdmUgdXBncmFkZWQgdG8gbGV2ZWwgMicsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nbGVnY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LHdlYXBvbmRlZnM9e2xlZ2NvbWxhc2VyPXtjb3JldGhpY2tuZXNzPTAuMjUsZHVyYXRpb249MC4wOSxuYW1lPSdMaWdodCBjbG9zZS1xdWFydGVycyBnMmcvZzJhIGxhc2VyJyxyYW5nZT0zNjAscmVsb2FkdGltZT0wLjIwLHJnYmNvbG9yPScwIDIgMScsc291bmRoaXRkcnk9Jycsc291bmRoaXR3ZXQ9J3NpenpsZScsc291bmRzdGFydD0nbGFzcmNydzEnLHNvdW5kdHJpZ2dlcj10cnVlLHNwcmF5YW5nbGU9NzAwLHRoaWNrbmVzcz02LHRleHR1cmUxPSdzaG90Jyx0ZXh0dXJlMj0nZW1wdHknLHdlYXBvbnR5cGU9J0xhc2VyQ2Fubm9uJyx3ZWFwb252ZWxvY2l0eT0yMTAwLGRhbWFnZT17ZGVmYXVsdD0yNTB9fSxzaG90Z3VuPXthcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD0wLGF2b2lkZmVhdHVyZT1mYWxzZSxjcmF0ZXJib29zdD0wLGNyYXRlcm11bHQ9MCxjYW1lcmFTaGFrZT0wLGVkZ2VlZmZlY3RpdmVuZXNzPTAuNjUsZXhwbG9zaW9uZ2VuZXJhdG9yPSdjdXN0b206Z2VuZXJpY3NoZWxsZXhwbG9zaW9uLXNtYWxsJyxpbXB1bHNlYm9vc3Q9MC4yLGltcHVsc2VmYWN0b3I9MC4yLGludGVuc2l0eT0zLG5hbWU9JzYgR2F1Z2UgU2hvdGd1bicsbm9zZWxmZGFtYWdlPXRydWUscHJlZGljdGJvb3N0PTEscHJvamVjdGlsZXM9NixyYW5nZT0zMjAscmVsb2FkdGltZT0yLHJnYmNvbG9yPScxIDAuNzUgMC4yNScsc2l6ZT0yLHNvdW5kaGl0PSd4cGxvbWVkMnhzJyxzb3VuZGhpdHdldD0nc3Bsc21lZCcsc291bmRzdGFydD0na3JvZ2dpZTJ4cycsc291bmRzdGFydHZvbHVtZT0xMixzcHJheWFuZ2xlPTIwMDAsdHVycmV0PXRydWUsY29tbWFuZGZpcmU9dHJ1ZSx3ZWFwb250aW1lcj0xLHdlYXBvbnR5cGU9J0Nhbm5vbicsd2VhcG9udmVsb2NpdHk9NjAwLHN0b2NrcGlsZT10cnVlLHN0b2NrcGlsZXRpbWU9NSxjdXN0b21wYXJhbXM9e3N0b2NrcGlsZWxpbWl0PTEwfSxkYW1hZ2U9e2RlZmF1bHQ9MTgwMCxjb21tYW5kZXJzPTB9fX0sd2VhcG9ucz17WzNdPXtkZWY9J3Nob3RndW4nLG9ubHl0YXJnZXRjYXRlZ29yeT0nU1VSRkFDRSd9fX0sbGVnY29tbHZsMj17ZW5lcmd5bWFrZT0xNTAsbWV0YWxtYWtlPTE1LHNwZWVkPTU3LjUsYXV0b2hlYWw9MTAwLGhlYWx0aD02NzAwLGN1c3RvbXBhcmFtcz17Y29tYmF0cmFkaXVzPTAsZXZvbHV0aW9uX3RpbWVyPTYwMCxwYXJhdHJvb3Blcj10cnVlLGZhbGxfZGFtYWdlX211bHRpcGxpZXI9MH0sYnVpbGRvcHRpb25zPXtbMV09J2Nvcm5lY3JvJyxbMl09J2xlZ2FkdnNvbCcsWzEzXT0nY29yaGxsdCcsWzI2XT0nbGVnZ2VvJyxbMjcdPSdsZWduYW5vdGMnLFsyOF09J2xlZ2phbScsWzI5XT0nbGVnZHRmJyxbMzBdPSdsZWdtZycsWzMxXT0nbGVncmFkJyxbMzJdPSdsZWdkdGwnLFszM109J2xlZ3R0cicsWzM0XT0nbGVncmhhcHNpcycsWzM1XT0nbGVnd2luJ30sd2VhcG9uZGVmcz17bGVnY29tbGFzZXI9e2FjY3VyYWN5PTUwLGFyZWFvZmVmZmVjdD02MCxhdm9pZGZyaWVuZGx5PWZhbHNlLGF2b2lkZmVhdHVyZT1mYWxzZSxj",
+                    "!bset tweakunits2 LS1OdXR0eUIgdjEuNTIgQXJtYWRhIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdBcm0gQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nYXJtY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGVuZXJneW1ha2U9MTAwLG1ldGFsbWFrZT0xMCxhdXRvaGVhbD01NSxoZWFsdGg9NDUwMCxzcGVlZD00MSxjYW5yZXN1cnJlY3Q9dHJ1ZSxidWlsZG9wdGlvbnM9eydhcm1zb2xhcicsJ2FybXdpbicsJ2FybW1zdG9yJywnYXJtZXN0b3InLCdhcm1tZXgnLCdhcm1tYWtyJywnYXJtbGFiJywnYXJtdnAnLCdhcm1hcCcsJ2FybWV5ZXMnLCdhcm1yYWQnLCdhcm1kcmFnJywnYXJtbGx0JywnYXJtcmwnLCdhcm1kbCcsJ2FybXRpZGUnLCdhcm11d21zJywnYXJtdXdlcycsJ2FybXV3bWV4JywnYXJtZm1rcicsJ2FybXN5JywnYXJtZmRyYWcnLCdhcm10bCcsJ2FybWZydCcsJ2FybWZyYWQnLCdhcm1ocCcsJ2FybWZocCcsJ2FybWdlbycsJ2FybWFtZXgnLCdhcm1ocCcsJ2FybWJlYW1lcicsJ2FybWphbXQnLCdhcm1zeScsJ2FybXJlY3RyJywnYXJtY2xhdyd9LHdlYXBvbmRlZnM9e2FybWNvbWxhc2VyPXtyYW5nZT0zMzAscmdiY29sb3I9JzAuNyAxIDEnLHNvdW5kc3RhcnQ9J2xhc3JmaXIxJyxkYW1hZ2U9e2RlZmF1bHQ9MTc1fX0sb2xkX2FybXNuaXBlX3dlYXBvbj17YXJlYW9mZWZmZWN0PTMyLGF2b2lkZmVhdHVyZT10cnVlLGF2b2lkZnJpZW5kbHk9dHJ1ZSxjb2xsaWRlZmVhdHVyZT10cnVlLGNvbGxpZGVmcmllbmRseT1mYWxzZSxj",
+                    "!bset tweakunits3 LS1OdXR0eUIgdjEuNTIgQ29ydGV4IENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2NvcmNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdDb3IgQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nY29yY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGF1dG9oZWFsPTgwLHNwZWVkPTQ1LGVuZXJneW1ha2U9NzUsbWV0YWxtYWtlPTYs",
+                ]
+            },
+            {
+                label: "Mega Nuke",
+                type: "checkbox",
+                commandBlocks: [
+                     "!bset tweakunits4 LS1OdXR0eUIgdjEuNTIgTWVnYSBOdWtlDQotLSBkb2NzLmdvb2dsZS5jb20vc3ByZWFkc2hlZXRzL2QvMVFTVnN1QUFNaEJyaGlaZFRpaFZmU0N3UHpiYlpXRExDdFhXUDIzQ1Uwa28NCnthcm1zaWxvPXtlbmVyZ3ljb3N0PTE1MDAwMDAsbWV0YWxjb3N0PTk4NzIwLGJ1aWxkdGltZT0yMjg1MDAsZm9vdHByaW50eD0xMixmb290cHJpbnR6PTEyLG1heHRoaXN1bml0PTEsZXhwbG9kZWFzPSdhZHZhbmNlZEZ1c2lvbkV4cGxvc2lvbicsd2VhcG9uZGVmcz17bnVjbGVhcl9taXNzaWxlPXthcmVhb2ZlZmZlY3Q9NTAwMCxjYW1lcmFTaGFrZT0xNTAwMCxjcmF0ZXJib29zdD01NSxjcmF0ZXJtdWx0PTQwLGVuZXJneXBlcnNob3Q9MzkwMDAwLG1ldGFscGVyc2hvdD0zMDAwLHNtb2tlc2l6ZT0yOCxzbW9rZWNvbG9yPTAuODUsc291bmRoaXR3ZXQ",
+                ]
+            },
+             {
+                label: "T3 Eco",
+                type: "checkbox",
+                commandBlocks: [
+                     "!bset tweakdefs7 LS1UMyBFY28gYnVpbHRpbiB2Ng0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdUFBTWhCcmhpWmRUaWhWZlNDd1B6YmJaV0RMQ3RYV1AyM0NVMGtvDQpsb2NhbCBhLGI9VW5pdERlZnMgb3J7fSx7J2FybWFjaycsJ2FybWFjYScsJ2FybWFjdicsJ2NvcmFjaycsJ2NvcmFjYScsJ2NvcmFjdicsJ2xlZ2FjaycsJ2xlZ2FjYScsJ2xlZ2Fjdid9Zm9yIGMsZCBpbiBwYWlycyh7J2FybW1ta3J0MycsJ2Nvcm1ta3J0MycsJ2xlZ2FkdmVjb252dDMnfSlkbyB0YWJsZS5tZXJnZUluUGxhY2UoYVtkXSx7Zm9vdHByaW50eD02LGZvb3RwcmludHo9Nn0pZW5kO2ZvciBjLGUgaW4gcGFpcnMoYilkbyBsb2NhbCBmLGc9ZTpzdWIoMSwzKSwjYVtlXS5idWlsZG9wdGlvbnM7YVtlXS5idWlsZG9wdGlvbnNbZysxXT1mLi4nYWZ1c3QzJ2FbZV0uYnVpbGRvcHRpb25zW2crMl09Zj09J2xlZ",
+                ]
+            },
+             {
+                label: "T3 Builders",
+                type: "checkbox",
+                commandBlocks: [
+                     "!bset tweakdefs8 LS1UMyBDb25zICYgVGF4ZWQgRmFjdG9yaWVzDQotLSBBdXRob3JzOiBOZXJ2ZW5zYWVnZSwgVGV0cmlzQ28NCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KbG9jYWwgYSxiLGMsZCxlLGYsZz1Vbml0RGVmcyBvcnt9LHsnYXJtJywnY29yJywnbGVnJ30sdGFibGUubWVyZ2Use2FybT0nQXJtYWRhICcsY29yPSdDb3J0ZXggJyxsZWc9J0xlZ2lvbiAnfSwnX3RheGVkJywxLjUsdGFibGUuY29udGFpbnM7bG9jYWwgZnVuY3Rpb24gaChpLGosaylpZiBhW2ldYW5kIG5vdCBhW2pddGhlbiBhW2pdPWMoYVtpXSxrKWVuZCB",
+                ]
+            },
+             {
+                label: "Raptor Health: Epic (1.3x health)",
+                type: "checkbox",
+                commandBlocks: [
+                    "!bset tweakdefs2 LS1OdXR0eUIgdjEuNTIgMS4zWCBIUA0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdUFBTWhCcmhpWmRUaWhWZlNDd1B6YmJaV0RMQ3RYV1AyM0NVMGtvDQpmb3IgYSxiIGluIHBhaXJzKFVuaXREZWZzKWRvIGlmIHN0cmlu",
+                    "!bset tweakdefs1 LS1OdXR0eUIgdjEuNTIgMS4zWCBRSFANCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KZm9yIGEsYiBpbiBwYWlycyhVbml0RGVmcylkbyBpZiBhOm1hdGNoKCdecmFwdG9yX3F1ZWVuXy4qJyl0aGVuIGIucmVwYWlyYWJsZT1mYWxzZTtiLmNhbmJlaGVhbGVkPWZhbHNlO2IuYnVpbGR0aW1lPTk5OTk5OTk7Yi5hdXRvaGVhbD0yO2IuY2FuU2VsZlJlcGFpcj1mYWxzZTtiLmhlYWx0aD1iLmhlYWx0aCoxLjMgZW5kIGVuZA",
+                ]
+            },
+             {
+                label: "Queen Health: Epic (1.3x health)", // Assuming this is linked to the same tweakdefs1 as Raptor Health
+                type: "checkbox",
+                commandBlocks: [
+                     "!bset tweakdefs1 LS1OdXR0eUIgdjEuNTIgMS4zWCBRSFANCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KZm9yIGEsYiBpbiBwYWlycyhVbml0RGVmcylkbyBpZiBhOm1hdGNoKCdecmFwdG9yX3F1ZWVuXy4qJyl0aGVuIGIucmVwYWlyYWJsZT1mYWxzZTtiLmNhbmJlaGVhbGVkPWZhbHNlO2IuYnVpbGR0aW1lPTk5OTk5OTk7Yi5hdXRvaGVhbD0yO2i",
+                ]
+            },
+             {
+                label: "Mode: No Rush",
+                type: "checkbox",
+                commandBlocks: [
+                     "!bset tweakdefs6 LS1Dcm9zcyBGYWN0aW9uIFRheCA3MCUNCi0tIEF1dGhvcnM6IFRldHJpc0NvDQotLSBkb2NzLmdvb2dsZS5jb20vc3ByZWFkc2hlZXRzL2QvMVFTVnN1QUFNaEJyaGlaZFRpaFZmU0N3UHpiYlpXRExDdFhXUDIzQ1Uwa28NCmxvY2FsIGEsYixjLGQsZSxmLGc9VW5pdERlZnMgb3J7fSwxLjcse30se30sSnNvbi5kZWNvZGUoVkZTLkxvYWRGaWxlKCdsYW5ndWFnZS9lbi91bml0cy5qc29uJykpLCdfdGF4ZWQnLCcgKFRheGVkKSdmb3IgaCxpIGluIHBhaXJzKGEpZG8gaWYgaS5jdXN0b21wYXJhbXMgYW5kIGkuY3VzdG9tcGFyYW1zLnN1YmZvbGRlciBhbmQoaS5jdXN0b21wYXJhbXMuc3ViZm9sZGVyOm1hdGNoJ0ZhY3Qnb3IgaS5jdXN0b21wYXJhbXMuc3ViZm9sZGVyOm1hdGNoJ0xhYicpYW5kIGkuY3VzdG9tcGFyYW1zLnRlY2hsZXZlbD09MiB0aGVuIGxvY2FsIGo9ZSBhbmQgZS51bml0cy5uYW1lc1toXW9yIGg7Y1toXT0xO2RbaC4uZ",
+                ]
+            },
+               {
+                label: "Mini Bosses",
+                type: "checkbox",
+                commandBlocks: [
+                    "!bset tweakdefs4 LS1NaW5pLUJvc3NlcyB2Mg0KLS0gQXV0aG9yczogUkNvcmUNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KbG9jYWwgYSxiLGMsZCxlLGY9VW5pdERlZnMgb3J7fSx0YWJsZS5tZXJnZSx0YWJsZS5jb3B5LCdyYXB0b3JfbWF0cmlhcmNoX2Jhc2ljJywnY3VzdG9tZnVzaW9uZXhwbG8nLFNwcmluZztsb2NhbCBnLGg9MS4wLDEuMDtkbyBsb2NhbCBpPWYuR2V0TW9kT3B0aW9ucygpb3J7fWxvY2FsIGZ1bmN0aW9uIGooayxsKWxvY2FsIG09aVtrXWlmIG0gYW5kIG0",
+                ]
+            },
+             {
+                label: "Unit Launchers",
+                type: "checkbox",
+                commandBlocks: [
+                    "!bset tweakdefs9 LS1NZWF0YmFsbGx1bmNoIFJlbG9hZGVkDQpsb2NhbCBVbml0RGVmcyxhPVVuaXREZWZzIG9ye30sJ2FybWJvdHJhaWwnbG9jYWwgYj17YXJtbWVhdGJhbGw9e2N1c3RvbXBhcmFtcz17aTE4bl9lbl9odW1hbm5hbWU9J01lYXRiYWxsIExhdW5jaGVyJyxpMThuX2VuX3Rvb2x0aXA9J01vZWdlIGRhcyBNZXR0IG1pdCBkaXIgc2VpbiEnfSx3ZWFwb25kZWZzPXthcm1fYm90cmFpbD17cmFuZ2U9MzIwMDAsbWV0YWxwZXJzaG90PTUzMDAsZW5lcmd5cGVyc2hvdD05NjAwMCxyZWxvYWR0aW1lPTAuNSxjdXN0b21wYXJhbXM9e3N0b2NrcGlsZWxpbWl0PTUwLHNwYXduc19uYW1lPSdhcm1tZWF0YmFsbCd9fX19LGFybWFzc2ltaWxhdG9yPXtjdXN0b21wYXJhbXM9e2kxOG5fZW5faHVtYW5uYW1lPSdBc3NpbWlsYXRvciBMYXVuY2hlcicsaTE4bl9lbl90b29sdGlwPSdSZXNpc3RhbmNlIGlzIGZ1dGlsZSwgZW1icmFjZSB0aGUgYm90IHN3YXJtISd9LHdlYXBvbmRlZnM9e2FybV9ib3RyYWlsPXtyYW5nZT0zMjAwMCxtZXRhbHBlcnNob3Q9NDUwMCxlbmVyZ3lwZXJzaG90PTgwMDAwLHJlbG9hZHRpbWU9MC41LGN1c3RvbXBhcmFtcz17c3RvY2twaWxlbGltaXQ9NTAsc3Bhd25zX25hbWU9J2FybWFzc2ltaWxhdG9yJ319fX0sYXJtcHd0ND17Y3VzdG9tcGFyYW1zPXtpMThuX2VuX2h1bWFubmFtZT0nRXBpYyBQYXduIExhdW5jaGVyJyxpMThuX2VuX3Rvb2x0aXA9J1VubGVhc2hlcyBwYXducyBzbyBlcGljLCB0aGV5IG1pZ2h0IHN0YXJ0IGEgcmV2b2x1dGlvbiEnfSx3ZWFwb25kZWZzPXthcm1fYm90cmFpbD17cmFuZ2U9MzIwMDAsbWV0YWxwZXJzaG90PTE0MjAwLGVuZXJneXBlcnNob3Q9NDgwMDAwLHJlbG9hZHRpbWU9MC41LGN1c3RvbXBhcmFtcz17c3RvY2twaWxlbGltaXQ9NTAsc3Bhd25zX25hbWU9J2FybXB3dDQnfX19fSxsZWdlc2hvdGd1bm1lY2g9e2N1c3RvbXBhcmFtcz17aTE4bl9lbl9odW1hbm5hbWU9J1ByZXRvcmlhbiBMYXVuY2hlcicsaTE4bl9lbl90b29sdGlwPSdTdW1tb25zIGd1YXJkaWFucyBzbyB0b3VnaCwgdGhleSBzY29mZiBhdCBleHBsb3Npb25zISd9LHdlYXBvbmRlZnM9e2FybV9ib3RyYWlsPXtyYW5nZT0zMjAwMCxtZXRhbHBlcnNob3Q9MTI1MDAsZW5lcmd5cGVyc2hvdD0zODQwMDAscmVsb2FkdGltZT0wLjUsY3VzdG9tcGFyYW1zPXtzdG9ja3BpbGVsaW1pdD01MCxzcGF3bnNfbmFtZT0nbGVnZXNob3RndW5tZWNoJ319fX0s",
+                ]
+            },
+            // Add other options similarly, mapping the label to the correct !bset blocks
+            // Ensure the full base64 strings are included for each command block.
+        ];
+
+        // This command block appears after the options in your sample text.
+        // Assuming it's always included.
+         const finalTweakUnits6 = "!bset tweakunits6 LS1OdXR0eUIgbHJwYyByZWJhbGFuY2UgdjINCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWJydGhhPXtoZWFsdGg9MTMwMDAsd2VhcG9uZGVmcz17QVJNQlJUSEFfTUFJTj17ZGFtYWdlPXtjb21tYW5kZXJzPTQ4MCxkZWZhdWx0PTMzMDAwfSxhcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD04MDAwLHJhbmdlPTI0MDAscmVsb2FkdGltZT05LHR1cm5yYXRlPTIwMDAwfX19LGNvcmludD17aGVhbHRoPTEzMDAwLHdlYXBvbmRlZnM9e0NPUklOVF9NQUlOPXtkYW1hZ2U9e2NvbW1hbmRlcnM9NDgwLGRlZmF1bHQ9ODUwMDB9LGFyZWFvZmVmZmVjdD0yMzAsZWRnZWVmZmVjdGl2ZW5lc3M9MC42LGVuZXJneXBlcnNob3Q9MTUwMDAscmFuZ2U9MjcwMCxyZWxvYWR0aW1lPTE4fX19LGxlZ2xycGM9e2hlYWx0aD0xMzAwMCx3ZWFwb25kZWZzPXtMRUdMUlBDX01BSU49e2RhbWFnZT17Y29tbWFuZGVycz00ODAsZGVmYXVsdD00NTAwfSxlbmVyZ3lwZXJzaG90PTIwMDAscmFuZ2U9MjAwMCxyZWxvYWR0aW1lPTIsdHVybnJhdGU9MzAwMDB9fX19";
+
+
+        // 3. Get references to the HTML elements
+        const optionsForm = document.getElementById('options-form');
+        const commandOutput = document.getElementById('command-output');
+        const copyButton = document.getElementById('copy-button');
+
+        // 4. Function to generate the command string
+        function generateCommands() {
+            let generatedText = baseCommands.trim(); // Start with base commands
+
+            // Get all checkboxes within the options form
+            const checkboxes = optionsForm.querySelectorAll('input[type="checkbox"]');
+
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    // Retrieve command blocks from the data attribute
+                    const commandBlocks = JSON.parse(checkbox.dataset.commandBlocks);
+                    commandBlocks.forEach(block => {
+                        generatedText += '\n' + block.trim(); // Add selected command blocks
+                    });
+                }
+            });
+
+            // Add the final !bset tweakunits6 command block
+             generatedText += '\n' + finalTweakUnits6.trim();
+
+
+            return generatedText.trim(); // Trim any leading/trailing whitespace
+        }
+
+        // 5. Function to render the options form
+        function renderOptions() {
+            optionsConfig.forEach(option => {
+                const label = document.createElement('label');
+                let input;
+
+                if (option.type === 'checkbox') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    // Store command blocks on the input element as a JSON string
+                    input.dataset.commandBlocks = JSON.stringify(option.commandBlocks);
+                }
+                 // Add logic here for other types like radio or select if needed
+
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(' ' + option.label)); // Add label text
+                optionsForm.appendChild(label);
+
+                // Add event listener to regenerate commands when an option changes
+                input.addEventListener('change', updateOutput);
+            });
+
+            // Initial generation
+            updateOutput();
+        }
+
+        // Function to update the output textarea
+        function updateOutput() {
+            commandOutput.value = generateCommands();
+        }
+
+        // 6. Add copy functionality
+        copyButton.addEventListener('click', () => {
+            commandOutput.select(); // Select the text area content
+            // Use the modern Clipboard API
+            navigator.clipboard.writeText(commandOutput.value)
+                .then(() => {
+                    // Optional: Provide user feedback (e.g., change button text temporarily)
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy Commands';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback for older browsers or errors (e.g., execCommand)
+                    alert('Could not copy text. Please copy manually.');
+                });
+        });
+
+        // Initialize the form and output when the page loads
+        document.addEventListener('DOMContentLoaded', renderOptions);
+
+    </script>
+</body>
+</html>
