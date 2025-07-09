@@ -196,7 +196,10 @@
 
          #data-table th:last-child,
         #data-table td:last-child {
-            width: 60%;
+            white-space: nowrap;     /* Prevents the cell's content from wrapping */
+            overflow: hidden;        /* Hides any content that overflows the cell's width */
+            max-width: 0;            /* A trick to make this work reliably in tables */
+            cursor: text;            /* Changes the cursor to a text-select cursor on hover */
         }
 
 
