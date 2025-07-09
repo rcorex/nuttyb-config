@@ -569,7 +569,6 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
              });
         }
 
-
         // 4. Function to generate the command string and lobby name
         function generateCommands() {
             let coreCommands = []; // Array to store each command line (excluding rename for now)
@@ -629,6 +628,71 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                 }
             });
 
+            // --- Construct the rename command ---
+            let renameCommand = `$rename [Mod] NuttyB Raptors`;
+            let renameParts = [];
+
+            if (extraRaptorsPart) {
+                renameParts.push(extraRaptorsPart); // extraRaptorsPart already includes brackets like "[Mini Bosses]"
+            }
+
+            // Combine Raptor and Queen Health parts if they exist
+            let combinedHealthPart = "";
+            if (raptorHealthPart && queenHealthPart) {
+                 combinedHealthPart = `${raptorHealthPart} ${queenHealthPart}`;
+            } else if (raptorHealthPart) {
+                 combinedHealthPart = raptorHealthPart;
+            } else if (queenHealthPart) {
+                 combinedHealthPart = queenHealthPart;
+            }
+
+            if (combinedHealthPart) {
+                 renameParts.push(`[${combinedHealthPart}]`); // Add brackets around the combined health part
+            }
+
+            if (renameParts.length > 0) {
+                renameCommand += ' ' + renameParts.join(''); // Join parts directly with no space between them
+            }
+
+            renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
+
+            // --- CORRECTED Splitting logic ---
+            let section1Commands = [];
+            let section2Commands = [];
+            let currentLengthSection1 = 0;
+
+            // Iterate through core commands first
+            for (let i = 0; i < coreCommands.length; i++) {
+                const command = coreCommands[i];
+                // Check if adding this command will exceed the limit
+                if (currentLengthSection1 + command.length + 1 <= MAX_SECTION_LENGTH) {
+                    section1Commands.push(command);
+                    currentLengthSection1 += command.length + 1;
+                } else {
+                    section2Commands.push(command);
+                }
+            }
+
+            // After all other commands are placed, add the rename command
+            // If there are any commands in Section 2, the rename command must also go to Section 2.
+            // Otherwise, check if it fits in Section 1.
+            if (section2Commands.length > 0) {
+                section2Commands.push(renameCommand);
+            } else if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
+                section1Commands.push(renameCommand);
+            } else {
+                // This case happens if section 1 is almost full and section 2 is empty.
+                section2Commands.push(renameCommand);
+            }
+
+
+            return {
+                lobbyName: renameCommand,
+                section1: section1Commands.join('\n'),
+                section2: section2Commands.join('\n')
+            };
+        }
+        
             // --- Construct the rename command ---
             let renameCommand = `$rename [Mod] NuttyB Raptors`;
             let renameParts = [];
