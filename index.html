@@ -604,12 +604,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             let queenHealthPart = "";
 
             // Iterate through the form elements to get selected options
-            // Use optionsFormColumns to query elements across both columns
             const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
 
             formElements.forEach(element => {
                 if (element.type === 'checkbox') {
-                    // Include command blocks if the checkbox is checked (this includes disabled ones)
                     if (element.checked) {
                         const commandBlocks = JSON.parse(element.dataset.commandBlocks);
                         commandBlocks.forEach(block => {
@@ -618,37 +616,23 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     }
                 } else if (element.tagName === 'SELECT') {
                     const selectedOption = element.options[element.selectedIndex];
-                    if (selectedOption.value) { // Check if a valid option is selected (not an empty value)
+                    if (selectedOption.value) { // Check if a valid option is selected
                          const commandBlock = selectedOption.value.trim();
                          coreCommands.push(commandBlock);
 
-                         // Capture short labels for the rename command
                          const optionGroup = formOptionsConfig.find(group => group.label === element.dataset.optionType);
                          if (optionGroup) {
                              const selectedChoice = optionGroup.choices.find(choice => choice.value === selectedOption.value);
-                             if (selectedChoice && selectedChoice.shortLabel !== undefined) { // Check for undefined to allow empty string
-                                 if (optionGroup.label === "Extras") {
-                                     extraRaptorsPart = selectedChoice.shortLabel;
-                                 } else if (optionGroup.label === "Raptor Health") {
-                                     // Add Raptor Health part
-                                     raptorHealthPart = selectedChoice.shortLabel;
-                                 } else if (optionGroup.label === "Queen Health") {
-                                      // Add Queen Health part
-                                      queenHealthPart = selectedChoice.shortLabel;
-                                 }
+                             if (selectedChoice && selectedChoice.shortLabel !== undefined) {
+                                 if (optionGroup.label === "Extras") extraRaptorsPart = selectedChoice.shortLabel;
+                                 else if (optionGroup.label === "Raptor Health") raptorHealthPart = selectedChoice.shortLabel;
+                                 else if (optionGroup.label === "Queen Health") queenHealthPart = selectedChoice.shortLabel;
                              }
                          }
                     } else {
-                         // Handle the "None" option for Extra Raptors specifically
-                         if (element.dataset.optionType === "Extras") {
-                             extraRaptorsPart = ""; // Ensure it's empty if "None" is selected
-                         }
-                         // For other selects, if "None" or empty is selected, clear their respective parts
-                         if (element.dataset.optionType === "Raptor Health") {
-                             raptorHealthPart = "";
-                         } else if (element.dataset.optionType === "Queen Health") {
-                             queenHealthPart = "";
-                         }
+                         if (element.dataset.optionType === "Extras") extraRaptorsPart = "";
+                         if (element.dataset.optionType === "Raptor Health") raptorHealthPart = "";
+                         if (element.dataset.optionType === "Queen Health") queenHealthPart = "";
                     }
                 }
             });
@@ -658,10 +642,9 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             let renameParts = [];
 
             if (extraRaptorsPart) {
-                renameParts.push(extraRaptorsPart); // extraRaptorsPart already includes brackets like "[Mini Bosses]"
+                renameParts.push(extraRaptorsPart);
             }
 
-            // Combine Raptor and Queen Health parts if they exist
             let combinedHealthPart = "";
             if (raptorHealthPart && queenHealthPart) {
                  combinedHealthPart = `${raptorHealthPart} ${queenHealthPart}`;
@@ -672,26 +655,24 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             }
 
             if (combinedHealthPart) {
-                 renameParts.push(`[${combinedHealthPart}]`); // Add brackets around the combined health part
+                 renameParts.push(`[${combinedHealthPart}]`);
             }
 
             if (renameParts.length > 0) {
-                renameCommand += ' ' + renameParts.join(''); // Join parts directly with no space between them
+                renameCommand += ' ' + renameParts.join('');
             }
 
-            renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
+            renameCommand += ` [No Mex]`;
 
-            // --- Splitting logic adjusted to prioritize rename in section 1 if it fits ---
+            // --- CORRECTED SPLITTING LOGIC ---
             let section1Commands = [];
             let section2Commands = [];
             let currentLengthSection1 = 0;
 
-            // Iterate through core commands first
-            for (let i = 0; i < coreCommands.length; i++) {
-                const command = coreCommands[i];
-                // Check if adding this command AND the rename command (plus separators) will exceed the limit
-                // This is the key change to prioritize rename in section 1
-                if (currentLengthSection1 + command.length + 1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
+            // 1. First, split all the CORE commands without considering the rename command.
+            for (const command of coreCommands) {
+                // Check if adding the next command would exceed the limit (+1 for newline character)
+                if (currentLengthSection1 + command.length + 1 <= MAX_SECTION_LENGTH) {
                     section1Commands.push(command);
                     currentLengthSection1 += command.length + 1;
                 } else {
@@ -699,12 +680,13 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                 }
             }
 
-            // After all other commands are placed, add the rename command
-            // If it fits in section 1, add it there. Otherwise, add it to section 2.
-            if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
-                section1Commands.push(renameCommand);
-            } else {
+            // 2. Now, after all other commands are split, add the rename command to the very end.
+            if (section2Commands.length > 0) {
+                // If there are any commands in Part 2, the rename command MUST go at the end of Part 2.
                 section2Commands.push(renameCommand);
+            } else {
+                // Otherwise, all commands fit in Part 1, so add it to the end of Part 1.
+                section1Commands.push(renameCommand);
             }
 
 
