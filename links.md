@@ -1,7 +1,3 @@
-# Useful Links & Resources
-
-Here are some important links related to NuttyB Raptors and Beyond All Reason.
-
 ## Widgets
 
 *   **[Raptor Stats Panel with Aggro](https://gist.github.com/tetrisface/2f99f5a5b179e3ac42e7e63825880713)**
