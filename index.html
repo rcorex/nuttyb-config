@@ -67,6 +67,18 @@
             background-color: #f9f9f9;
         }
 
+        /* Two-column layout for options */
+        #options-form-columns {
+            display: flex;
+            flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
+            gap: 20px; /* Space between columns */
+        }
+
+        .options-column {
+            flex: 1 1 45%; /* Grow, shrink, initial basis (approx 50% minus gap) */
+            min-width: 250px; /* Ensure columns don't get too narrow */
+        }
+
         #options-form label {
             display: block;
             margin-bottom: 8px;
@@ -193,10 +205,18 @@
              <p>Select your desired settings and copy the generated text into the lobby.</p>
             <div class="settings-container">
                 <h2>Game Options</h2>
-                <div id="options-form">
-                    <!-- Options will be rendered here by JavaScript -->
-                    <p>Loading configuration data...</p>
+                <!-- New container for two-column layout -->
+                <div id="options-form-columns">
+                    <div class="options-column" id="left-column">
+                        <!-- Left column options will be rendered here by JS -->
+                        <p>Loading configuration data...</p>
+                    </div>
+                    <div class="options-column" id="right-column">
+                        <!-- Right column (otherCheckboxes) will be rendered here by JS -->
+                    </div>
                 </div>
+                <!-- Original options-form div now acts as a placeholder or can be removed -->
+                <div id="options-form" style="display: none;"></div>
             </div>
 
             <div class="output-container">
@@ -352,7 +372,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
 
         // 3. Get references to the HTML elements
-        const optionsForm = document.getElementById('options-form');
+        const optionsFormColumns = document.getElementById('options-form-columns'); // New reference to the columns container
+        const leftColumn = document.getElementById('left-column');
+        const rightColumn = document.getElementById('right-column');
         const commandOutput1 = document.getElementById('command-output-1'); // Section 1
         const commandOutput2 = document.getElementById('command-output-2'); // Section 2
         const copyButtons = document.querySelectorAll('.copy-button'); // Select all copy buttons
@@ -377,7 +399,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                 // populateDataTable(); // Populate table only when the tab is clicked
             } catch (error) {
                 console.error("Could not load configuration data:", error);
-                optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
+                // Update messages for both columns if loading fails
+                leftColumn.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
+                rightColumn.innerHTML = ''; // Clear right column if error
                 dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
                  lobbyNameDisplay.textContent = 'Error loading data.';
             }
@@ -387,13 +411,12 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
             const groupedOptions = {
-                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
-                // Changed type back to checkbox, default to true, disabled to false
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false },
-                tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
-                tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
-                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }] }, // Add "None" option with empty shortLabel
-                otherCheckboxes: { type: "checkboxes", options: [] } // For all other checkboxes
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true, column: 'left' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
+                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, // Add "None" option with empty shortLabel
+                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } // This is a virtual group for sorting, actual items will be separate
             };
 
             rawOptionsData = []; // Clear previous data
@@ -405,7 +428,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                     const commandBlock = parts[1].trim();
 
                     let status = "Optional"; // Default status
-                    let addedToForm = false; // Flag to check if added to a form group
+                    let addedToFormGroup = false; // Flag to check if added to a specific, named form group
 
                     // --- Prioritize specific groups first ---
 
@@ -424,120 +447,105 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                         if (commandBlock.startsWith('!bset tweakdefs4')) { // Mini Bosses is the default
                              groupedOptions.extraRaptors.defaultValue = commandBlock;
                         }
-                        addedToForm = true;
+                        addedToFormGroup = true;
                     }
 
                     // Check if part of tweakdefs1 group (Optional Select)
-                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs1')) {
+                    if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
-                         // Extract health part from label like "QHP Epic (1.3x health)" -> "1_3x QHP"
                          const match = label.match(/\((.*?)\)/);
                          let shortLabel = "";
                          if (match && match[1]) {
-                             // Remove " health" before replacing dot and appending QHP
                              shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
                          } else {
                              shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/QHP.*$/, 'QHP').trim(); // Fallback
                          }
                          groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
-                         addedToForm = true;
+                         addedToFormGroup = true;
                     }
 
                     // Check if part of tweakdefs2 group (Optional Select)
-                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs2')) {
+                    if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
-                         // Extract health part from label like "HP Epic (1.3x health)" -> "1_3x HP"
                          const match = label.match(/\((.*?)\)/);
                          let shortLabel = "";
                          if (match && match[1]) {
-                             // Remove " health" before replacing dot and appending HP
                              shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' HP';
                          } else {
                               shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/HP.*$/, 'HP').trim(); // Fallback
                          }
                          groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
-                         addedToForm = true;
+                         addedToFormGroup = true;
                     }
 
 
                     // Check if part of Main Tweaks group (Mandatory/Visible Checkbox)
                     const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
-                    if (!addedToForm && isMainTweak) {
+                    if (!addedToFormGroup && isMainTweak) {
                         status = "Mandatory/Visible";
                         groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
-                        addedToForm = true;
+                        addedToFormGroup = true;
                     }
 
                     // Check if part of Evolving Commanders group (Optional Checkbox)
                     const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
-                    if (!addedToForm && isEvolvingCommander) {
+                    if (!addedToFormGroup && isEvolvingCommander) {
                          status = "Optional"; // Status is Optional
                          groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
                          // Check if this specific evolving commander should make the group default selected
                          if (defaultSelectedLabels.includes(label)) {
                              groupedOptions.evolvingCommanders.default = true; // Set the group default to true if any of its components are default selected
                          }
-                         addedToForm = true;
+                         addedToFormGroup = true;
                     }
 
 
                     // Check if hidden
                     const isHidden = hiddenLabels.includes(label);
-                     if (!addedToForm && isHidden) {
+                     if (isHidden) { // isHidden bypasses addedToFormGroup as it's not rendered
                          status = "Hidden";
-                         addedToForm = true; // Don't add hidden items to the form
-                     }
-
-                    // Check if default selected (only applies to Optional, non-mandatory, non-hidden, and not part of a specific group)
-                    const isDefaultSelected = !addedToForm && defaultSelectedLabels.includes(label);
-                     if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional and not in a specific group
-                         status = "Default Selected";
                      }
 
 
-                    // Add to raw data list for the table
+                    // Add to raw data list for the table (all items, including hidden and those in groups)
                     rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
 
 
                     // Add to otherCheckboxes if not added to any specific group and not hidden
-                    if (!addedToForm && !isHidden) {
-                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: isDefaultSelected });
+                    if (!addedToFormGroup && !isHidden) {
+                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); // Add column property
                     }
                 }
             });
 
-            // Build the final formOptionsConfig array
+            // Build the final formOptionsConfig array - this determines rendering order
             formOptionsConfig = [];
-            // Add the mandatory/visible checkbox groups if they have command blocks
+            // Add the fixed groups to the left column explicitly
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.mainTweaks);
             }
-             // Add the Evolving Commanders group if it has command blocks (now optional checkbox)
-             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
-                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
-             }
-             // Add the Extra Raptors dropdown if it has choices (beyond the default "None")
-             if (groupedOptions.extraRaptors.choices.length > 1) { // Check if more than just "None" exists
-                 formOptionsConfig.push(groupedOptions.extraRaptors);
-             }
-            // Add dropdowns for tweakdefs1/2 if they have choices
+            if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
+                formOptionsConfig.push(groupedOptions.evolvingCommanders);
+            }
+            if (groupedOptions.extraRaptors.choices.length > 1) {
+                formOptionsConfig.push(groupedOptions.extraRaptors);
+            }
             if (groupedOptions.tweakdefs1.choices.length > 0) {
-                 formOptionsConfig.push(groupedOptions.tweakdefs1);
+                formOptionsConfig.push(groupedOptions.tweakdefs1);
             }
-             if (groupedOptions.tweakdefs2.choices.length > 0) {
-                 formOptionsConfig.push(groupedOptions.tweakdefs2);
+            if (groupedOptions.tweakdefs2.choices.length > 0) {
+                formOptionsConfig.push(groupedOptions.tweakdefs2);
             }
-            // Add other individual checkboxes
+
+            // Now add the individual "other" checkboxes. They will be marked with a 'column' property later.
+            // For now, formOptionsConfig is structured to dictate the *order* of rendering,
+            // and `renderOptions` will decide which *physical column* it goes into.
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
 
-            // Optional: Sort formOptionsConfig by label for consistent order (excluding the fixed groups)
-            // You might need more complex sorting if you want specific order
-            // For simplicity, we'll just sort the 'otherCheckboxes' group before concatenating if needed.
 
-             // For select options, ensure a default is selected if needed, or add a "Choose..." option
+            // Set default selected choice for select groups
              formOptionsConfig.forEach(group => {
                  if (group.type === 'select' && group.choices.length > 0) {
-                     // If a specific default value is set for the select, use it
                      if (group.defaultValue) {
                          group.choices.forEach(choice => {
                              if (choice.value === group.defaultValue) {
@@ -545,7 +553,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                              }
                          });
                      } else {
-                         // Otherwise, ensure the first option (which is "None" for Extra Raptors) is selected by default
+                         // Default to the first option if no specific default is set (e.g., "None")
                          group.choices[0].selected = true;
                      }
                  }
@@ -563,7 +571,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             let queenHealthPart = "";
 
             // Iterate through the form elements to get selected options
-            const formElements = optionsForm.querySelectorAll('input[type="checkbox"], select');
+            // Use optionsFormColumns to query elements across both columns
+            const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
 
             formElements.forEach(element => {
                 if (element.type === 'checkbox') {
@@ -662,7 +671,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             // Otherwise, add it to section 2.
             if (section1Commands.length > 0 && (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH)) {
                 section1Commands.push(renameCommand);
-            } else {
+            } else if (section1Commands.length === 0) { // If section 1 is empty, put rename there. This handles cases where only baseCommands are present.
+                 section1Commands.push(renameCommand);
+            }
+            else { // Section 1 is too long, push it to section 2
                 section2Commands.push(renameCommand);
             }
 
@@ -676,53 +688,57 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
 
         // 5. Function to render the options form
         function renderOptions() {
-            optionsForm.innerHTML = ''; // Clear loading message
+            // Clear both columns before rendering
+            leftColumn.innerHTML = '';
+            rightColumn.innerHTML = '';
+
+            // Add loading message back if you want, or just remove if JS is fast
+            // leftColumn.innerHTML = '<p>Loading configuration data...</p>';
 
             formOptionsConfig.forEach(optionGroup => {
-                if (optionGroup.type === 'checkbox') {
-                    // Render individual checkbox or the mandatory group checkbox
-                    const label = document.createElement('label');
-                    const input = document.createElement('input');
-                    input.type = 'checkbox';
-                    input.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
-                    input.checked = optionGroup.default; // Set checked state based on default flag
-                    input.disabled = optionGroup.disabled || false; // Set disabled state
+                const label = document.createElement('label');
+                let inputElement; // This will hold either the input or select element
 
-                    label.appendChild(input);
+                if (optionGroup.type === 'checkbox') {
+                    inputElement = document.createElement('input');
+                    inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default;
+                    inputElement.disabled = optionGroup.disabled || false;
+
+                    label.appendChild(inputElement);
                     label.appendChild(document.createTextNode(' ' + optionGroup.label));
-                    optionsForm.appendChild(label);
 
                     // Add event listener only if not disabled
-                    if (!input.disabled) {
-                        input.addEventListener('change', updateOutput);
+                    if (!inputElement.disabled) {
+                        inputElement.addEventListener('change', updateOutput);
                     }
 
-
                 } else if (optionGroup.type === 'select') {
-                    // Render dropdown (select)
-                    const label = document.createElement('label');
-                    label.textContent = optionGroup.label + ': '; // Label for the dropdown group
-
-                    const select = document.createElement('select');
-                    select.dataset.optionType = optionGroup.label; // Identify the group
+                    inputElement = document.createElement('select'); // It's a select, not an input
+                    inputElement.dataset.optionType = optionGroup.label; // Identify the group
 
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = choice.value; // Store the command block as the value
-                        optionElement.textContent = choice.label; // Display the label to the user
-                        optionElement.selected = choice.selected || false; // Set selected state
-                        // Store shortLabel on the option element for easy access in generateCommands
+                        optionElement.value = choice.value;
+                        optionElement.textContent = choice.label;
+                        optionElement.selected = choice.selected || false;
                         optionElement.dataset.shortLabel = choice.shortLabel || "";
-                        select.appendChild(optionElement);
+                        inputElement.appendChild(optionElement); // Append option to select
                     });
 
-                    label.appendChild(select);
-                    optionsForm.appendChild(label);
+                    label.textContent = optionGroup.label + ': '; // Label for the dropdown group
+                    label.appendChild(inputElement); // Append select to label
 
                     // Add event listener
-                    select.addEventListener('change', updateOutput);
+                    inputElement.addEventListener('change', updateOutput);
                 }
-                 // Add logic for other types if needed
+                // Determine which column to append to
+                if (optionGroup.column === 'right') {
+                    rightColumn.appendChild(label);
+                } else {
+                    leftColumn.appendChild(label);
+                }
             });
 
             // Initial generation
@@ -747,7 +763,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                     .then(() => {
                         event.target.textContent = 'Copied!';
                         setTimeout(() => {
-                            event.target.textContent = `Copy ${event.target.textContent.replace('Copied!','Section ').trim()}`; // Revert button text
+                            // Revert button text, stripping "Copied!" and re-adding "Section X"
+                            event.target.textContent = `Copy ${targetId.replace('command-output-','Section ').trim()}`;
                         }, 2000);
                     })
                     .catch(err => {
