@@ -408,9 +408,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                          const match = label.match(/\((.*?)\)/);
                          let shortLabel = "";
                          if (match && match[1]) {
-                             shortLabel = match[1].replace(/\./g, '_') + ' QHP';
+                             // Remove " health" before replacing dot and appending QHP
+                             shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
                          } else {
-                             shortLabel = label.replace(/\./g, '_').replace(/QHP.*$/, 'QHP').trim(); // Fallback
+                             shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/QHP.*$/, 'QHP').trim(); // Fallback
                          }
                          groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToForm = true;
@@ -423,9 +424,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                          const match = label.match(/\((.*?)\)/);
                          let shortLabel = "";
                          if (match && match[1]) {
-                             shortLabel = match[1].replace(/\./g, '_') + ' HP';
+                             // Remove " health" before replacing dot and appending HP
+                             shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' HP';
                          } else {
-                              shortLabel = label.replace(/\./g, '_').replace(/HP.*$/, 'HP').trim(); // Fallback
+                              shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/HP.*$/, 'HP').trim(); // Fallback
                          }
                          groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToForm = true;
@@ -525,7 +527,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             let generatedText = baseCommands.trim(); // Start with base commands
 
             let extraRaptorsPart = "";
-            let healthPart = "";
+            let raptorHealthPart = ""; // Separate parts for clarity
+            let queenHealthPart = "";
 
             // Iterate through the form elements to get selected options
             const formElements = optionsForm.querySelectorAll('input[type="checkbox"], select');
@@ -553,11 +556,9 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                                  if (optionGroup.label === "Extra Raptors") {
                                      extraRaptorsPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Raptor Health") {
-                                     // Add Raptor Health first, then Queen Health
-                                     healthPart = selectedChoice.shortLabel + (healthPart ? ` ${healthPart}` : '');
+                                     raptorHealthPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Queen Health") {
-                                      // Add Queen Health second
-                                      healthPart = (healthPart ? `${healthPart} ` : '') + selectedChoice.shortLabel;
+                                      queenHealthPart = selectedChoice.shortLabel;
                                  }
                              }
                          }
@@ -566,13 +567,11 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                          if (element.dataset.optionType === "Extra Raptors") {
                              extraRaptorsPart = ""; // Ensure it's empty if "None" is selected
                          }
-                         // For other selects, if "None" or empty is selected, ensure healthPart is not affected by that group
+                         // For other selects, if "None" or empty is selected, clear their respective parts
                          if (element.dataset.optionType === "Raptor Health") {
-                             // Remove the Raptor HP part if it exists in healthPart
-                             healthPart = healthPart.replace(/.*? HP\s*/, '').trim();
+                             raptorHealthPart = "";
                          } else if (element.dataset.optionType === "Queen Health") {
-                             // Remove the Queen QHP part if it exists in healthPart
-                             healthPart = healthPart.replace(/\s*.*? QHP/, '').trim();
+                             queenHealthPart = "";
                          }
                     }
                 }
@@ -585,9 +584,21 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             if (extraRaptorsPart) {
                 renameParts.push(extraRaptorsPart); // extraRaptorsPart already includes brackets like "[Mini Bosses]"
             }
-            if (healthPart) {
-                renameParts.push(`[${healthPart}]`); // healthPart is like "1_3x HP 1_3x QHP", needs brackets
+
+            // Combine Raptor and Queen Health parts if they exist
+            let combinedHealthPart = "";
+            if (raptorHealthPart && queenHealthPart) {
+                 combinedHealthPart = `${raptorHealthPart} ${queenHealthPart}`;
+            } else if (raptorHealthPart) {
+                 combinedHealthPart = raptorHealthPart;
+            } else if (queenHealthPart) {
+                 combinedHealthPart = queenHealthPart;
             }
+
+            if (combinedHealthPart) {
+                 renameParts.push(`[${combinedHealthPart}]`); // Add brackets around the combined health part
+            }
+
 
             if (renameParts.length > 0) {
                 renameCommand += ' ' + renameParts.join(''); // Join parts directly with no space between them
