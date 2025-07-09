@@ -18,7 +18,7 @@
         }
 
         .container {
-            max-width: 900px; /* Slightly wider for the table */
+            max-width: 950px; /* Slightly wider for the table */
             margin: 0 auto;
             background: #fff;
             padding: 20px;
@@ -115,6 +115,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
+            table-layout: fixed; /* Fix table layout to prevent overflow */
         }
 
         #data-table th, #data-table td {
@@ -122,6 +123,7 @@
             padding: 8px;
             text-align: left;
             vertical-align: top; /* Align content to top */
+            word-wrap: break-word; /* Ensure content breaks within cells */
         }
 
         #data-table th {
@@ -131,6 +133,17 @@
         #data-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+
+        #data-table th:first-child,
+        #data-table td:first-child {
+            width: 30%; /* Allocate width for the label column */
+        }
+
+         #data-table th:last-child,
+        #data-table td:last-child {
+            width: 70%; /* Allocate width for the command blocks column */
+        }
+
 
         #data-table td pre {
             margin: 0;
@@ -259,7 +272,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 label: "NuttyB Coms",
                 type: "checkbox",
                 commandBlocks: [
-                    "!bset tweakunits1 LS1OdXR0eUIgdjEuNTIgTGVnaW9uIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2xlZ2NvbT17ZW5lcmd5bWFrZT01MCxtZXRhbG1ha2U9NSxoZWFsdGg9NjAwMCxhdXRvaGVhbD00MCxidWlsZG9wdGlvbnM9e1szMl09J2Nvcm5lY3JvJyxbMzNdPSdsZWdkdGwnLFszNF09J2xlZ2R0ZicsWzM1XT0nbGVnZHRyJyxbMzZdPSdsZWdqYW0nfSxjdXN0b21wYXJhbXM9e2V2b2x1dGlvbl9hbm5vdW5jZW1lbnQ9J0xlZ2lvbiBjb21tYW5kZXJzIGhhdmUgdXBncmFkZWQgdG8gbGV2ZWwgMicsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nbGVnY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LHdlYXBvbmRlZnM9e2xlZ2NvbWxhc2VyPXtjb3JldGhpY2tuZXNzPTAuMjUsZHVyYXRpb249MC4wOSxuYW1lPSdMaWdodCBjbG9zZS1xdWFydGVycyBnMmcvZzJhIGxhc2VyJyxyYW5nZT0zNjAscmVsb2FkdGltZT0wLjIwLHJnYmNvbG9yPScwIDIgMScsc291bmRoaXRkcnk9Jycsc291bmRoaXR3ZXQ9J3NpenpsZScsc291bmRzdGFydD0nbGFzcmNydzEnLHNvdW5kdHJpZ2dlcj10cnVlLHNwcmF5YW5nbGU9NzAwLHRoaWNrbmVzcz02LHRleHR1cmUxPSdzaG90Jyx0ZXh0dXJlMj0nZW1wdHknLHdlYXBvbnR5cGU9J0xhc2VyQ2Fubm9uJyx3ZWFwb252ZWxvY2l0eT0yMTAwLGRhbWFnZT17ZGVmYXVsdD0yNTB9fSxzaG90Z3VuPXthcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD0wLGF2b2lkZmVhdHVyZT1mYWxzZSxjcmF0ZXJib29zdD0wLGNyYXRlcm11bHQ9MCxjYW1lcmFTaGFrZT0wLGVkZ2VlZmZlY3RpdmVuZXNzPTAuNjUsZXhwbG9zaW9uZ2VuZXJhdG9yPSdjdXN0b206Z2VuZXJpY3NoZWxsZXhwbG9zaW9uLXNtYWxsJyxpbXB1bHNlYm9vc3Q9MC4yLGltcHVsc2VmYWN0b3I9MC4yLGludGVuc2l0eT0zLG5hbWU9JzYgR2F1Z2UgU2hvdGd1bicsbm9zZWxmZGFtYWdlPXRydWUscHJlZGljdGJvb3N0PTEscHJvamVjdGlsZXM9NixyYW5nZT0zMjAscmVsb2FkdGltZT0yLHJnYmNvbG9yPScxIDAuNzUgMC4yNScsc2l6ZT0yLHNvdW5kaGl0PSd4cGxvbWVkMnhzJyxzb3VuZGhpdHdldD0nc3Bsc21lZCcsc291bmRzdGFydD0na3JvZ2dpZTJ4cycsc291bmRzdGFydHZvbHVtZT0xMixzcHJheWFuZ2xlPTIwMDAsdHVycmV0PXRydWUsY29tbWFuZGZpcmU9dHJ1ZSx3ZWFwb250aW1lcj0xLHdlYXBvbnR5cGU9J0Nhbm5vbicsd2VhcG9udmVsb2NpdHk9NjAwLHN0b2NrcGlsZT10cnVlLHN0b2NrcGlsZXRpbWU9NSxjdXN0b21wYXJhbXM9e3N0b2NrcGlsZWxpbWl0PTEwfSxkYW1hZ2U9e2RlZmF1bHQ9MTgwMCxjb21tYW5kZXJzPTB9fX0sd2VhcG9ucz17WzNdPXtkZWY9J3Nob3RndW4nLG9ubHl0YXJnZXRjYXRlZ29yeT0nU1VSRkFDRSd9fX0sbGVnY29tbHZsMj17ZW5lcmd5bWFrZT0xNTAsbWV0YWxtYWtlPTE1LHNwZWVkPTU3LjUsYXV0b2hlYWw9MTAwLGhlYWx0aD02NzAwLGN1c3RvbXBhcmFtcz17Y29tYmF0cmFkaXVzPTAsZXZvbHV0aW9uX3RpbWVyPTYwMCxwYXJhdHJvb3Blcj10cnVlLGZhbGxfZGFtYWdlX211bHRpcGxpZXI9MH0sYnVpbGRvcHRpb25zPXtbMV09J2Nvcm5lY3JvJyxbMl09J2xlZ2FkdnNvbCcsWzEzXT0nY29yaGxsdCcsWzI2XT0nbGVnZ2VvJyxbMjcdPSdsZWduYW5vdGMnLFsyOF09J2xlZ2phbScsWzI5XT0nbGVnZHRmJyxbMzBdPSdsZWdtZycsWzMxXT0nbGVncmFkJyxbMzJdPSdsZWdkdGwnLFszM109J2xlZ3R0cicsWzM0XT0nbGVncmhhcHNpcycsWzM1XT0nbGVnd2luJ30sd2VhcG9uZGVmcz17bGVnY29tbGFzZXI9e2FjY3VyYWN5PTUwLGFyZWFvZmVmZmVjdD02MCxhdm9pZGZyaWVuZGx5PWZhbHNlLGF2b2lkZmVhdHVyZT1mYWxzZSxj",
+                    "!bset tweakunits1 LS1OdXR0eUIgdjEuNTIgTGVnaW9uIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2xlZ2NvbT17ZW5lcmd5bWFrZT01MCxtZXRhbG1ha2U9NSxoZWFsdGg9NjAwMCxhdXRvaGVhbD00MCxidWlsZG9wdGlvbnM9e1szMl09J2Nvcm5lY3JvJyxbMzNdPSdsZWdkdGwnLFszNF09J2xlZ2R0ZicsWzM1XT0nbGVnZHRyJyxbMzZdPSdsZWdqYW0nfSxjdXN0b21wYXJhbXM9e2V2b2x1dGlvbl9hbm5vdW5jZW1lbnQ9J0xlZ2lvbiBjb21tYW5kZXJzIGhhdmUgdXBncmFkZWQgdG8gbGV2ZWwgMicsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nbGVnY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LHdlYXBvbmRlZnM9e2xlZ2NvbWxhc2VyPXtjb3JldGhpY2tuZXNzPTAuMjUsZHVyYXRpb249MC4wOSxuYW1lPSdMaWdodCBjbG9zZS1xdWFydGVycyBnMmcvZzJhIGxhc2VyJyxyYW5nZT0zNjAscmVsb2FkdGltZT0wLjIwLHJnYmNvbG9yPScwIDIgMScsc291bmRoaXRkcnk9Jycsc291bmRoaXR3ZXQ9J3NpenpsZScsc291bmRzdGFydD0nbGFzcmNydzEnLHNvdW5kdHJpZ2dlcj10cnVlLHNwcmF5YW5nbGU9NzAwLHRoaWNrbmVzcz02LHRleHR1cmUxPSdzaG90Jyx0ZXh0dXJlMj0nZW1wdHknLHdlYXBvbnR5cGU9J0xhc2VyQ2Fubm9uJyx3ZWFwb252ZWxvY2l0eT0yMTAwLGRhbWFnZT17ZGVmYXVsdD0yNTB9fSxzaG90Z3VuPXthcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD0wLGF2b2lkZmVhdHVyZT1mYWxzZSxjcmF0ZXJib29zdD0wLGNyYXRlcm11bHQ9MCxjYW1lcmFTaGFrZT0wLGVkZ2VlZmZlY3RpdmVuZXNzPTAuNjUsZXhwbG9zaW9uZ2VuZXJhdG9yPSdjdXN0b206Z2VuZXJpY3NoZWxsZXhwbG9zaW9uLXNtYWxsJyxpbXB1bHNlYm9vc3Q9MC4yLGltcHVsc2VmYWN0b3I9MC4yLGludGVuc2l0eT0zLG5hbWU9JzYgR2F1Z2UgU2hvdGd1bicsbm9zZWxmZGFtYWdlPXRydWUscHJlZGljdGJvb3N0PTEscHJvamVjdGlsZXM9NixyYW5nZT0zMjAscmVsb2FkdGltZT0yLHJnYmNvbG9yPScxIDAuNzUgMC4yNScsc2l6ZT0yLHNvdW5kaGl0PSd4cGxvbWVkMnhzJyxzb3VuZGhpdHdldD0nc3Bsc21lZCcsc291bmRzdGFydD0na3JvZ2dpZTJ4cycsc291bmRzdGFydHZvbHVtZT0xMixzcHJheWFuZ2xlPTIwMDAsdHVycmV0PXRydWUsY29tbWFuZGZpcmU9dHJ1ZSx3ZWFwb250aW1lcj0xLHdlYXBvbnR5cGU9J0Nhbm5vbicsd2VhcG9udmVsb2NpdHk9NjAwLHN0b2NrcGlsZT10cnVlLHN0b2NrcGlsZXRpbWU9NSxjdXN0b21wYXJhbXM9e3N0b2NrcGlsZWxpbWl0PTEwfSxkYW1hZ2U9e2RlZmF1bHQ9MTgwMCxjb21tYW5kZXJzPTB9fX0sd2VhcG9ucz17WzNdPXtkZWY9J3Nob3RndW4nLG9ubHl0YXJnZXRjYXRlZ29yeT0nU1VSRkFDRSd9fX0sbGVnY29tbHZsMj17ZW5lcmd5bWFrZT0xNTAsbWV0YWxtYWtlPTE1LHNwZWVkPTU3LjUsYXV0b2hlYWw9MTAwLGhlYWx0aD02NzAwLGN1c3RvbXBhcmFtcz17Y29tYmF0cmFkaXVzPTAsc2hpZWxkX3Bvd2VyPTUwMCxzaGllbGRfcmFkaXVzPTEwMCxwYXJhdHJvb3Blcj10cnVlLGZhbGxfZGFtYWdlX211bHRpcGxpZXI9MH0sYnVpbGRvcHRpb25zPXtbMV09J2Nvcm5lY3JvJyxbMl09J2xlZ2FkdnNvbCcsWzEzXT0nY29yaGxsdCcsWzI2XT0nbGVnZ2VvJyxbMjcdPSdsZWduYW5vdGMnLFsyOF09J2xlZ2phbScsWzI5XT0nbGVnZHRmJyxbMzBdPSdsZWdtZycsWzMxXT0nbGVncmFkJyxbMzJdPSdsZWdkdGwnLFszM109J2xlZ3R0cicsWzM0XT0nbGVncmhhcHNpcycsWzM1XT0nbGVnd2luJ30sd2VhcG9uZGVmcz17bGVnY29tbGFzZXI9e2FjY3VyYWN5PTUwLGFyZWFvZmVmZmVjdD02MCxhdm9pZGZyaWVuZGx5PWZhbHNlLGF2b2lkZmVhdHVyZT1mYWxzZSxj",
                     "!bset tweakunits2 LS1OdXR0eUIgdjEuNTIgQXJtYWRhIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdBcm0gQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nYXJtY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGVuZXJneW1ha2U9MTAwLG1ldGFsbWFrZT0xMCxhdXRvaGVhbD01NSxoZWFsdGg9NDUwMCxzcGVlZD00MSxjYW5yZXN1cnJlY3Q9dHJ1ZSxidWlsZG9wdGlvbnM9eydhcm1zb2xhcicsJ2FybXdpbicsJ2FybW1zdG9yJywnYXJtZXN0b3InLCdhcm1tZXgnLCdhcm1tYWtyJywnYXJtbGFiJywnYXJtdnAnLCdhcm1hcCcsJ2FybWV5ZXMnLCdhcm1yYWQnLCdhcm1kcmFnJywnYXJtbGx0JywnYXJtcmwnLCdhcm1kbCcsJ2FybXRpZGUnLCdhcm11d21zJywnYXJtdXdlcycsJ2FybXV3bWV4JywnYXJtZm1rcicsJ2FybXN5JywnYXJtZmRyYWcnLCdhcm10bCcsJ2FybWZydCcsJ2FybWZyYWQnLCdhcm1ocCcsJ2FybWZocCcsJ2FybWFkd",
                     "!bset tweakunits3 LS1OdXR0eUIgdjEuNTIgQ29ydGV4IENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2NvcmNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdDb3IgQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nY29yY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGF1dG9oZWFsPTgwLHNwZWVkPTQ1LGVuZXJneW1ha2U9NzUsbWV0YWxtYWtlPTYs",
                 ]
@@ -275,7 +288,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 label: "T3 Eco",
                 type: "checkbox",
                 commandBlocks: [
-                     "!bset tweakdefs7 LS1UMyBFY28gYnVpbHRpbiB2Ng0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdUFBTWhCcmhpWmRUaWhWZlNDd1B6YmJaV0RMQ3RYV1AyM0NVMGtvDQpsb2NhbCBhLGI9VW5pdERlZnMgb3J7fSx7J2FybWFjaycsJ2FybWFjYScsJ2FybWFjdicsJ2NvcmFjaycsJ2NvcmFjYScsJ2NvcmFjdicsJ2xlZ2FjaycsJ2xlZ2FjYScsJ2xlZ2Fjdid9Zm9yIGMsZCBpbiBwYWlycyh7J2FybW1ta3J0MycsJ2Nvcm1ta3J0MycsJ2xlZ2FkdmVjb252dDMnfSlkbyB0YWJsZS5tZXJnZUluUGxhY2UoYVtkXSx7Zm9vdHByaW50eD02LGZvb3RwcmludHo9Nn0pZW5kO2ZvciBjLGUgaW4gcGFpcnMoYilkbyBsb2NhbCBmLGc9ZTpzdWIoMSwzKSwjYVtlXS5idWlsZG9wdGlvbnM7YVtlXS5idWlsZG9wdGlvbnNbZysxXT1mLi4nYWZ1c3QzJ2FbZV0uYnVpbGRvcHRpb25zW2crMl09Zj09J2xlZ",
+                     "!bset tweakdefs7 LS1UMyBFY28gYnVpbHRpbiB2Ng0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdVB",
                 ]
             },
              {
