@@ -67,18 +67,37 @@
             background-color: #f9f9f9;
         }
 
-        #options-form label {
+        /* Two-column layout for options */
+        #options-form-columns {
+            display: flex;
+            flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
+            gap: 20px; /* Space between columns */
+        }
+
+        .options-column {
+            flex: 1 1 45%; /* Grow, shrink, initial basis (approx 50% minus gap) */
+            min-width: 250px; /* Ensure columns don't get too narrow */
+        }
+
+        /* Ensure each option label is a block and has enough margin */
+        #left-column label,
+        #right-column label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 12px; /* Increased margin for better separation */
             cursor: pointer;
         }
 
-         #options-form label input[type="checkbox"] {
+         #left-column label input[type="checkbox"],
+         #right-column label input[type="checkbox"] {
              margin-right: 5px;
          }
 
-         #options-form select {
-             margin-left: 5px; /* Indent dropdowns slightly */
+         /* Apply width 100% to select elements within the columns */
+         #left-column label select,
+         #right-column label select {
+             width: 100%; /* Make select elements take full width of their parent label */
+             box-sizing: border-box; /* Include padding/border in width */
+             margin-left: 0; /* Remove previous indent */
          }
 
         .command-output-section {
