@@ -210,70 +210,8 @@
     <script>
         // JavaScript code goes here
 
-        // Define base commands separately, as they don't seem to be in the
-        // tab-separated data format provided.
-        const baseCommands = `
-!preset coop
-!teamsize 12
-!autobalance off
-!assistdronesbuildpowermultiplier 1
-!assistdronesenabled enabled
-!commanderbuildersbuildpower 1000
-!commanderbuildersenabled enabled
-!commanderbuildersrange 1000
-!disablemapdamage 1
-!experimentalextraunits 1
-!experimentallegionfaction 1
-!experimentalshields bounceeverything
-!map Full Metal Plate
-!addbox 80 82 115 117 2
-!clearbox 1
-!maxunits 10000
-!multiplier_builddistance 1.5
-!multiplier_buildpower 1
-!multiplier_buildtimecost 1
-!multiplier_energyconversion 1
-!multiplier_energycost 1
-!multiplier_energyproduction 1
-!multiplier_losrange 1
-!multiplier_maxdamage 1
-!multiplier_maxvelocity 1
-!multiplier_metalcost 1
-!multiplier_metalextraction 1
-!multiplier_radarrange 1
-!multiplier_resourceincome 1
-!multiplier_shieldpower 1
-!multiplier_shieldpower 2
-!multiplier_turnrate 1
-!multiplier_weapondamage 1
-!raptor_difficulty epic
-!raptor_firstwavesboost 7
-!raptor_graceperiodmult 2.7
-!raptor_queentimemult 1.3
-!raptor_spawncountmult 3
-!raptor_spawntimemult 1
-!releasecandidates 1
-!startenergy 10000
-!startenergystorage 10000
-!startmetal 10000
-!startmetalstorage 10000
-!scavunitsforplayers 1
-!forceallunits 1
-!unit_restrictions_noair 0
-!unit_restrictions_noendgamelrpc 0
-!unit_restrictions_nolrpc 0
-!unit_restrictions_nonukes 0
-!draft_mode disabled
-!unit_restrictions_notacnukes 0
-$welcome-message Lobby settings made with the Paste Machine https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
-!unit_market 0
-!evocom 0
-!nowasting all
-!bSet unit_restrictions_nonukes 1
-!bSet raptor_queen_count 8
-!balance
-$rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
-`;
+        // Variable to hold the base commands loaded from commonsettings.txt
+        let baseCommands = '';
 
         // Define command prefixes for the "NuttyB Main Tweaks" group (Mandatory/Visible Checkbox)
         const mainTweaksPrefixes = [
@@ -317,29 +255,152 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         let formOptionsConfig = []; // Grouped data for the options form
 
 
-        // 3. Get references to the HTML elements
-        const optionsForm = document.getElementById('options-form');
-        const commandOutput = document.getElementById('command-output');
-        const copyButton = document.getElementById('copy-button');
-        const dataTableBody = document.querySelector('#data-table tbody');
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-
         // Function to fetch and parse the configuration data
         async function loadConfigData() {
             try {
-                const response = await fetch('tweakdata.txt'); // Fetching from tweakdata.txt
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Fetch base commands first
+                const baseResponse = await fetch('commonsettings.txt');
+                if (!baseResponse.ok) {
+                    throw new Error(`HTTP error loading commonsettings.txt! status: ${baseResponse.status}`);
                 }
-                const text = await response.text();
-                parseConfigData(text);
+                baseCommands = await baseResponse.text();
+
+                // Then fetch tweak data
+                const tweakResponse = await fetch('tweakdata.txt'); // Fetching from tweakdata.txt
+                if (!tweakResponse.ok) {
+                    throw new Error(`HTTP error loading tweakdata.txt! status: ${tweakResponse.status}`);
+                }
+                const tweakText = await tweakResponse.text();
+
+                parseConfigData(tweakText);
                 renderOptions();
                 // populateDataTable(); // Populate table only when the tab is clicked
             } catch (error) {
                 console.error("Could not load configuration data:", error);
-                optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the tweakdata.txt file and try again.</p>';
+                optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the text files and try again.</p>';
+                dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
+            }
+        }
+
+        // Function to parse the text data
+        function parseConfigData(text) {
+            const lines = text.trim().split('\n');
+            const groupedOptions = {
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
+                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "" }] }, // Add "None" option by default
+                otherCheckboxes: { type: "checkboxes", options: [] } // For all other checkboxes
+            };
+
+            rawOptionsData = []; // Clear previous data
+
+            lines.forEach(line => {
+                const parts = line.split('\t');
+                if (parts.length >= 2) {
+                    const label = parts[0].trim();
+                    const commandBlock = parts[1].trim();
+
+                    let status = "Optional"; // Default status
+                    let addedToForm = false; // Flag to check if added to a form group
+
+                    // --- Prioritize specific groups first ---
+
+                    // Check if part of Extra Raptors group (Optional Select)
+                    const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (isExtraRaptor) {
+                        status = "Optional/Grouped";
+                        groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock });
+                        // Set default selected option for this dropdown
+                        if (commandBlock.startsWith('!bset tweakdefs4')) { // Mini Bosses is the default
+                             groupedOptions.extraRaptors.defaultValue = commandBlock;
+                        }
+                        addedToForm = true;
+                    }
+
+                    // Check if part of tweakdefs1 group (Optional Select)
+                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs1')) {
+                         status = "Optional/Grouped";
+                         groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock });
+                         addedToForm = true;
+                    }
+
+                    // Check if part of tweakdefs2 group (Optional Select)
+                    if (!addedToForm && commandBlock.startsWith('!bset tweakdefs2')) {
+                         status = "Optional/Grouped";
+                         groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock });
+                         addedToForm = true;
+                    }
+
+                    // Check if part of Main Tweaks group (Mandatory/Visible Checkbox)
+                    const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToForm && isMainTweak) {
+                        status = "Mandatory/Visible";
+                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
+                        addedToForm = true;
+                    }
+
+                    // Check if part of Evolving Commanders group (Mandatory/Visible Checkbox)
+                    const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToForm && isEvolvingCommander) {
+                         status = "Mandatory/Visible";
+                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                         addedToForm = true;
+                    }
+
+
+                    // Check if hidden
+                    const isHidden = hiddenLabels.includes(label);
+                     if (!addedToForm && isHidden) {
+                         status = "Hidden";
+                         addedToForm = true; // Don't add hidden items to the form
+                     }
+
+                    // Check if default selected (only applies to Optional, non-mandatory, non-hidden, and not part of a specific group)
+                    const isDefaultSelected = !addedToForm && defaultSelectedLabels.includes(label);
+                     if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional and not in a specific group
+                         status = "Default Selected";
+                     }
+
+
+                    // Add to raw data list for the table
+                    rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
+
+
+                    // Add to otherCheckboxes if not added to any specific group and not hidden
+                    if (!addedToForm && !isHidden) {
+                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: isDefaultSelected });
+                    }
+                }
+            });
+
+            // Build the final formOptionsConfig array
+            formOptionsConfig = [];
+            // Add the mandatory/visible checkbox groups if they have command blocks
+            if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
+                 formOptionsConfig.push(groupedOptions.mainTweaks);
+            }
+             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
+                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
+             }
+             // Add the Extra Raptors dropdown if it has choices (beyond the default "None")
+             if (groupedOptions.extraRaptors.choices.length > 1) { // Check if more than just "None" exists
+                 formOptionsConfig.push(groupedOptions.extraRaptors);
+             }
+            // Add dropdowns for tweakdefs1/2 if they have choices
+            if (groupedOptions.tweakdefs1.choices.length > 0) {
+                 formOptionsConfig.push(groupedOptions.tweakdefs1);
+            }
+             if (groupedOptions.tweakdefs2.choices.length > 0) {
+                 formOptionsConfig.push(groupedOptions.tweakdefs2);
+             responseObject.text();
+                parseConfigData(tweakText);
+                renderOptions();
+                // populateDataTable(); // Populate table only when the tab is clicked
+            } catch (error) {
+                console.error("Could not load configuration data:", error);
+                optionsForm.innerHTML = '<p style="color: red;">Failed to load configuration data. Please check the text files and try again.</p>';
                 dataTableBody.innerHTML = '<tr><td colspan="3" style="color: red;">Failed to load data.</td></tr>';
             }
         }
