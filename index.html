@@ -282,6 +282,14 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             '!bset tweakunits ',
         ];
 
+         // Define command prefixes for the "NuttyB Evolving Commanders" group
+         const evolvingCommandersPrefixes = [
+             '!bset tweakunits1 ',
+             '!bset tweakunits2 ',
+             '!bset tweakunits3 ',
+         ];
+
+
         // Define labels of options to hide
         const hiddenLabels = [
             'Slow raptors/scavs', // Corresponds to !bset tweakdefs5
@@ -335,6 +343,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             const lines = text.trim().split('\n');
             const groupedOptions = {
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: true },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [] },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [] },
                 other: { type: "checkboxes", options: [] } // For all other checkboxes
@@ -357,24 +366,34 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                         groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
                     }
 
+                    // Check if part of Evolving Commanders group
+                    const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (isEvolvingCommander) {
+                         status = "Mandatory/Visible"; // Could use a different status if desired
+                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                    }
+
+
                     // Check if hidden
                     const isHidden = hiddenLabels.includes(label);
                      if (isHidden) {
                          status = "Hidden";
                      }
 
-                    // Check if default selected (only applies to Optional, non-hidden)
-                    const isDefaultSelected = !isMainTweak && !isHidden && defaultSelectedLabels.includes(label);
+                    // Check if default selected (only applies to Optional, non-mandatory, non-hidden)
+                    const isDefaultSelected = !isMainTweak && !isEvolvingCommander && !isHidden && defaultSelectedLabels.includes(label);
                      if (isDefaultSelected && status === "Optional") { // Only mark as default if it's truly optional
                          status = "Default Selected";
                      }
 
 
-                    // Add to raw data list for the table
+                    // Add to raw data list for the table (only add if not part of a mandatory/visible group to avoid duplicates in table)
+                    // Or, add all and handle display in populateDataTable
                     rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status });
 
-                    // Group for the options form (exclude main tweaks and hidden)
-                    if (!isMainTweak && !isHidden) {
+
+                    // Group for the options form (exclude mandatory/visible groups and hidden)
+                    if (!isMainTweak && !isEvolvingCommander && !isHidden) {
                         if (commandBlock.startsWith('!bset tweakdefs1')) {
                             groupedOptions.tweakdefs1.choices.push({ label: label, commandBlock: commandBlock });
                         } else if (commandBlock.startsWith('!bset tweakdefs2')) {
@@ -394,6 +413,10 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
                  formOptionsConfig.push(groupedOptions.mainTweaks);
             }
+             // Add the Evolving Commanders group if it has command blocks
+             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
+                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
+             }
             // Add dropdowns if they have choices
             if (groupedOptions.tweakdefs1.choices.length > 0) {
                  formOptionsConfig.push(groupedOptions.tweakdefs1);
@@ -404,7 +427,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
             // Add other individual checkboxes
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.other.options);
 
-            // Optional: Sort formOptionsConfig by label for consistent order (excluding the fixed Main Tweaks group)
+            // Optional: Sort formOptionsConfig by label for consistent order (excluding the fixed groups)
             // You might need more complex sorting if you want specific order
             // For simplicity, we'll just sort the 'other' group before concatenating if needed.
 
