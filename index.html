@@ -174,7 +174,7 @@
             padding: 8px;
             text-align: left;
             vertical-align: top;
-            word-wrap: break-word;
+            /* The problematic 'word-wrap' has been REMOVED from here */
         }
 
         #data-table th {
@@ -193,34 +193,20 @@
          #data-table td:nth-child(2) {
              width: 15%;
          }
-         #data-table th:last-child {
+
+         #data-table th:last-child,
+         #data-table td:last-child {
             width: 60%;
          }
 
 
-        /* ---- NEW, CORRECTED DATA TABLE STYLING ---- */
-        #data-table td:last-child {
-            /* The max-width trick still applies to the cell itself */
-            max-width: 0;
-        }
-
         #data-table td pre {
-            /* Common styles for all <pre> tags in the table */
+            /* This rule now correctly handles the non-wrapping command block */
             margin: 0;
             padding: 0;
-        }
-
-        #data-table td:not(:last-child) pre {
-            /* Apply wrapping ONLY to <pre> tags in cells that are NOT the last child */
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        #data-table td:last-child pre {
-            /* Apply non-wrapping and overflow styles ONLY to the <pre> in the LAST cell */
-            white-space: nowrap;
-            overflow: hidden;
-            cursor: text;
+            white-space: nowrap;  /* Prevents the text from wrapping */
+            overflow: hidden;     /* Hides the overflowing text */
+            cursor: text;         /* Provides a text-selection cursor */
         }
     </style>
 </head>
