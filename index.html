@@ -311,7 +311,7 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and Paste both parts separately</p>
+                <p>Copy and Paste both parts to the lobby independently</p>
 
                 <div class="command-output-section">
                     <h3>Part 1</h3>
@@ -656,14 +656,14 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
                 formOptionsConfig.push(groupedOptions.evolvingCommanders);
             }
-            if (groupedOptions.extraRaptors.choices.length > 1) {
-                formOptionsConfig.push(groupedOptions.extraRaptors);
+            if (groupedOptions.tweakdefs2.choices.length > 0) {
+                formOptionsConfig.push(groupedOptions.tweakdefs2);
             }
             if (groupedOptions.tweakdefs1.choices.length > 0) {
                 formOptionsConfig.push(groupedOptions.tweakdefs1);
             }
-            if (groupedOptions.tweakdefs2.choices.length > 0) {
-                formOptionsConfig.push(groupedOptions.tweakdefs2);
+            if (groupedOptions.extraRaptors.choices.length > 1) {
+                formOptionsConfig.push(groupedOptions.extraRaptors);
             }
 
             // Now add the individual "other" checkboxes. They will be marked with a 'column' property later.
