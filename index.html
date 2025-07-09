@@ -3,34 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NuttyB Raptors Settings Generator</title>
+    <title>NuttyB Raptors Configurator</title>
     <style>
         body {
             font-family: sans-serif;
             margin: 20px;
             line-height: 1.6;
-            background-color: #f4f4f4;
-            color: #333;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
         }
 
         h1, h2 {
-            color: #555;
+            color: #f5f5f5; /* Lighter heading text */
+        }
+
+        a {
+            color: #4caf50; /* Green links */
         }
 
         .container {
-            max-width: 950px; /* Slightly wider for the table */
+            max-width: 950px;
             margin: 0 auto;
-            background: #fff;
+            background: #1e1e1e; /* Slightly lighter dark for container */
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #333;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         /* Tab Styles */
         .tabs {
             display: flex;
             margin-bottom: 15px;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid #444;
         }
 
         .tab-button {
@@ -39,51 +44,51 @@
             border: none;
             background-color: transparent;
             border-bottom: 2px solid transparent;
-            transition: border-bottom 0.3s ease;
+            transition: border-bottom 0.3s ease, color 0.3s ease;
             font-size: 1em;
+            color: #aaa; /* Inactive tab text color */
         }
 
         .tab-button.active {
-            border-bottom-color: #5cb85c;
+            border-bottom-color: #66bb6a; /* Lighter green for active tab */
             font-weight: bold;
-            color: #5cb85c;
+            color: #f5f5f5; /* Active tab text color */
         }
 
         .tab-content {
-            display: none; /* Hide tab content by default */
+            display: none;
             padding-top: 15px;
         }
 
         .tab-content.active {
-            display: block; /* Show active tab content */
+            display: block;
         }
 
 
         .settings-container, .output-container {
             margin-bottom: 20px;
             padding: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             border-radius: 5px;
-            background-color: #f9f9f9;
+            background-color: #2c2c2c; /* Darker section background */
         }
 
         /* Two-column layout for options */
         #options-form-columns {
             display: flex;
-            flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
-            gap: 20px; /* Space between columns */
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .options-column {
-            flex: 1 1 45%; /* Grow, shrink, initial basis (approx 50% minus gap) */
-            min-width: 250px; /* Ensure columns don't get too narrow */
+            flex: 1 1 45%;
+            min-width: 250px;
         }
 
-        /* Ensure each option label is a block and has enough margin */
         #left-column label,
         #right-column label {
             display: block;
-            margin-bottom: 8px; /* Reduced margin for tighter spacing */
+            margin-bottom: 8px;
             cursor: pointer;
         }
 
@@ -92,16 +97,19 @@
              margin-right: 5px;
          }
 
-         /* Allow select elements to size based on content, remove full width */
          #left-column label select,
          #right-column label select {
-             /* Removed: width: 100%; */
-             box-sizing: border-box; /* Keep this for consistent box model */
-             margin-left: 0; /* Keep this to prevent unintended indent */
+             box-sizing: border-box;
+             margin-left: 0;
+             background-color: #333;
+             color: #e0e0e0;
+             border: 1px solid #555;
+             border-radius: 4px;
+             padding: 5px;
          }
 
         .command-output-section {
-            margin-bottom: 15px; /* Space between sections */
+            margin-bottom: 15px;
         }
 
         .command-output-section h3 {
@@ -113,19 +121,21 @@
             width: 100%;
             box-sizing: border-box;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #555;
             border-radius: 4px;
             font-family: monospace;
             white-space: pre-wrap;
             word-wrap: break-word;
             resize: vertical;
+            background-color: #1e1e1e;
+            color: #f5f5f5;
         }
 
-        .copy-button { /* Changed ID to class for multiple buttons */
+        .copy-button {
             display: inline-block;
-            margin-top: 5px; /* Adjust margin as it's below textarea */
+            margin-top: 5px;
             padding: 10px 15px;
-            background-color: #5cb85c;
+            background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 4px;
@@ -135,20 +145,20 @@
         }
 
         .copy-button:hover {
-            background-color: #4cae4c;
+            background-color: #66bb6a;
         }
 
         .copy-button:active {
-            background-color: #398439;
+            background-color: #388e3c;
         }
 
         .lobby-name-output {
-            margin-top: 20px; /* More space above lobby name */
+            margin-top: 20px;
             padding: 10px;
-            border: 1px dashed #ccc;
-            background-color: #e9e9e9;
+            border: 1px dashed #555;
+            background-color: #333;
             font-family: monospace;
-            word-break: break-all; /* Break long names */
+            word-break: break-all;
         }
 
         /* Data Table Styles */
@@ -156,52 +166,52 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            table-layout: fixed; /* Fix table layout to prevent overflow */
+            table-layout: fixed;
         }
 
         #data-table th, #data-table td {
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             padding: 8px;
             text-align: left;
-            vertical-align: top; /* Align content to top */
-            word-wrap: break-word; /* Ensure content breaks within cells */
+            vertical-align: top;
+            word-wrap: break-word;
         }
 
         #data-table th {
-            background-color: #f2f2f2;
+            background-color: #333;
         }
 
         #data-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #2c2c2c;
         }
 
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 25%; /* Allocate width for the label column */
+            width: 25%;
         }
          #data-table th:nth-child(2),
          #data-table td:nth-child(2) {
-             width: 15%; /* Allocate width for the status column */
+             width: 15%;
          }
 
          #data-table th:last-child,
         #data-table td:last-child {
-            width: 60%; /* Allocate width for the command blocks column */
+            width: 60%;
         }
 
 
         #data-table td pre {
             margin: 0;
             padding: 0;
-            white-space: pre-wrap; /* Wrap long lines in pre */
-            word-wrap: break-word; /* Break words in pre */
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>NuttyB Raptors Settings Generator</h1>
+        <h1>NuttyB Raptors Configurator</h1>
         <p>Inspired by <a href="https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit" target="_blank">The Paste Machine</a></p>
 
         <div class="tabs">
@@ -210,7 +220,7 @@
         </div>
 
         <div id="config-tab" class="tab-content active">
-             <p>Select your desired settings and copy the generated commands into the lobby.</p>
+             <p>Select your desired options and copy the generated commands into the lobby</p>
             <div class="settings-container">
                 <h2>Game Options</h2>
                 <!-- New container for two-column layout -->
@@ -229,7 +239,7 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and Paste part 1 and 2 separately.</p>
+                <p>Copy and Paste both parts separately</p>
 
                 <div class="command-output-section">
                     <h3>Part 1</h3>
@@ -326,7 +336,7 @@
 !unit_restrictions_nonukes 0
 !draft_mode disabled
 !unit_restrictions_notacnukes 0
-$welcome-message Settings made with Config Generator https://rcorex.github.io/nuttyb-config/
+$welcome-message Settings made with NuttyB Configurator https://rcorex.github.io/nuttyb-config/
 !unit_market 0
 !evocom 0
 !nowasting all
@@ -424,7 +434,7 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
-                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, // Add "None" option with empty shortLabel
+                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, // Add "None" option with empty shortLabel
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } // This is a virtual group for sorting, actual items will be separate
             };
 
@@ -462,12 +472,19 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                     // Check if part of tweakdefs1 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
-                         const match = label.match(/\((.*?)\)/);
+                         // --- CORRECTED LOGIC FOR QHP ---
+                         const match = label.match(/(\d+\.?\d*x)/); // Look for a number followed by 'x'
                          let shortLabel = "";
                          if (match && match[1]) {
-                             shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
+                             shortLabel = match[1].replace(/\./g, '_') + ' QHP';
                          } else {
-                             shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/QHP.*$/, 'QHP').trim(); // Fallback
+                             // Fallback for labels without 'x', e.g., "Epic (1.3x health)"
+                             const parenMatch = label.match(/\((.*?)\)/);
+                             if (parenMatch && parenMatch[1]) {
+                                 shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
+                             } else {
+                                 shortLabel = label; // Last resort fallback
+                             }
                          }
                          groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToFormGroup = true;
@@ -476,12 +493,19 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                     // Check if part of tweakdefs2 group (Optional Select)
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
-                         const match = label.match(/\((.*?)\)/);
+                         // --- CORRECTED LOGIC FOR HP ---
+                         const match = label.match(/(\d+\.?\d*x)/); // Look for a number followed by 'x'
                          let shortLabel = "";
                          if (match && match[1]) {
-                             shortLabel = match[1].replace(' health', '').replace(/\./g, '_') + ' HP';
+                             shortLabel = match[1].replace(/\./g, '_') + ' HP';
                          } else {
-                              shortLabel = label.replace(' health', '').replace(/\./g, '_').replace(/HP.*$/, 'HP').trim(); // Fallback
+                             // Fallback for labels without 'x', e.g., "Epic (1.3x health)"
+                             const parenMatch = label.match(/\((.*?)\)/);
+                             if (parenMatch && parenMatch[1]) {
+                                 shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' HP';
+                             } else {
+                                 shortLabel = label; // Last resort fallback
+                             }
                          }
                          groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToFormGroup = true;
@@ -603,7 +627,7 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                          if (optionGroup) {
                              const selectedChoice = optionGroup.choices.find(choice => choice.value === selectedOption.value);
                              if (selectedChoice && selectedChoice.shortLabel !== undefined) { // Check for undefined to allow empty string
-                                 if (optionGroup.label === "Extra Raptors") {
+                                 if (optionGroup.label === "Extras") {
                                      extraRaptorsPart = selectedChoice.shortLabel;
                                  } else if (optionGroup.label === "Raptor Health") {
                                      // Add Raptor Health part
@@ -616,7 +640,7 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                          }
                     } else {
                          // Handle the "None" option for Extra Raptors specifically
-                         if (element.dataset.optionType === "Extra Raptors") {
+                         if (element.dataset.optionType === "Extras") {
                              extraRaptorsPart = ""; // Ensure it's empty if "None" is selected
                          }
                          // For other selects, if "None" or empty is selected, clear their respective parts
@@ -657,7 +681,7 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
 
             renameCommand += `[No Mex]`; // Assuming [No Mex] is always included
 
-            // --- CORRECTED Splitting logic ---
+            // --- Splitting logic adjusted to prioritize rename in section 1 if it fits ---
             let section1Commands = [];
             let section2Commands = [];
             let currentLengthSection1 = 0;
@@ -665,8 +689,9 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
             // Iterate through core commands first
             for (let i = 0; i < coreCommands.length; i++) {
                 const command = coreCommands[i];
-                // Check if adding this command will exceed the limit
-                if (currentLengthSection1 + command.length + 1 <= MAX_SECTION_LENGTH) {
+                // Check if adding this command AND the rename command (plus separators) will exceed the limit
+                // This is the key change to prioritize rename in section 1
+                if (currentLengthSection1 + command.length + 1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
                     section1Commands.push(command);
                     currentLengthSection1 += command.length + 1;
                 } else {
@@ -675,14 +700,10 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
             }
 
             // After all other commands are placed, add the rename command
-            // If there are any commands in Section 2, the rename command must also go to Section 2.
-            // Otherwise, check if it fits in Section 1.
-            if (section2Commands.length > 0) {
-                section2Commands.push(renameCommand);
-            } else if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
+            // If it fits in section 1, add it there. Otherwise, add it to section 2.
+            if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
                 section1Commands.push(renameCommand);
             } else {
-                // This case happens if section 1 is almost full and section 2 is empty.
                 section2Commands.push(renameCommand);
             }
 
@@ -773,7 +794,7 @@ $welcome-message Settings made with Config Generator https://rcorex.github.io/nu
                         event.target.textContent = 'Copied!';
                         setTimeout(() => {
                             // Revert button text, stripping "Copied!" and re-adding "Section X"
-                            event.target.textContent = `Copy ${targetId.replace('command-output-','Section ').trim()}`;
+                            event.target.textContent = `Copy ${targetId.replace('command-output-','Part ').trim()}`;
                         }, 2000);
                     })
                     .catch(err => {
