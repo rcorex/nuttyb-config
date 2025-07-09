@@ -23,7 +23,7 @@ Here are some important links related to NuttyB Raptors and Beyond All Reason.
 
 ## Sources
 
-*   **[NuttyB Configurator Github](https://rcorex.github.io/nuttyb-config/)**
+*   **[NuttyB Configurator Github](https://github.com/rcorex/nuttyb-config)**
     *   The source code repository for this configurator.
 
 *   **[NuttyB Tweaks Github](https://github.com/Backbash/NuttyB-Raptors)**
