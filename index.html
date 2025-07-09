@@ -104,13 +104,6 @@
             background-color: #333; /* Adds a subtle hover effect to the whole option */
         }
         
-        /* NEW: Flexbox layout for select/dropdown labels to ensure vertical alignment */
-        .select-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         /* Style for Checkboxes */
         input[type="checkbox"] {
             accent-color: #66bb6a; /* This makes the CHECKED box bright green */
@@ -150,11 +143,15 @@
         select {
             box-sizing: border-box;
             margin-left: 5px;
-            background-color: #4a4a4a; /* Lighter background for more contrast */
+            background-color: #4a4a4a;
             color: #f0f0f0;
-            border: 1px solid #777; /* Brighter border */
+            border: 1px solid #777;
             border-radius: 4px;
-            padding: 6px;
+            /* --- UPDATED: Key changes for height alignment --- */
+            padding: 2px 6px; /* Reduced vertical padding */
+            font-size: 0.9em; /* Slightly smaller font to fit better */
+            vertical-align: middle; /* Aligns with the checkbox and text */
+            /* --- End of updates --- */
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
@@ -818,9 +815,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                     }
 
                 } else if (optionGroup.type === 'select') {
-                    // UPDATED: Use Flexbox for alignment
-                    label.classList.add('select-label');
-
+                    // UPDATED: Reverted to the simpler version
                     inputElement = document.createElement('select');
                     inputElement.dataset.optionType = optionGroup.label;
 
@@ -833,10 +828,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
                         inputElement.appendChild(optionElement);
                     });
 
-                    const labelText = document.createElement('span');
-                    labelText.textContent = optionGroup.label + ': ';
-
-                    label.appendChild(labelText);
+                    label.textContent = optionGroup.label + ': ';
                     label.appendChild(inputElement);
 
                     inputElement.addEventListener('change', updateOutput);
