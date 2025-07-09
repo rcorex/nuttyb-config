@@ -85,28 +85,48 @@
             min-width: 250px;
         }
 
+        /* ---- NEW: High-Visibility Form Controls ---- */
         #left-column label,
         #right-column label {
             display: block;
             margin-bottom: 8px;
             cursor: pointer;
+            padding: 3px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
         }
 
-         #left-column label input[type="checkbox"],
-         #right-column label input[type="checkbox"] {
-             margin-right: 5px;
-         }
+        #left-column label:hover,
+        #right-column label:hover {
+            background-color: #333; /* Adds a subtle hover effect to the whole option */
+        }
 
-         #left-column label select,
-         #right-column label select {
-             box-sizing: border-box;
-             margin-left: 0;
-             background-color: #333;
-             color: #e0e0e0;
-             border: 1px solid #555;
-             border-radius: 4px;
-             padding: 5px;
-         }
+        /* Style for Checkboxes */
+        input[type="checkbox"] {
+            accent-color: #66bb6a; /* This makes the CHECKED box bright green */
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        /* Style for Dropdowns (Selects) */
+        select {
+            box-sizing: border-box;
+            margin-left: 5px;
+            background-color: #4a4a4a; /* Lighter background for more contrast */
+            color: #f0f0f0;
+            border: 1px solid #777; /* Brighter border */
+            border-radius: 4px;
+            padding: 6px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        select:focus {
+            border-color: #66bb6a; /* Green border on focus */
+            box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.4); /* Green glow on focus */
+            outline: none;
+        }
 
         .command-output-section {
             margin-bottom: 15px;
