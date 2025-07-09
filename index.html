@@ -18,13 +18,46 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px; /* Slightly wider for the table */
             margin: 0 auto;
             background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .tab-button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            border-bottom: 2px solid transparent;
+            transition: border-bottom 0.3s ease;
+            font-size: 1em;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #5cb85c;
+            font-weight: bold;
+            color: #5cb85c;
+        }
+
+        .tab-content {
+            display: none; /* Hide tab content by default */
+            padding-top: 15px;
+        }
+
+        .tab-content.active {
+            display: block; /* Show active tab content */
+        }
+
 
         .settings-container, .output-container {
             margin-bottom: 20px;
@@ -53,6 +86,7 @@
             font-family: monospace;
             white-space: pre-wrap; /* Wrap long lines */
             word-wrap: break-word; /* Break words if necessary */
+            resize: vertical; /* Allow vertical resizing */
         }
 
         #copy-button {
@@ -75,6 +109,35 @@
         #copy-button:active {
             background-color: #398439;
         }
+
+        /* Data Table Styles */
+        #data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #data-table th, #data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top; /* Align content to top */
+        }
+
+        #data-table th {
+            background-color: #f2f2f2;
+        }
+
+        #data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #data-table td pre {
+            margin: 0;
+            padding: 0;
+            white-space: pre-wrap; /* Wrap long lines in pre */
+            word-wrap: break-word; /* Break words in pre */
+        }
     </style>
 </head>
 <body>
@@ -82,19 +145,41 @@
     <div class="container">
         <h1>NuttyB Raptors Settings Generator</h1>
 
-        <p>Select your desired settings and copy the generated text into the lobby.</p>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="config">Configuration</button>
+            <button class="tab-button" data-tab="data">Data Table</button>
+        </div>
 
-        <div class="settings-container">
-            <h2>Game Options</h2>
-            <div id="options-form">
-                <!-- Options will be rendered here by JavaScript -->
+        <div id="config-tab" class="tab-content active">
+             <p>Select your desired settings and copy the generated text into the lobby.</p>
+            <div class="settings-container">
+                <h2>Game Options</h2>
+                <div id="options-form">
+                    <!-- Options will be rendered here by JavaScript -->
+                </div>
+            </div>
+
+            <div class="output-container">
+                <h2>Generated Commands</h2>
+                <textarea id="command-output" rows="20" readonly></textarea>
+                <button id="copy-button">Copy Commands</button>
             </div>
         </div>
 
-        <div class="output-container">
-            <h2>Generated Commands</h2>
-            <textarea id="command-output" rows="20" readonly></textarea>
-            <button id="copy-button">Copy Commands</button>
+        <div id="data-tab" class="tab-content">
+            <h2>Configuration Data</h2>
+            <p>This table shows the raw command blocks associated with each option.</p>
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Option Label</th>
+                        <th>Command Blocks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Table rows will be generated here by JavaScript -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -175,7 +260,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 type: "checkbox",
                 commandBlocks: [
                     "!bset tweakunits1 LS1OdXR0eUIgdjEuNTIgTGVnaW9uIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2xlZ2NvbT17ZW5lcmd5bWFrZT01MCxtZXRhbG1ha2U9NSxoZWFsdGg9NjAwMCxhdXRvaGVhbD00MCxidWlsZG9wdGlvbnM9e1szMl09J2Nvcm5lY3JvJyxbMzNdPSdsZWdkdGwnLFszNF09J2xlZ2R0ZicsWzM1XT0nbGVnZHRyJyxbMzZdPSdsZWdqYW0nfSxjdXN0b21wYXJhbXM9e2V2b2x1dGlvbl9hbm5vdW5jZW1lbnQ9J0xlZ2lvbiBjb21tYW5kZXJzIGhhdmUgdXBncmFkZWQgdG8gbGV2ZWwgMicsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nbGVnY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LHdlYXBvbmRlZnM9e2xlZ2NvbWxhc2VyPXtjb3JldGhpY2tuZXNzPTAuMjUsZHVyYXRpb249MC4wOSxuYW1lPSdMaWdodCBjbG9zZS1xdWFydGVycyBnMmcvZzJhIGxhc2VyJyxyYW5nZT0zNjAscmVsb2FkdGltZT0wLjIwLHJnYmNvbG9yPScwIDIgMScsc291bmRoaXRkcnk9Jycsc291bmRoaXR3ZXQ9J3NpenpsZScsc291bmRzdGFydD0nbGFzcmNydzEnLHNvdW5kdHJpZ2dlcj10cnVlLHNwcmF5YW5nbGU9NzAwLHRoaWNrbmVzcz02LHRleHR1cmUxPSdzaG90Jyx0ZXh0dXJlMj0nZW1wdHknLHdlYXBvbnR5cGU9J0xhc2VyQ2Fubm9uJyx3ZWFwb252ZWxvY2l0eT0yMTAwLGRhbWFnZT17ZGVmYXVsdD0yNTB9fSxzaG90Z3VuPXthcmVhb2ZlZmZlY3Q9NjAsZW5lcmd5cGVyc2hvdD0wLGF2b2lkZmVhdHVyZT1mYWxzZSxjcmF0ZXJib29zdD0wLGNyYXRlcm11bHQ9MCxjYW1lcmFTaGFrZT0wLGVkZ2VlZmZlY3RpdmVuZXNzPTAuNjUsZXhwbG9zaW9uZ2VuZXJhdG9yPSdjdXN0b206Z2VuZXJpY3NoZWxsZXhwbG9zaW9uLXNtYWxsJyxpbXB1bHNlYm9vc3Q9MC4yLGltcHVsc2VmYWN0b3I9MC4yLGludGVuc2l0eT0zLG5hbWU9JzYgR2F1Z2UgU2hvdGd1bicsbm9zZWxmZGFtYWdlPXRydWUscHJlZGljdGJvb3N0PTEscHJvamVjdGlsZXM9NixyYW5nZT0zMjAscmVsb2FkdGltZT0yLHJnYmNvbG9yPScxIDAuNzUgMC4yNScsc2l6ZT0yLHNvdW5kaGl0PSd4cGxvbWVkMnhzJyxzb3VuZGhpdHdldD0nc3Bsc21lZCcsc291bmRzdGFydD0na3JvZ2dpZTJ4cycsc291bmRzdGFydHZvbHVtZT0xMixzcHJheWFuZ2xlPTIwMDAsdHVycmV0PXRydWUsY29tbWFuZGZpcmU9dHJ1ZSx3ZWFwb250aW1lcj0xLHdlYXBvbnR5cGU9J0Nhbm5vbicsd2VhcG9udmVsb2NpdHk9NjAwLHN0b2NrcGlsZT10cnVlLHN0b2NrcGlsZXRpbWU9NSxjdXN0b21wYXJhbXM9e3N0b2NrcGlsZWxpbWl0PTEwfSxkYW1hZ2U9e2RlZmF1bHQ9MTgwMCxjb21tYW5kZXJzPTB9fX0sd2VhcG9ucz17WzNdPXtkZWY9J3Nob3RndW4nLG9ubHl0YXJnZXRjYXRlZ29yeT0nU1VSRkFDRSd9fX0sbGVnY29tbHZsMj17ZW5lcmd5bWFrZT0xNTAsbWV0YWxtYWtlPTE1LHNwZWVkPTU3LjUsYXV0b2hlYWw9MTAwLGhlYWx0aD02NzAwLGN1c3RvbXBhcmFtcz17Y29tYmF0cmFkaXVzPTAsZXZvbHV0aW9uX3RpbWVyPTYwMCxwYXJhdHJvb3Blcj10cnVlLGZhbGxfZGFtYWdlX211bHRpcGxpZXI9MH0sYnVpbGRvcHRpb25zPXtbMV09J2Nvcm5lY3JvJyxbMl09J2xlZ2FkdnNvbCcsWzEzXT0nY29yaGxsdCcsWzI2XT0nbGVnZ2VvJyxbMjcdPSdsZWduYW5vdGMnLFsyOF09J2xlZ2phbScsWzI5XT0nbGVnZHRmJyxbMzBdPSdsZWdtZycsWzMxXT0nbGVncmFkJyxbMzJdPSdsZWdkdGwnLFszM109J2xlZ3R0cicsWzM0XT0nbGVncmhhcHNpcycsWzM1XT0nbGVnd2luJ30sd2VhcG9uZGVmcz17bGVnY29tbGFzZXI9e2FjY3VyYWN5PTUwLGFyZWFvZmVmZmVjdD02MCxhdm9pZGZyaWVuZGx5PWZhbHNlLGF2b2lkZmVhdHVyZT1mYWxzZSxj",
-                    "!bset tweakunits2 LS1OdXR0eUIgdjEuNTIgQXJtYWRhIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdBcm0gQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nYXJtY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGVuZXJneW1ha2U9MTAwLG1ldGFsbWFrZT0xMCxhdXRvaGVhbD01NSxoZWFsdGg9NDUwMCxzcGVlZD00MSxjYW5yZXN1cnJlY3Q9dHJ1ZSxidWlsZG9wdGlvbnM9eydhcm1zb2xhcicsJ2FybXdpbicsJ2FybW1zdG9yJywnYXJtZXN0b3InLCdhcm1tZXgnLCdhcm1tYWtyJywnYXJtbGFiJywnYXJtdnAnLCdhcm1hcCcsJ2FybWV5ZXMnLCdhcm1yYWQnLCdhcm1kcmFnJywnYXJtbGx0JywnYXJtcmwnLCdhcm1kbCcsJ2FybXRpZGUnLCdhcm11d21zJywnYXJtdXdlcycsJ2FybXV3bWV4JywnYXJtZm1rcicsJ2FybXN5JywnYXJtZmRyYWcnLCdhcm10bCcsJ2FybWZydCcsJ2FybWZyYWQnLCdhcm1ocCcsJ2FybWZocCcsJ2FybWdlbycsJ2FybWFtZXgnLCdhcm1ocCcsJ2FybWJlYW1lcicsJ2FybWphbXQnLCdhcm1zeScsJ2FybXJlY3RyJywnYXJtY2xhdyd9LHdlYXBvbmRlZnM9e2FybWNvbWxhc2VyPXtyYW5nZT0zMzAscmdiY29sb3I9JzAuNyAxIDEnLHNvdW5kc3RhcnQ9J2xhc3JmaXIxJyxkYW1hZ2U9e2RlZmF1bHQ9MTc1fX0sb2xkX2FybXNuaXBlX3dlYXBvbj17YXJlYW9mZWZmZWN0PTMyLGF2b2lkZmVhdHVyZT10cnVlLGF2b2lkZnJpZW5kbHk9dHJ1ZSxjb2xsaWRlZmVhdHVyZT10cnVlLGNvbGxpZGVmcmllbmRseT1mYWxzZSxj",
+                    "!bset tweakunits2 LS1OdXR0eUIgdjEuNTIgQXJtYWRhIENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2FybWNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdBcm0gQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nYXJtY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGVuZXJneW1ha2U9MTAwLG1ldGFsbWFrZT0xMCxhdXRvaGVhbD01NSxoZWFsdGg9NDUwMCxzcGVlZD00MSxjYW5yZXN1cnJlY3Q9dHJ1ZSxidWlsZG9wdGlvbnM9eydhcm1zb2xhcicsJ2FybXdpbicsJ2FybW1zdG9yJywnYXJtZXN0b3InLCdhcm1tZXgnLCdhcm1tYWtyJywnYXJtbGFiJywnYXJtdnAnLCdhcm1hcCcsJ2FybWV5ZXMnLCdhcm1yYWQnLCdhcm1kcmFnJywnYXJtbGx0JywnYXJtcmwnLCdhcm1kbCcsJ2FybXRpZGUnLCdhcm11d21zJywnYXJtdXdlcycsJ2FybXV3bWV4JywnYXJtZm1rcicsJ2FybXN5JywnYXJtZmRyYWcnLCdhcm10bCcsJ2FybWZydCcsJ2FybWZyYWQnLCdhcm1ocCcsJ2FybWZocCcsJ2FybWFkd",
                     "!bset tweakunits3 LS1OdXR0eUIgdjEuNTIgQ29ydGV4IENvbQ0KLS0gQXV0aG9yczogQ2hyaXNweU51dCwgQmFja0Jhc2gNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0Ke2NvcmNvbT17Y3VzdG9tcGFyYW1zPXtldm9sdXRpb25fYW5ub3VuY2VtZW50PSdDb3IgQ29tbWFuZGVycyB1cGdyYWRlZCcsZXZvbHV0aW9uX2Fubm91bmNlbWVudF9zaXplPTE4LjUsZXZvbHV0aW9uX3RhcmdldD0nY29yY29tbHZsMicsZXZvbHV0aW9uX2NvbmRpdGlvbj0ndGltZXInLGV2b2x1dGlvbl90aW1lcj00MjAsY29tYmF0cmFkaXVzPTAscGFyYXRyb29wZXI9dHJ1ZSxmYWxsX2RhbWFnZV9tdWx0aXBsaWVyPTB9LGF1dG9oZWFsPTgwLHNwZWVkPTQ1LGVuZXJneW1ha2U9NzUsbWV0YWxtYWtlPTYs",
                 ]
             },
@@ -204,7 +289,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 label: "Raptor Health: Epic (1.3x health)",
                 type: "checkbox",
                 commandBlocks: [
-                    "!bset tweakdefs2 LS1OdXR0eUIgdjEuNTIgMS4zWCBIUA0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdUFBTWhCcmhpWmRUaWhWZlNDd1B6YmJaV0RMQ3RYV1AyM0NVMGtvDQpmb3IgYSxiIGluIHBhaXJzKFVuaXREZWZzKWRvIGlmIHN0cmlu",
+                    "!bset tweakdefs2 LS1OdXR0eUIgdjEuNTIgMS4zWCBIUA0KLS0gZG9jcy5nb29nbGUuY29tL3NwcmVhZHNoZWV0cy9kLzFRU1ZzdVB",
                     "!bset tweakdefs1 LS1OdXR0eUIgdjEuNTIgMS4zWCBRSFANCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KZm9yIGEsYiBpbiBwYWlycyhVbml0RGVmcylkbyBpZiBhOm1hdGNoKCdecmFwdG9yX3F1ZWVuXy4qJyl0aGVuIGIucmVwYWlyYWJsZT1mYWxzZTtiLmNhbmJlaGVhbGVkPWZhbHNlO2IuYnVpbGR0aW1lPTk5OTk5OTk7Yi5hdXRvaGVhbD0yO2IuY2FuU2VsZlJlcGFpcj1mYWxzZTtiLmhlYWx0aD1iLmhlYWx0aCoxLjMgZW5kIGVuZA",
                 ]
             },
@@ -226,7 +311,7 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 label: "Mini Bosses",
                 type: "checkbox",
                 commandBlocks: [
-                    "!bset tweakdefs4 LS1NaW5pLUJvc3NlcyB2Mg0KLS0gQXV0aG9yczogUkNvcmUNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KbG9jYWwgYSxiLGMsZCxlLGY9VW5pdERlZnMgb3J7fSx0YWJsZS5tZXJnZSx0YWJsZS5jb3B5LCdyYXB0b3JfbWF0cmlhcmNoX2Jhc2ljJywnY3VzdG9tZnVzaW9uZXhwbG8nLFNwcmluZztsb2NhbCBnLGg9MS4wLDEuMDtkbyBsb2NhbCBpPWYuR2V0TW9kT3B0aW9ucygpb3J7fWxvY2FsIGZ1bmN0aW9uIGooayxsKWxvY2FsIG09aVtrXWlmIG0gYW5kIG0",
+                    "!bset tweakdefs4 LS1NaW5pLUJvc3NlcyB2Mg0KLS0gQXV0aG9yczogUkNvcmUNCi0tIGRvY3MuZ29vZ2xlLmNvbS9zcHJlYWRzaGVldHMvZC8xUVNWc3VBQU1oQnJoaVpkVGloVmZTQ3dQemJiWldETEN0WFdQMjNDVTBrbw0KbG9jYWwgYSxiLGMsZCxlLGY9VW5pdERlZnMgb3J7fSx0YWJsZS5tZXJnZSx0YWJsZS5jb3B5LCdyYXB0b3JfbWF0cmlhcmNoX2Jhc2ljJywnY3VzdG9tZnVzaW9uZXhwbG8nLFNwcmluZztsb2NhbCBnLGg9MS4wLDEuMDtkbyBsb2NhbCBpPWYuR2V0TW9kT3B0aW9ucygpb3J7fWxvY2FsIGp",
                 ]
             },
              {
@@ -249,6 +334,10 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
         const optionsForm = document.getElementById('options-form');
         const commandOutput = document.getElementById('command-output');
         const copyButton = document.getElementById('copy-button');
+        const dataTableBody = document.querySelector('#data-table tbody');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
 
         // 4. Function to generate the command string
         function generateCommands() {
@@ -324,8 +413,70 @@ $rename [Mod] NuttyB Raptors [Mini Bosses][No Rush][1_3x HP 1_3x QHP][No Mex]
                 });
         });
 
+        // 7. Function to populate the data table
+        function populateDataTable() {
+            dataTableBody.innerHTML = ''; // Clear existing rows
+
+            optionsConfig.forEach(option => {
+                const row = dataTableBody.insertRow();
+
+                const labelCell = row.insertCell();
+                labelCell.textContent = option.label;
+
+                const commandsCell = row.insertCell();
+                const pre = document.createElement('pre');
+                pre.textContent = option.commandBlocks.join('\n\n'); // Join multiple blocks with double newline
+                commandsCell.appendChild(pre);
+            });
+
+             // Add the base commands to the table as well
+             const baseRow = dataTableBody.insertRow();
+             const baseLabelCell = baseRow.insertCell();
+             baseLabelCell.textContent = "Base Commands (Always Included)";
+             const baseCommandsCell = baseRow.insertCell();
+             const basePre = document.createElement('pre');
+             basePre.textContent = baseCommands.trim();
+             baseCommandsCell.appendChild(basePre);
+
+             // Add the final tweakunits6 command block to the table
+             const finalRow = dataTableBody.insertRow();
+             const finalLabelCell = finalRow.insertCell();
+             finalLabelCell.textContent = "LRPC Rebalance (Always Included)";
+             const finalCommandsCell = finalRow.insertCell();
+             const finalPre = document.createElement('pre');
+             finalPre.textContent = finalTweakUnits6.trim();
+             finalCommandsCell.appendChild(finalPre);
+        }
+
+        // 8. Function to handle tab switching
+        function switchTab(event) {
+            const targetTabId = event.target.dataset.tab + '-tab';
+
+            // Remove 'active' class from all buttons and content
+            tabButtons.forEach(button => button.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Add 'active' class to the clicked button and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(targetTabId).classList.add('active');
+
+            // If switching to the data tab, populate the table (or ensure it's populated)
+            if (event.target.dataset.tab === 'data') {
+                populateDataTable();
+            }
+        }
+
+        // Add event listeners to tab buttons
+        tabButtons.forEach(button => {
+            button.addEventListener('click', switchTab);
+        });
+
+
         // Initialize the form and output when the page loads
-        document.addEventListener('DOMContentLoaded', renderOptions);
+        document.addEventListener('DOMContentLoaded', () => {
+            renderOptions();
+            // populateDataTable(); // Populate table on load, or only when tab is clicked
+        });
 
     </script>
 </body>
