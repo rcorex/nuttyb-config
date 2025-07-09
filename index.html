@@ -17,22 +17,6 @@
             color: #555;
         }
 
-        /* Added style for the new subtitle */
-        .subtitle {
-            margin-top: -10px; /* Adjust as needed to pull it closer to the title */
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            color: #666;
-        }
-        .subtitle a {
-            color: #5cb85c;
-            text-decoration: none;
-        }
-        .subtitle a:hover {
-            text-decoration: underline;
-        }
-
-
         .container {
             max-width: 950px; /* Slightly wider for the table */
             margin: 0 auto;
@@ -83,33 +67,17 @@
             background-color: #f9f9f9;
         }
 
-        /* Two-column layout for options */
-        #options-form-columns {
-            display: flex;
-            flex-wrap: wrap; /* Allow columns to wrap on smaller screens */
-            gap: 20px; /* Space between columns */
-        }
-
-        .options-column {
-            flex: 1 1 45%; /* Grow, shrink, initial basis (approx 50% minus gap) */
-            min-width: 250px; /* Ensure columns don't get too narrow */
-        }
-
-        /* Ensure each option label is a block and has enough margin */
-        #left-column label,
-        #right-column label {
-            display: block; /* Already set, but good to re-confirm */
-            margin-bottom: 12px; /* Increased margin for better separation */
+        #options-form label {
+            display: block;
+            margin-bottom: 8px;
             cursor: pointer;
         }
 
-         #left-column label input[type="checkbox"],
-         #right-column label input[type="checkbox"] {
+         #options-form label input[type="checkbox"] {
              margin-right: 5px;
          }
 
-         #left-column label select,
-         #right-column label select {
+         #options-form select {
              margin-left: 5px; /* Indent dropdowns slightly */
          }
 
@@ -215,7 +183,7 @@
 
     <div class="container">
         <h1>NuttyB Raptors Settings Generator</h1>
-        <p class="subtitle">Inspired by <a href="https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit" target="_blank">The Paste Machine</a></p>
+        <p>Inspired by <a href="https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit" target="_blank">The Paste Machine</a>.</p>
 
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
@@ -436,7 +404,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
                 tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
-                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }] }, // Add "None" option with empty shortLabel
+                extraRaptors: { label: "Extra Raptors", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, // Add "None" option with empty shortLabel
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } // This is a virtual group for sorting, actual items will be separate
             };
 
@@ -574,7 +542,7 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                              }
                          });
                      } else {
-                         // Default to the first option if no specific default is set (e.g., "None")
+                         // Otherwise, ensure the first option (which is "None" for Extra Raptors) is selected by default
                          group.choices[0].selected = true;
                      }
                  }
@@ -688,10 +656,10 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             }
 
             // After all other commands are placed, add the rename command
-            // If it fits in section1 (with its current content)
+            // If it fits in section 1, add it there. Otherwise, add it to section 2.
             if (currentLengthSection1 + renameCommand.length + 1 <= MAX_SECTION_LENGTH) {
                 section1Commands.push(renameCommand);
-            } else { // Otherwise, it goes to section 2
+            } else {
                 section2Commands.push(renameCommand);
             }
 
@@ -710,7 +678,8 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
             rightColumn.innerHTML = '';
 
             // Add initial loading message (if desired, or remove if fast enough)
-            leftColumn.innerHTML = '<p>Loading configuration data...</p>'; // Restore loading message to left column
+            // leftColumn.innerHTML = '<p>Loading configuration data...</p>';
+
 
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -731,26 +700,24 @@ $welcome-message Lobby settings made with the Paste Machine https://docs.google.
                         inputElement.addEventListener('change', updateOutput);
                     }
 
-
                 } else if (optionGroup.type === 'select') {
                     inputElement = document.createElement('select'); // It's a select, not an input
                     inputElement.dataset.optionType = optionGroup.label; // Identify the group
 
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = choice.value; // Store the command block as the value
-                        optionElement.textContent = choice.label; // Display the label to the user
-                        optionElement.selected = choice.selected || false; // Set selected state
-                        // Store shortLabel on the option element for easy access in generateCommands
+                        optionElement.value = choice.value;
+                        optionElement.textContent = choice.label;
+                        optionElement.selected = choice.selected || false;
                         optionElement.dataset.shortLabel = choice.shortLabel || "";
-                        select.appendChild(optionElement);
+                        inputElement.appendChild(optionElement); // Append option to select
                     });
 
-                    label.appendChild(select);
-                    optionsForm.appendChild(label);
+                    label.textContent = optionGroup.label + ': '; // Label for the dropdown group
+                    label.appendChild(inputElement); // Append select to label
 
                     // Add event listener
-                    select.addEventListener('change', updateOutput);
+                    inputElement.addEventListener('change', updateOutput);
                 }
                 // Determine which column to append to
                 if (optionGroup.column === 'right') {
