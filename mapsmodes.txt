@@ -21,7 +21,7 @@ Raptor Crater Inverted
 ---
 Special Hotstepper
 !map Special Hotstepper
-!addbox 83 82 116 117 2
+!addbox 83 81 118 116 2
 !clearbox 1
 !map_lavatiderhythm disabled
 !teamsize 16
