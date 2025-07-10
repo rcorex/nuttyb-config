@@ -276,6 +276,21 @@
         .action-button:hover {
             background-color: #666;
         }
+        #maps-modes-form {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+        #maps-modes-form label {
+            text-align: right;
+            padding-right: 10px;
+        }
+        #maps-modes-form select {
+            width: 100%;
+            max-width: 400px;
+            margin-left: 0;
+        }
     </style>
 </head>
 <body>
@@ -302,6 +317,13 @@
                 <div class="action-buttons-container">
                     <button id="reset-default-btn" class="action-button">Default</button>
                     <button id="reset-none-btn" class="action-button">None</button>
+                </div>
+            </div>
+
+            <div id="maps-modes-container" class="settings-container" style="display: none;">
+                <h2>Maps and Modes</h2>
+                <div id="maps-modes-form">
+                    <!-- JS will populate this -->
                 </div>
             </div>
 
@@ -365,7 +387,7 @@
             </table>
 
             <h2 style="margin-top: 30px;">Maps and Modes</h2>
-            <p>This table shows the available maps and modes</p>
+            <p>This table shows the available maps and modes from the configuration file.</p>
             <table id="maps-modes-table">
                 <thead>
                     <tr>
@@ -597,8 +619,8 @@
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
                 let commands = [];
-                if (el.tagName === 'SELECT' && el.value) commands.push(el.value);
-                else if (el.type === 'checkbox' && el.checked) commands = JSON.parse(el.dataset.commandBlocks);
+                if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
+                else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
@@ -745,6 +767,26 @@
         }
         
         function generateCommands() {
+            // Get commands from Maps and Modes dropdowns
+            const presetCommands = [];
+            const mapsSelect = document.getElementById('maps-select');
+            const modesSelect = document.getElementById('modes-select');
+
+            if (mapsSelect && mapsSelect.value !== '') {
+                const selectedMap = gameConfigs.maps[mapsSelect.value];
+                if (selectedMap && selectedMap.commands) {
+                    presetCommands.push(...selectedMap.commands);
+                }
+            }
+
+            if (modesSelect && modesSelect.value !== '') {
+                const selectedMode = gameConfigs.modes[modesSelect.value];
+                if (selectedMode && selectedMode.commands) {
+                    presetCommands.push(...selectedMode.commands);
+                }
+            }
+
+            // Get commands from standard tweak options
             const standardCommands = [];
             const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
@@ -762,6 +804,8 @@
                     commands.forEach(cmd => { if (cmd) standardCommands.push(cmd.trim()); });
                 }
             });
+
+            // Process standard and custom tweak commands
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
@@ -779,7 +823,15 @@
                     targetSet.add(availableSlot);
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-            const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
+
+            // Assemble all commands in the correct order
+            const finalCommands = [
+                baseCommandsText.trim(),
+                ...presetCommands,
+                ...standardCommands,
+                ...customCommands
+            ];
+            
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors `;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=renameParts.join('');renameCommand+=`[No Mex]`;
@@ -789,6 +841,8 @@
             let currentLength = 0;
             const allCommands = [...finalCommands, renameCommand];
             for (const cmd of allCommands) {
+                // Filter out empty strings before processing
+                if (!cmd) continue;
                 if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
                     sections.push(currentSection.join('\n'));
                     currentSection = [cmd];
@@ -803,6 +857,50 @@
         }
 
         function renderOptions() {
+            // Render Maps and Modes dropdowns first
+            const mapsModesContainer = document.getElementById('maps-modes-container');
+            const mapsModesForm = document.getElementById('maps-modes-form');
+
+            if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
+                mapsModesContainer.style.display = 'block';
+                mapsModesForm.innerHTML = ''; 
+
+                // Create and append Maps dropdown
+                const mapsLabel = document.createElement('label');
+                mapsLabel.htmlFor = 'maps-select';
+                mapsLabel.textContent = 'Maps:';
+                const mapsSelect = document.createElement('select');
+                mapsSelect.id = 'maps-select';
+                gameConfigs.maps.forEach((map, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = map.name;
+                    mapsSelect.appendChild(option);
+                });
+                mapsSelect.addEventListener('change', updateOutput);
+                mapsModesForm.appendChild(mapsLabel);
+                mapsModesForm.appendChild(mapsSelect);
+
+                // Create and append Modes dropdown
+                const modesLabel = document.createElement('label');
+                modesLabel.htmlFor = 'modes-select';
+                modesLabel.textContent = 'Modes:';
+                const modesSelect = document.createElement('select');
+                modesSelect.id = 'modes-select';
+                gameConfigs.modes.forEach((mode, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = mode.name;
+                    modesSelect.appendChild(option);
+                });
+                modesSelect.addEventListener('change', updateOutput);
+                mapsModesForm.appendChild(modesLabel);
+                mapsModesForm.appendChild(modesSelect);
+            } else {
+                mapsModesContainer.style.display = 'none';
+            }
+
+            // Render standard tweak options
             leftColumn.innerHTML = ''; rightColumn.innerHTML = '';
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -924,6 +1022,10 @@
                 if (el.type === 'checkbox') el.checked = false;
                 else if (el.tagName === 'SELECT') el.selectedIndex = 0;
             });
+            const mapsSelect = document.getElementById('maps-select');
+            if (mapsSelect) mapsSelect.selectedIndex = 0;
+            const modesSelect = document.getElementById('modes-select');
+            if (modesSelect) modesSelect.selectedIndex = 0;
             updateOutput();
         });
 
@@ -941,6 +1043,10 @@
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
+            const mapsSelect = document.getElementById('maps-select');
+            if (mapsSelect) mapsSelect.selectedIndex = 0;
+            const modesSelect = document.getElementById('modes-select');
+            if (modesSelect) modesSelect.selectedIndex = 0;
             updateOutput();
         });
         
