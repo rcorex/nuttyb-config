@@ -103,8 +103,7 @@
             vertical-align: middle;
         }
         input[type="checkbox"]:disabled { cursor: not-allowed; }
-        .custom-option-label-text.disabled { color: #777; } /* Disabled text color */
-
+        .custom-option-label-text.disabled { color: #777; }
         input[type="checkbox"]:disabled:checked {
             appearance: none; -webkit-appearance: none;
             background-color: #66bb6a;
@@ -257,7 +256,6 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <!-- UPDATED: Text changed -->
                 <p>Copy and paste all parts separately to the lobby</p>
                 
                 <div id="part-1-section" class="command-output-section">
@@ -270,11 +268,31 @@
                     <textarea id="command-output-2" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
                 </div>
-                <!-- NEW: Added Part 3 section -->
                 <div id="part-3-section" class="command-output-section" style="display: none;">
                     <h3>Part 3</h3>
                     <textarea id="command-output-3" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-3">Copy Part 3</button>
+                </div>
+                <!-- NEW: Added parts 4 through 7 -->
+                <div id="part-4-section" class="command-output-section" style="display: none;">
+                    <h3>Part 4</h3>
+                    <textarea id="command-output-4" rows="8" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-4">Copy Part 4</button>
+                </div>
+                <div id="part-5-section" class="command-output-section" style="display: none;">
+                    <h3>Part 5</h3>
+                    <textarea id="command-output-5" rows="8" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-5">Copy Part 5</button>
+                </div>
+                <div id="part-6-section" class="command-output-section" style="display: none;">
+                    <h3>Part 6</h3>
+                    <textarea id="command-output-6" rows="8" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-6">Copy Part 6</button>
+                </div>
+                <div id="part-7-section" class="command-output-section" style="display: none;">
+                    <h3>Part 7</h3>
+                    <textarea id="command-output-7" rows="8" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-7">Copy Part 7</button>
                 </div>
 
                 <div class="lobby-name-output">
@@ -628,19 +646,18 @@
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
             const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
-            
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
             
-            // UPDATED: Use a dynamic function for splitting
+            // UPDATED: Dynamic splitting logic
             const sections = [];
             let currentSection = [];
             let currentLength = 0;
             const allCommands = [...finalCommands, renameCommand];
 
             for (const cmd of allCommands) {
-                if (currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
+                if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
                     sections.push(currentSection.join('\n'));
                     currentSection = [cmd];
                     currentLength = cmd.length;
@@ -688,7 +705,8 @@
             const generatedData = generateCommands();
             lobbyNameDisplay.textContent = generatedData.lobbyName;
 
-            for (let i = 1; i <= 3; i++) {
+            // UPDATED: Loop up to 7 and handle showing/hiding sections
+            for (let i = 1; i <= 7; i++) {
                 const sectionDiv = document.getElementById(`part-${i}-section`);
                 const textArea = document.getElementById(`command-output-${i}`);
                 if (generatedData.sections[i-1]) {
