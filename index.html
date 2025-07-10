@@ -133,7 +133,6 @@
         
         .command-output-section { 
             display: grid;
-            /* CHANGED: Set a fixed width for the first column to prevent layout shifts on button text change */
             grid-template-columns: 130px 1fr;
             gap: 15px;
             align-items: start;
@@ -810,7 +809,7 @@
 
         copyButtons.forEach(button => button.addEventListener('click', event => {
             const targetTextArea = document.getElementById(event.target.dataset.target);
-            targetTextArea.select();
+            // targetTextArea.select(); // REMOVED: This line caused the context menu to appear.
             const originalText = event.target.textContent;
             navigator.clipboard.writeText(targetTextArea.value)
                 .then(() => {
