@@ -15,6 +15,9 @@ Raptor Crater Inverted
 !map Raptor Crater
 !disablemapdamage 0
 !debugcommands invertmap
+!addbox 80 82 115 117 2
+!clearbox 1
+!teamsize 16
 ---
 Special Hotstepper
 !map Special Hotstepper
