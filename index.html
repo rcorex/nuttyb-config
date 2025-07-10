@@ -259,24 +259,27 @@
             background-color: #2c2c2c;
         }
 
+        /* UPDATED: Rebalanced widths */
         #data-table th:first-child,
         #data-table td:first-child {
-            width: 30%;
+            width: 30%; /* Option */
         }
         #data-table th:nth-child(2),
         #data-table td:nth-child(2) {
-            width: 17%;
+            width: 17%; /* Status */
         }
         #data-table th:nth-child(3),
         #data-table td:nth-child(3) {
-            width: 24%;
+            width: 24%; /* Summary */
         }
         #data-table th:last-child,
         #data-table td:last-child {
-            width: 29%;
+            width: 29%; /* Command Blocks */
         }
 
-        /* NEW: Rule to truncate the summary column */
+        /* UPDATED: Apply truncation to the first three columns */
+        #data-table td:first-child,
+        #data-table td:nth-child(2),
         #data-table td:nth-child(3) {
             white-space: nowrap;
             overflow: hidden;
@@ -344,7 +347,7 @@
 
     <div class="container">
         <h1>NuttyB Raptors Configurator</h1>
-
+        
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="data">Data</button>
@@ -858,14 +861,15 @@
 
                 const labelCell = row.insertCell();
                 labelCell.textContent = item.label;
+                labelCell.title = item.label; // ADDED
 
                 const statusCell = row.insertCell();
                 statusCell.textContent = item.status;
+                statusCell.title = item.status; // ADDED
 
                 const summaryCell = row.insertCell();
                 summaryCell.textContent = item.summary;
-                summaryCell.title = item.summary; // Add this line for the hover tooltip
-
+                summaryCell.title = item.summary;
                 
                 const commandsCell = row.insertCell();
                 
