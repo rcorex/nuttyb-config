@@ -203,6 +203,14 @@
             width: 100%; box-sizing: border-box; background-color: #4a4a4a; color: #f0f0f0;
             border: 1px solid #777; border-radius: 4px; padding: 6px; font-family: sans-serif;
         }
+
+        /* NEW: Set a specific width for the text and textarea inputs */
+        #custom-tweak-form input[type="text"], 
+        #custom-tweak-form textarea {
+            width: 80%;
+        }
+        /* NEW: Rule to override the width for the type dropdown */
+
         #custom-tweak-form #custom-option-type {
             width: auto;
             justify-self: start;
@@ -211,6 +219,14 @@
         #custom-tweak-form button {
             grid-column: 2; background-color: #4caf50; cursor: pointer;
             font-weight: bold; transition: background-color 0.3s ease;
+
+            /* NEW: Let the button size itself */
+            width: auto; 
+            /* NEW: Align the smaller button to the left of its grid cell */
+            justify-self: start; 
+        }
+        #custom-tweak-form button:hover { background-color: #66bb6a; }
+
         }
         #custom-tweak-form button:hover { background-color: #66bb6a; }
         /* NEW: Rule for the Save Tweak button */
@@ -218,6 +234,7 @@
             width: auto;
             justify-self: end; /* Aligns to the right */
         }
+
         #slot-warning-messages p {
             color: #aaa;
             text-align: left;
