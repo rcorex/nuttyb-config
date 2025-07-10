@@ -16,7 +16,7 @@ Raptor Crater Inverted
 !disablemapdamage 0
 !debugcommands invertmap
 ---
-Special Hostepper
+Special Hotstepper
 !map Special Hotstepper
 !addbox 80 82 115 117 2
 !clearbox 1
