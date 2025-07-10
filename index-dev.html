@@ -842,42 +842,8 @@
         function renderOptions() {
             leftColumn.innerHTML = ''; 
             rightColumn.innerHTML = '';
-
-            // Render Maps and Modes dropdowns into the left column
-            if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
-                if (gameConfigs.maps.length > 0) {
-                    const mapsLabel = document.createElement('label');
-                    mapsLabel.textContent = 'Maps: ';
-                    const mapsSelect = document.createElement('select');
-                    mapsSelect.id = 'maps-select';
-                    gameConfigs.maps.forEach((map, index) => {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.textContent = map.name;
-                        mapsSelect.appendChild(option);
-                    });
-                    mapsSelect.addEventListener('change', updateOutput);
-                    mapsLabel.appendChild(mapsSelect);
-                    leftColumn.appendChild(mapsLabel);
-                }
-                if (gameConfigs.modes.length > 0) {
-                    const modesLabel = document.createElement('label');
-                    modesLabel.textContent = 'Modes: ';
-                    const modesSelect = document.createElement('select');
-                    modesSelect.id = 'modes-select';
-                    gameConfigs.modes.forEach((mode, index) => {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.textContent = mode.name;
-                        modesSelect.appendChild(option);
-                    });
-                    modesSelect.addEventListener('change', updateOutput);
-                    modesLabel.appendChild(modesSelect);
-                    leftColumn.appendChild(modesLabel);
-                }
-            }
             
-            // Render standard tweak options
+            // Render standard tweak options first
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
                 let inputElement;
@@ -901,6 +867,50 @@
                 if (optionGroup.column === 'right') rightColumn.appendChild(label);
                 else leftColumn.appendChild(label);
             });
+
+            // Now, create and insert Map/Mode dropdowns after "Extras"
+            if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
+                let mapsLabel, modesLabel;
+
+                if (gameConfigs.maps.length > 0) {
+                    mapsLabel = document.createElement('label');
+                    mapsLabel.textContent = 'Map: ';
+                    const mapsSelect = document.createElement('select');
+                    mapsSelect.id = 'maps-select';
+                    gameConfigs.maps.forEach((map, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = map.name;
+                        mapsSelect.appendChild(option);
+                    });
+                    mapsSelect.addEventListener('change', updateOutput);
+                    mapsLabel.appendChild(mapsSelect);
+                }
+                if (gameConfigs.modes.length > 0) {
+                    modesLabel = document.createElement('label');
+                    modesLabel.textContent = 'Mode: ';
+                    const modesSelect = document.createElement('select');
+                    modesSelect.id = 'modes-select';
+                    gameConfigs.modes.forEach((mode, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = mode.name;
+                        modesSelect.appendChild(option);
+                    });
+                    modesSelect.addEventListener('change', updateOutput);
+                    modesLabel.appendChild(modesSelect);
+                }
+
+                const extrasLabel = document.querySelector('select[data-option-type="Extras"]')?.parentElement;
+                if (extrasLabel) {
+                    if (modesLabel) extrasLabel.after(modesLabel);
+                    if (mapsLabel) extrasLabel.after(mapsLabel);
+                } else { // Fallback if "Extras" doesn't exist
+                    if (mapsLabel) leftColumn.appendChild(mapsLabel);
+                    if (modesLabel) leftColumn.appendChild(modesLabel);
+                }
+            }
+
             renderAllCustomComponents();
             updateOutput();
         }
