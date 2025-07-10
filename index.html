@@ -10,32 +10,43 @@
             font-family: sans-serif;
             margin: 20px;
             line-height: 1.6;
-            background-color: #121212;
-            color: #e0e0e0;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
         }
-        h1, h2, h3 {
-            color: #f5f5f5;
-            margin-top: 0px;
-            margin-bottom: 16px;
+
+        h1, h2 {
+            color: #f5f5f5; /* Lighter heading text */
+            margin-top: 0px; /* --- NEW: Reduce space above headings --- */
+            margin-bottom: 16px; /* --- NEW: Standardize space below headings --- */
         }
-        a { color: #4caf50; }
+
+        a {
+            color: #4caf50; /* Green links */
+        }
+
         .container {
             max-width: 950px;
             margin: 0 auto;
-            background: #1e1e1e;
+            background: #1e1e1e; /* Slightly lighter dark for container */
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #333;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
+
+        /* --- NEW, IMPROVED TAB STYLES --- */
+
+        /* The container for the tabs */
         .tabs {
             display: flex;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #333; /* This line is what the active tab will "cover up" */
         }
+
+        /* General style for all tab buttons */
         .tab-button {
             padding: 10px 18px;
             cursor: pointer;
-            background-color: #2c2c2c;
+            background-color: #2c2c2c; /* Background for inactive tabs */
             border: 1px solid #333;
             border-bottom: none;
             border-top-left-radius: 6px;
@@ -43,47 +54,64 @@
             color: #aaa;
             font-size: 1em;
             margin-right: 2px;
-            position: relative;
+            position: relative; /* Needed for positioning tricks */
             transition: background-color 0.2s ease, color 0.2s ease;
         }
+
+        /* Style for inactive tabs on hover */
         .tab-button:not(.active):hover {
             background-color: #3a3a3a;
             color: #e0e0e0;
         }
+
+        /* Style for the ACTIVE tab */
         .tab-button.active {
-            background-color: #1e1e1e;
+            background-color: #1e1e1e; /* Match the main container background */
             color: #f5f5f5;
             font-weight: bold;
+            /* The key trick: pull the tab down to cover the container's bottom border */
             margin-bottom: -1px; 
             border-color: #333;
-            border-bottom-color: #1e1e1e;
-            z-index: 1;
+            border-bottom-color: #1e1e1e; /* Make the bottom border "disappear" */
+            z-index: 1; /* Ensure it renders on top of other elements */
         }
+
+        /* Adjust the content pane to complete the illusion */
         .tab-content {
             display: none;
             background-color: #1e1e1e;
             padding: 20px;
             border: 1px solid #333;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
+            border-top: none; /* The .tabs container provides the top line */
+            border-radius: 0 0 6px 6px; /* Round the bottom corners */
         }
-        .tab-content.active { display: block; }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+
         .settings-container, .output-container {
             margin-bottom: 20px;
             padding: 15px;
             border: 1px solid #444;
             border-radius: 5px;
-            background-color: #2c2c2c;
+            background-color: #2c2c2c; /* Darker section background */
         }
+
+        /* Two-column layout for options */
         #options-form-columns {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
         }
+
         .options-column {
             flex: 1 1 45%;
             min-width: 250px;
         }
+
+        /* ---- NEW: High-Visibility Form Controls ---- */
         #left-column label,
         #right-column label {
             display: block;
@@ -93,141 +121,235 @@
             border-radius: 4px;
             transition: background-color 0.2s ease;
         }
+
         #left-column label:hover,
         #right-column label:hover {
-            background-color: #333;
+            background-color: #333; /* Adds a subtle hover effect to the whole option */
         }
+        
+        /* Style for Checkboxes */
         input[type="checkbox"] {
-            accent-color: #66bb6a;
+            accent-color: #66bb6a; /* This makes the CHECKED box bright green */
             width: 1.2em;
             height: 1.2em;
             margin-right: 8px;
             vertical-align: middle;
         }
+        
+        /* Override default browser styling for the disabled, checked "Main Tweaks" box */
         input[type="checkbox"]:disabled:checked {
-            appearance: none; -webkit-appearance: none;
-            background-color: #66bb6a;
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: #66bb6a; /* Set the background to the desired green */
             border: 1px solid #777;
             border-radius: 3px;
             position: relative;
             cursor: not-allowed;
         }
+
+        /* Add a checkmark since we removed the native appearance */
         input[type="checkbox"]:disabled:checked::after {
-            content: '✓'; display: block; font-size: 1.1em;
-            font-weight: bold; color: #1e1e1e;
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); line-height: 0;
+            content: '✓';
+            display: block;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1e1e1e; /* Dark checkmark for contrast */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 0;
         }
+
+
+        /* Style for Dropdowns (Selects) */
         select {
-            box-sizing: border-box; margin-left: 5px;
-            background-color: #4a4a4a; color: #f0f0f0;
-            border: 1px solid #777; border-radius: 4px;
-            padding: 2px 6px; font-size: 0.9em; vertical-align: middle; 
+            box-sizing: border-box;
+            margin-left: 5px;
+            background-color: #4a4a4a;
+            color: #f0f0f0;
+            border: 1px solid #777;
+            border-radius: 4px;
+            padding: 2px 6px; 
+            font-size: 0.9em; 
+            vertical-align: middle; 
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+
         select:focus {
-            border-color: #66bb6a;
-            box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.4);
+            border-color: #66bb6a; /* Green border on focus */
+            box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.4); /* Green glow on focus */
             outline: none;
         }
-        .command-output-section { margin-bottom: 15px; }
-        .command-output-section h3 { margin-top: 0; margin-bottom: 5px; }
-        .command-output-section textarea {
-            width: 100%; box-sizing: border-box; padding: 10px;
-            border: 1px solid #555; border-radius: 4px;
-            font-family: monospace; white-space: pre-wrap; word-wrap: break-word;
-            resize: vertical; background-color: #1e1e1e; color: #f5f5f5;
-        }
-        .copy-button {
-            display: inline-block; margin-top: 5px; padding: 10px 15px;
-            background-color: #4caf50; color: white;
-            border: none; border-radius: 4px; cursor: pointer;
-            font-size: 1em; transition: background-color 0.3s ease;
-        }
-        .copy-button:hover { background-color: #66bb6a; }
-        .copy-button:active { background-color: #388e3c; }
-        .lobby-name-output {
-            margin-top: 20px; padding: 10px; border: 1px dashed #555;
-            background-color: #333; font-family: monospace; word-break: break-all;
-        }
-        #data-table, #custom-tweaks-table {
-            width: 100%; border-collapse: collapse;
-            margin-top: 15px; table-layout: fixed;
-        }
-        #data-table th, #data-table td, #custom-tweaks-table th, #custom-tweaks-table td {
-            border: 1px solid #444; padding: 8px;
-            text-align: left; vertical-align: middle;
-            font-family: monospace;
-        }
-        #data-table th, #custom-tweaks-table th { background-color: #333; }
-        #data-table tr:nth-child(even), #custom-tweaks-table tr:nth-child(even) { background-color: #2c2c2c; }
-        #data-table td:first-child, #data-table td:nth-child(2), #data-table td:nth-child(3),
-        #custom-tweaks-table td {
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        #data-table th:first-child, #data-table td:first-child { width: 28%; }
-        #data-table th:nth-child(2), #data-table td:nth-child(2) { width: 15%; }
-        #data-table th:nth-child(3), #data-table td:nth-child(3) { width: 27%; }
-        #data-table th:last-child, #data-table td:last-child { width: 30%; }
-        #custom-tweaks-table th:first-child, #custom-tweaks-table td:first-child { width: 30%; }
-        #custom-tweaks-table th:nth-child(2), #custom-tweaks-table td:nth-child(2) { width: 15%; }
-        #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 40%; }
-        #custom-tweaks-table th:last-child, #custom-tweaks-table td:last-child { width: 15%; text-align: center; }
-        
-        .command-cell-wrapper {
-            display: flex; justify-content: space-between;
-            align-items: center; width: 100%; overflow: hidden;
-        }
-        .command-text {
-            white-space: nowrap; overflow: hidden;
-            text-overflow: ellipsis; flex-grow: 1;
-        }
-        .copy-row-button, .delete-tweak-btn {
-            padding: 4px 8px; font-size: 0.8em; margin-left: 10px; flex-shrink: 0;
-            background-color: #4a4a4a; color: #e0e0e0; border: 1px solid #777;
-            border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
-        }
-        .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
-        .delete-tweak-btn { background-color: #8c3a3a; }
-        .delete-tweak-btn:hover { background-color: #a74848; }
 
-        #data-table td:last-child { white-space: normal; overflow: visible; }
-        #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
-        #links-tab ul { padding-left: 20px; }
-        #links-tab li { margin-bottom: 10px; }
-        
-        #custom-tweak-form {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 30px;
+        .command-output-section {
+            margin-bottom: 15px;
         }
-        #custom-tweak-form label { text-align: right; padding-right: 10px; }
-        #custom-tweak-form input, #custom-tweak-form select, #custom-tweak-form textarea, #custom-tweak-form button {
+
+        .command-output-section h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+
+        .command-output-section textarea {
             width: 100%;
             box-sizing: border-box;
-            background-color: #4a4a4a; color: #f0f0f0; border: 1px solid #777;
-            border-radius: 4px; padding: 6px; font-family: sans-serif;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            resize: vertical;
+            background-color: #1e1e1e;
+            color: #f5f5f5;
         }
-        #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
-        #custom-tweak-form button {
-            grid-column: 2; background-color: #4caf50; cursor: pointer;
-            font-weight: bold; transition: background-color 0.3s ease;
+
+        .copy-button {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 10px 15px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
         }
-        #custom-tweak-form button:hover { background-color: #66bb6a; }
-        #custom-options-container { margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; }
+
+        .copy-button:hover {
+            background-color: #66bb6a;
+        }
+
+        .copy-button:active {
+            background-color: #388e3c;
+        }
+
+        .lobby-name-output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px dashed #555;
+            background-color: #333;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        /* Data Table Styles */
+        #data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            table-layout: fixed;
+        }
+
+        #data-table th, #data-table td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+            font-family: monospace;
+        }
+
+        #data-table th {
+            background-color: #333;
+        }
+
+        #data-table tr:nth-child(even) {
+            background-color: #2c2c2c;
+        }
+
+        #data-table th:first-child,
+        #data-table td:first-child {
+            width: 28%; /* Option */
+        }
+        #data-table th:nth-child(2),
+        #data-table td:nth-child(2) {
+            width: 15%; /* Status */
+        }
+        #data-table th:nth-child(3),
+        #data-table td:nth-child(3) {
+            width: 27%; /* Summary */
+        }
+        #data-table th:last-child,
+        #data-table td:last-child {
+            width: 30%; /* Command Blocks */
+        }
+
+        /* Apply truncation to the first three columns */
+        #data-table td:first-child,
+        #data-table td:nth-child(2),
+        #data-table td:nth-child(3) {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .command-cell-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .command-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        .copy-row-button {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            flex-shrink: 0;
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            border: 1px solid #777;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .copy-row-button:hover {
+            background-color: #666;
+        }
+
+        #data-table td:last-child {
+            white-space: normal;
+            overflow: visible;
+        }
+        
+        #links-tab h2, #links-tab h3 {
+            margin-top: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        #links-tab code {
+            background-color: #333;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        #links-tab ul {
+            padding-left: 20px;
+        }
+        #links-tab li {
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
+
     <div class="container">
         <h1>NuttyB Raptors Configurator</h1>
         
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="data">Data</button>
-            <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="links">Links</button>
         </div>
 
@@ -242,21 +364,25 @@
                     <div class="options-column" id="right-column">
                     </div>
                 </div>
+                <div id="options-form" style="display: none;"></div>
             </div>
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
                 <p>Copy and paste both parts separately to the lobby</p>
+
                 <div class="command-output-section">
                     <h3>Part 1</h3>
                     <textarea id="command-output-1" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
                 </div>
+
                 <div class="command-output-section">
                     <h3>Part 2</h3>
                     <textarea id="command-output-2" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
                 </div>
+
                 <div class="lobby-name-output">
                     <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
                 </div>
@@ -269,42 +395,14 @@
             <table id="data-table">
                 <thead>
                     <tr>
-                        <th>Option</th><th>Status</th><th>Summary</th><th>Command Blocks</th>
+                        <th>Option</th>
+                        <th>Status</th>
+                        <th>Summary</th>
+                        <th>Command Blocks</th>
                     </tr>
                 </thead>
                 <tbody>
                      <tr><td colspan="4">Loading data...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div id="custom-tab" class="tab-content">
-            <h2>Add Custom Tweak</h2>
-            <form id="custom-tweak-form">
-                <label for="custom-option-desc">Option Description:</label>
-                <input type="text" id="custom-option-desc" placeholder="e.g., Super Fast Tanks" required>
-                
-                <label for="custom-option-type">Type:</label>
-                <select id="custom-option-type">
-                    <option value="tweakdefs">tweakdefs</option>
-                    <option value="tweakunits">tweakunits</option>
-                </select>
-
-                <label for="custom-tweak-code">Tweak (Base64URL):</label>
-                <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded string here" required></textarea>
-                
-                <label></label>
-                <button type="submit">Save Tweak</button>
-            </form>
-
-            <h2>Saved Tweaks</h2>
-            <table id="custom-tweaks-table">
-                <thead>
-                    <tr>
-                        <th>Option</th><th>Type</th><th>Tweak</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
                 </tbody>
             </table>
         </div>
@@ -318,16 +416,49 @@
         let baseCommandsText = '';
         let rawOptionsData = [];
         let formOptionsConfig = [];
-        let customOptions = [];
-        const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
 
-        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
-        const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
-        const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
-        const hiddenLabels = [ 'Slow raptors/scavs' ];
-        const defaultSelectedLabels = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Legion NuttyB Evolving Commander', 'Armada NuttyB Evolving Commander', 'Cortex NuttyB Evolving Commander' ];
-        const rightColumnOrder = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Mega Nuke' ];
-        
+        const mainTweaksPrefixes = [
+            '!bset tweakdefs ',
+            '!bset tweakdefs3 ',
+            '!bset tweakunits ',
+        ];
+
+         const evolvingCommandersPrefixes = [
+             '!bset tweakunits1 ',
+             '!bset tweakunits2 ',
+             '!bset tweakunits3 ',
+         ];
+
+         const extraRaptorsPrefixes = [
+             '!bset tweakdefs4 ',
+             '!bset tweakunits5 ',
+         ];
+
+        const hiddenLabels = [
+            'Slow raptors/scavs',
+        ];
+
+        const defaultSelectedLabels = [
+            'Cross Faction T2',
+            'T3 Eco',
+            'T3 Builders',
+            'Unit Launchers',
+            'LRPC Rebalance v2',
+            'Legion NuttyB Evolving Commander',
+            'Armada NuttyB Evolving Commander',
+            'Cortex NuttyB Evolving Commander',
+        ];
+
+        // NEW: Array to control the order of the right-column checkboxes
+        const rightColumnOrder = [
+            'Cross Faction T2',
+            'T3 Eco',
+            'T3 Builders',
+            'Unit Launchers',
+            'LRPC Rebalance v2',
+            'Mega Nuke'
+        ];
+
         const optionsFormColumns = document.getElementById('options-form-columns');
         const leftColumn = document.getElementById('left-column');
         const rightColumn = document.getElementById('right-column');
@@ -335,22 +466,25 @@
         const commandOutput2 = document.getElementById('command-output-2');
         const copyButtons = document.querySelectorAll('.copy-button');
         const dataTableBody = document.querySelector('#data-table tbody');
-        const customTweakForm = document.getElementById('custom-tweak-form');
-        const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const lobbyNameDisplay = document.getElementById('lobby-name-display');
+
         const MAX_SECTION_LENGTH = 50000;
         
         async function loadBaseCommands() {
             const response = await fetch('basecommands.txt');
-            if (!response.ok) throw new Error(`Could not load basecommands.txt: ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Could not load basecommands.txt: ${response.statusText}`);
+            }
             baseCommandsText = await response.text();
         }
 
         async function loadConfigData() {
             const response = await fetch('tweakdata.txt');
-            if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
+            }
             const text = await response.text();
             parseConfigData(text);
         }
@@ -359,88 +493,14 @@
             const linksContentEl = document.getElementById('links-tab');
             try {
                 const response = await fetch('links.md');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const markdownText = await response.text();
                 linksContentEl.innerHTML = marked.parse(markdownText);
             } catch (error) {
                 console.error("Could not load links content:", error);
-                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
-            }
-        }
-
-        function loadCustomOptions() {
-            const savedTweaks = localStorage.getItem(CUSTOM_TWEAKS_KEY);
-            customOptions = savedTweaks ? JSON.parse(savedTweaks) : [];
-        }
-
-        function saveCustomOptions() {
-            localStorage.setItem(CUSTOM_TWEAKS_KEY, JSON.stringify(customOptions));
-        }
-
-        function addCustomTweak(event) {
-            event.preventDefault();
-            const desc = document.getElementById('custom-option-desc').value.trim();
-            const type = document.getElementById('custom-option-type').value;
-            const tweak = document.getElementById('custom-tweak-code').value.trim();
-            if (!desc || !tweak) return;
-            customOptions.push({ id: Date.now(), desc, type, tweak });
-            saveCustomOptions();
-            renderAllCustomComponents();
-            updateOutput();
-            customTweakForm.reset();
-        }
-
-        function deleteCustomTweak(id) {
-            customOptions = customOptions.filter(tweak => tweak.id !== id);
-            saveCustomOptions();
-            renderAllCustomComponents();
-            updateOutput();
-        }
-
-        function renderAllCustomComponents() {
-            renderCustomTweaksTable();
-            renderCustomTweaksAsCheckboxes();
-        }
-
-        function renderCustomTweaksTable() {
-            customTweaksTableBody.innerHTML = '';
-            if (customOptions.length === 0) {
-                customTweaksTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No custom tweaks saved.</td></tr>';
-                return;
-            }
-            customOptions.forEach(tweak => {
-                const row = customTweaksTableBody.insertRow();
-                row.innerHTML = `
-                    <td title="${tweak.desc}">${tweak.desc}</td>
-                    <td title="${tweak.type}">${tweak.type}</td>
-                    <td title="${tweak.tweak}">${tweak.tweak}</td>
-                    <td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>
-                `;
-            });
-        }
-
-        function renderCustomTweaksAsCheckboxes() {
-            let container = document.getElementById('custom-options-container');
-            if (container) container.remove();
-            if (customOptions.length > 0) {
-                container = document.createElement('div');
-                container.id = 'custom-options-container';
-                const header = document.createElement('h3');
-                header.textContent = 'Custom Tweaks';
-                container.appendChild(header);
-                customOptions.forEach(tweak => {
-                    const label = document.createElement('label');
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.dataset.isCustom = 'true';
-                    checkbox.dataset.customData = JSON.stringify({ type: tweak.type, tweak: tweak.tweak });
-                    checkbox.addEventListener('change', updateOutput);
-                    
-                    label.appendChild(checkbox);
-                    label.appendChild(document.createTextNode(` ${tweak.desc}`));
-                    container.appendChild(label);
-                });
-                rightColumn.appendChild(container);
+                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content. Make sure the <strong>links.md</strong> file exists in the same directory.</p>';
             }
         }
 
@@ -449,9 +509,15 @@
             try {
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const padding = base64.length % 4;
-                if (padding) base64 += '===='.slice(padding);
+                if (padding) {
+                    base64 += '===='.slice(padding);
+                }
                 const decodedData = atob(base64);
-                return new TextDecoder('utf-8').decode(Uint8Array.from(decodedData, c => c.charCodeAt(0)));
+                const utf8Decoder = new TextDecoder('utf-8');
+                const decodedUtf8 = utf8Decoder.decode(
+                    Uint8Array.from(decodedData, c => c.charCodeAt(0))
+                );
+                return decodedUtf8;
             } catch (e) {
                 console.error(`Base64URL decoding failed for: ${base64Url}`, e);
                 return 'Error decoding data';
@@ -468,158 +534,273 @@
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
+
             rawOptionsData = [];
+
             lines.forEach(line => {
                 const parts = line.split('\t');
                 if (parts.length >= 2) {
                     const label = parts[0].trim();
                     const commandBlock = parts[1].trim();
+                    
                     let summary = '';
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) {
-                            summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
+                            const encodedData = commandParts[2];
+                            const decodedText = decodeBase64Url(encodedData);
+                            summary = decodedText.split('\n')[0].trim();
                         }
                     }
-                    let status = "Optional", addedToFormGroup = false;
-                    if (extraRaptorsPrefixes.some(p => commandBlock.startsWith(p))) {
+
+                    let status = "Optional";
+                    let addedToFormGroup = false;
+
+                    const isExtraRaptor = extraRaptorsPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (isExtraRaptor) {
                         status = "Optional/Grouped";
-                        let shortLabel = (label === "Mini Bosses") ? "[Mini Bosses]" : (label === "Experimental Wave Challenge") ? "[Expo Waves]" : "";
-                        groupedOptions.extraRaptors.choices.push({ label, value: commandBlock, shortLabel });
-                        if (commandBlock.startsWith('!bset tweakdefs4')) groupedOptions.extraRaptors.defaultValue = commandBlock;
+                        let shortLabel = "";
+                        if (label === "Mini Bosses") {
+                            shortLabel = "[Mini Bosses]";
+                        } else if (label === "Experimental Wave Challenge") {
+                            shortLabel = "[Expo Waves]";
+                        }
+                        groupedOptions.extraRaptors.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
+                        if (commandBlock.startsWith('!bset tweakdefs4')) {
+                             groupedOptions.extraRaptors.defaultValue = commandBlock;
+                        }
                         addedToFormGroup = true;
                     }
+
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
-                         let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' QHP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' QHP'; }
-                         groupedOptions.tweakdefs1.choices.push({ label, value: commandBlock, shortLabel });
+                         const match = label.match(/(\d+\.?\d*x)/); 
+                         let shortLabel = "";
+                         if (match && match[1]) {
+                             shortLabel = match[1].replace(/\./g, '_') + ' QHP';
+                         } else {
+                             const parenMatch = label.match(/\((.*?)\)/);
+                             if (parenMatch && parenMatch[1]) {
+                                 shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' QHP';
+                             } else {
+                                 shortLabel = label;
+                             }
+                         }
+                         groupedOptions.tweakdefs1.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToFormGroup = true;
                     }
+
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
-                         let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
-                         groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel });
+                         const match = label.match(/(\d+\.?\d*x)/); 
+                         let shortLabel = "";
+                         if (match && match[1]) {
+                             shortLabel = match[1].replace(/\./g, '_') + ' HP';
+                         } else {
+                             const parenMatch = label.match(/\((.*?)\)/);
+                             if (parenMatch && parenMatch[1]) {
+                                 shortLabel = parenMatch[1].replace(' health', '').replace(/\./g, '_') + ' HP';
+                             } else {
+                                 shortLabel = label;
+                             }
+                         }
+                         groupedOptions.tweakdefs2.choices.push({ label: label, value: commandBlock, shortLabel: shortLabel });
                          addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) {
-                        status = "Mandatory/Visible"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true;
+
+                    const isMainTweak = mainTweaksPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToFormGroup && isMainTweak) {
+                        status = "Mandatory/Visible";
+                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
+                        addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) {
-                         status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true;
+
+                    const isEvolvingCommander = evolvingCommandersPrefixes.some(prefix => commandBlock.startsWith(prefix));
+                    if (!addedToFormGroup && isEvolvingCommander) {
+                         status = "Optional";
+                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
+                         if (defaultSelectedLabels.includes(label)) {
+                             groupedOptions.evolvingCommanders.default = true;
+                         }
+                         addedToFormGroup = true;
                     }
-                    if (hiddenLabels.includes(label)) status = "Hidden";
-                    rawOptionsData.push({ label, commandBlock, status, summary });
-                    if (!addedToFormGroup && !hiddenLabels.includes(label)) {
-                         groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' });
+
+                    const isHidden = hiddenLabels.includes(label);
+                     if (isHidden) {
+                         status = "Hidden";
+                     }
+
+                    rawOptionsData.push({ label: label, commandBlock: commandBlock, status: status, summary: summary });
+
+                    if (!addedToFormGroup && !isHidden) {
+                         groupedOptions.otherCheckboxes.options.push({ label: label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' });
                     }
                 }
             });
-            groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
+
+            // UPDATED: Sort the checkboxes based on the explicit order
+            groupedOptions.otherCheckboxes.options.sort((a, b) => {
+                const indexA = rightColumnOrder.indexOf(a.label);
+                const indexB = rightColumnOrder.indexOf(b.label);
+                const effectiveIndexA = (indexA === -1) ? Infinity : indexA;
+                const effectiveIndexB = (indexB === -1) ? Infinity : indexB;
+                return effectiveIndexA - effectiveIndexB;
+            });
+
             formOptionsConfig = [];
-            if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
-            if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
-            if (groupedOptions.tweakdefs2.choices.length > 0) formOptionsConfig.push(groupedOptions.tweakdefs2);
-            if (groupedOptions.tweakdefs1.choices.length > 0) formOptionsConfig.push(groupedOptions.tweakdefs1);
-            if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
+            if (groupedOptions.mainTweaks.commandBlocks.length > 0) {
+                 formOptionsConfig.push(groupedOptions.mainTweaks);
+            }
+            if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) {
+                formOptionsConfig.push(groupedOptions.evolvingCommanders);
+            }
+            if (groupedOptions.tweakdefs2.choices.length > 0) {
+                formOptionsConfig.push(groupedOptions.tweakdefs2);
+            }
+            if (groupedOptions.tweakdefs1.choices.length > 0) {
+                formOptionsConfig.push(groupedOptions.tweakdefs1);
+            }
+            if (groupedOptions.extraRaptors.choices.length > 1) {
+                formOptionsConfig.push(groupedOptions.extraRaptors);
+            }
+            
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
-            formOptionsConfig.forEach(g=>{if(g.type==='select'&&g.choices.length>0){if(g.defaultValue){g.choices.forEach(c=>{if(c.value===g.defaultValue)c.selected=true})}else{g.choices[0].selected=true}}});
+
+             formOptionsConfig.forEach(group => {
+                 if (group.type === 'select' && group.choices.length > 0) {
+                     if (group.defaultValue) {
+                         group.choices.forEach(choice => {
+                             if (choice.value === group.defaultValue) {
+                                 choice.selected = true;
+                             }
+                         });
+                     } else {
+                         group.choices[0].selected = true;
+                     }
+                 }
+             });
         }
 
-        // --- COMMAND GENERATION (CORRECTED) ---
         function generateCommands() {
-            const standardCommands = [];
-            const customTweaksToProcess = [];
-            const usedTweakDefs = new Set();
-            const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+            let coreCommands = [];
+            coreCommands.push(baseCommandsText.trim());
+
+            let extraRaptorsPart = "";
+            let raptorHealthPart = "";
+            let queenHealthPart = "";
+
             const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
-            
-            // 1. Collect commands from ALL standard selected options (checkboxes and dropdowns) first
-            formElements.forEach(el => {
-                if (el.dataset.isCustom) {
-                    // If it's a custom checkbox and it's checked, save it for later processing
-                    if (el.checked) {
-                        customTweaksToProcess.push(JSON.parse(el.dataset.customData));
+
+            formElements.forEach(element => {
+                if (element.type === 'checkbox') {
+                    if (element.checked) {
+                        const commandBlocks = JSON.parse(element.dataset.commandBlocks);
+                        commandBlocks.forEach(block => {
+                            coreCommands.push(block.trim());
+                        });
                     }
+                } else if (element.tagName === 'SELECT') {
+                    const selectedOption = element.options[element.selectedIndex];
+                    if (selectedOption.value) {
+                         const commandBlock = selectedOption.value.trim();
+                         coreCommands.push(commandBlock);
+
+                         const optionGroup = formOptionsConfig.find(group => group.label === element.dataset.optionType);
+                         if (optionGroup) {
+                             const selectedChoice = optionGroup.choices.find(choice => choice.value === selectedOption.value);
+                             if (selectedChoice && selectedChoice.shortLabel !== undefined) {
+                                 if (optionGroup.label === "Extras") extraRaptorsPart = selectedChoice.shortLabel;
+                                 else if (optionGroup.label === "Raptor Health") raptorHealthPart = selectedChoice.shortLabel;
+                                 else if (optionGroup.label === "Queen Health") queenHealthPart = selectedChoice.shortLabel;
+                             }
+                         }
+                    } else {
+                         if (element.dataset.optionType === "Extras") extraRaptorsPart = "";
+                         if (element.dataset.optionType === "Raptor Health") raptorHealthPart = "";
+                         if (element.dataset.optionType === "Queen Health") queenHealthPart = "";
+                    }
+                }
+            });
+
+            let renameCommand = `$rename [Mod] NuttyB Raptors`;
+            let renameParts = [];
+
+            if (extraRaptorsPart) {
+                renameParts.push(extraRaptorsPart);
+            }
+
+            let combinedHealthPart = "";
+            if (raptorHealthPart && queenHealthPart) {
+                 combinedHealthPart = `${raptorHealthPart} ${queenHealthPart}`;
+            } else if (raptorHealthPart) {
+                 combinedHealthPart = raptorHealthPart;
+            } else if (queenHealthPart) {
+                 combinedHealthPart = queenHealthPart;
+            }
+
+            if (combinedHealthPart) {
+                 renameParts.push(`[${combinedHealthPart}]`);
+            }
+
+            if (renameParts.length > 0) {
+                renameCommand += ' ' + renameParts.join('');
+            }
+
+            renameCommand += `[No Mex]`;
+
+            let section1Commands = [];
+            let section2Commands = [];
+            let currentLengthSection1 = 0;
+
+            for (const command of coreCommands) {
+                if (currentLengthSection1 + command.length + 1 <= MAX_SECTION_LENGTH) {
+                    section1Commands.push(command);
+                    currentLengthSection1 += command.length + 1;
                 } else {
-                    // This is a standard element (either a checkbox or a select dropdown)
-                    let commands = [];
-                    if (el.tagName === 'SELECT') {
-                        if (el.value) commands.push(el.value);
-                    } else if (el.type === 'checkbox' && el.checked) {
-                        commands = JSON.parse(el.dataset.commandBlocks);
-                    }
-                    
-                    // Add the collected commands to our standard list
-                    commands.forEach(cmd => {
-                        if (cmd) standardCommands.push(cmd.trim());
-                    });
+                    section2Commands.push(command);
                 }
-            });
+            }
 
-            // 2. Scan the collected standard commands to find which slots are used
-            standardCommands.forEach(cmd => {
-                const match = cmd.match(slotRegex);
-                if (match) {
-                    const type = match[1];
-                    const number = parseInt(match[2], 10);
-                    if (type === 'tweakdefs') usedTweakDefs.add(number);
-                    else if (type === 'tweakunits') usedTweakUnits.add(number);
-                }
-            });
+            if (section2Commands.length > 0) {
+                section2Commands.push(renameCommand);
+            } else {
+                section1Commands.push(renameCommand);
+            }
 
-            // 3. Now, process the custom tweaks, finding available slots from the remaining pool
-            const customCommands = [];
-            customTweaksToProcess.forEach(tweak => {
-                const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
-                let availableSlot = null;
-                for (let i = 1; i <= 9; i++) {
-                    if (!targetSet.has(i)) {
-                        availableSlot = i;
-                        break;
-                    }
-                }
-                if (availableSlot !== null) {
-                    customCommands.push(`!bset ${tweak.type}${availableSlot} ${tweak.tweak}`);
-                    targetSet.add(availableSlot); // Mark as used for the next custom tweak
-                } else {
-                    console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`);
-                }
-            });
-            
-            const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
-            
-            // 4. Generate lobby name
-            let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            formElements.forEach(el=>{if(el.tagName==='SELECT'){const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}}});
-            let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
 
-            // 5. Split commands into two parts
-            let s1=[],s2=[],l1=0;
-            for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
-            if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
-            return{lobbyName:renameCommand,section1:s1.join('\n'),section2:s2.join('\n')};
+            return {
+                lobbyName: renameCommand,
+                section1: section1Commands.join('\n'),
+                section2: section2Commands.join('\n')
+            };
         }
 
         function renderOptions() {
-            leftColumn.innerHTML = ''; rightColumn.innerHTML = '';
+            leftColumn.innerHTML = '';
+            rightColumn.innerHTML = '';
+
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
                 let inputElement;
+
                 if (optionGroup.type === 'checkbox') {
                     inputElement = document.createElement('input');
                     inputElement.type = 'checkbox';
                     inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
                     inputElement.checked = optionGroup.default;
                     inputElement.disabled = optionGroup.disabled || false;
+
                     label.appendChild(inputElement);
                     label.appendChild(document.createTextNode(' ' + optionGroup.label));
-                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
+
+                    if (!inputElement.disabled) {
+                        inputElement.addEventListener('change', updateOutput);
+                    }
+
                 } else if (optionGroup.type === 'select') {
                     inputElement = document.createElement('select');
                     inputElement.dataset.optionType = optionGroup.label;
+
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
                         optionElement.value = choice.value;
@@ -628,14 +809,19 @@
                         optionElement.dataset.shortLabel = choice.shortLabel || "";
                         inputElement.appendChild(optionElement);
                     });
+
                     label.textContent = optionGroup.label + ': ';
                     label.appendChild(inputElement);
+
                     inputElement.addEventListener('change', updateOutput);
                 }
-                if (optionGroup.column === 'right') rightColumn.appendChild(label);
-                else leftColumn.appendChild(label);
+                if (optionGroup.column === 'right') {
+                    rightColumn.appendChild(label);
+                } else {
+                    leftColumn.appendChild(label);
+                }
             });
-            renderAllCustomComponents();
+
             updateOutput();
         }
 
@@ -646,67 +832,118 @@
             lobbyNameDisplay.textContent = generatedData.lobbyName;
         }
 
+        copyButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const targetId = event.target.dataset.target;
+                const targetTextArea = document.getElementById(targetId);
+                targetTextArea.select();
+                navigator.clipboard.writeText(targetTextArea.value)
+                    .then(() => {
+                        event.target.textContent = 'Copied!';
+                        setTimeout(() => {
+                            event.target.textContent = `Copy ${targetId.replace('command-output-','Part ').trim()}`;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Could not copy text. Please copy manually.');
+                    });
+            });
+        });
+
+        dataTableBody.addEventListener('click', function(event) {
+            if (event.target.matches('.copy-row-button')) {
+                const button = event.target;
+                const commandToCopy = button.dataset.command;
+
+                navigator.clipboard.writeText(commandToCopy).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy command: ', err);
+                    alert('Could not copy command.');
+                });
+            }
+        });
+
         function populateDataTable() {
             dataTableBody.innerHTML = ''; 
-            rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
+
+            const visibleOptions = rawOptionsData.filter(item => item.status !== 'Hidden');
+
+            visibleOptions.forEach(item => {
                 const row = dataTableBody.insertRow();
-                row.insertCell().textContent = item.label;
-                row.insertCell().textContent = item.status;
-                row.insertCell().textContent = item.summary;
+
+                const labelCell = row.insertCell();
+                labelCell.textContent = item.label;
+                labelCell.title = item.label;
+
+                const statusCell = row.insertCell();
+                statusCell.textContent = item.status;
+                statusCell.title = item.status;
+
+                const summaryCell = row.insertCell();
+                summaryCell.textContent = item.summary;
+                summaryCell.title = item.summary;
+                
                 const commandsCell = row.insertCell();
-                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
-                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
-                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
-                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'command-cell-wrapper';
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'command-text';
+                textSpan.textContent = item.commandBlock;
+                textSpan.title = item.commandBlock;
+
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy';
+                copyBtn.className = 'copy-row-button';
+                copyBtn.dataset.command = item.commandBlock;
+
+                wrapper.appendChild(textSpan);
+                wrapper.appendChild(copyBtn);
+                commandsCell.appendChild(wrapper);
             });
         }
 
         function switchTab(event) {
             const targetTabId = event.target.dataset.tab + '-tab';
+
             tabButtons.forEach(button => button.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
+
             event.target.classList.add('active');
             document.getElementById(targetTabId).classList.add('active');
-            if (event.target.dataset.tab === 'data' && rawOptionsData.length > 0) populateDataTable();
-            if (event.target.dataset.tab === 'custom') renderCustomTweaksTable();
+
+            if (event.target.dataset.tab === 'data') {
+                if (rawOptionsData.length > 0) {
+                     populateDataTable();
+                } else {
+                     dataTableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>';
+                }
+            }
         }
 
-        copyButtons.forEach(button => button.addEventListener('click', event => {
-            const targetTextArea = document.getElementById(event.target.dataset.target);
-            targetTextArea.select();
-            navigator.clipboard.writeText(targetTextArea.value)
-                .then(() => {
-                    event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = `Copy ${event.target.dataset.target.replace('command-output-','Part ').trim()}`; }, 2000);
-                }).catch(err => { console.error('Failed to copy: ', err); });
-        }));
-
-        dataTableBody.addEventListener('click', event => {
-            if (event.target.matches('.copy-row-button')) {
-                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
-                    event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
-                }).catch(err => { console.error('Failed to copy command: ', err); });
-            }
+        tabButtons.forEach(button => {
+            button.addEventListener('click', switchTab);
         });
-
-        customTweakForm.addEventListener('submit', addCustomTweak);
-        customTweaksTableBody.addEventListener('click', event => {
-            if (event.target.matches('.delete-tweak-btn')) {
-                deleteCustomTweak(parseInt(event.target.dataset.id, 10));
-            }
-        });
-        
-        tabButtons.forEach(button => button.addEventListener('click', switchTab));
 
         async function initializeApp() {
             try {
-                loadCustomOptions();
-                await Promise.all([ loadBaseCommands(), loadConfigData(), loadLinksContent() ]);
+                await Promise.all([
+                    loadBaseCommands(),
+                    loadConfigData(),
+                    loadLinksContent()
+                ]);
                 renderOptions();
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
-                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+                const container = document.querySelector('.container');
+                container.innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
             }
         }
 
