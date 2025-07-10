@@ -565,8 +565,8 @@
             const groupedOptions = { 
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
-                tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
-                tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [{ label: "Default", value: "", shortLabel: "" }], column: 'left' },
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [{ label: "Default", value: "", shortLabel: "" }], column: 'left' },
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
@@ -597,9 +597,7 @@
                          if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
                          groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { 
-                        status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; 
-                    }
+                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
                     if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
@@ -607,6 +605,28 @@
                 }
             });
             groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
+            
+            // --- Set preferred and fallback defaults for dropdowns ---
+            const preferredDefaults = { 'Raptor Health': 'HP Epic (1.3x health)', 'Queen Health': 'QHP Epic (1.3x health)' };
+            const allOptionGroups = [groupedOptions.mainTweaks, groupedOptions.evolvingCommanders, groupedOptions.tweakdefs2, groupedOptions.tweakdefs1, groupedOptions.extraRaptors, ...groupedOptions.otherCheckboxes.options];
+            allOptionGroups.forEach(group => {
+                if (group.type !== 'select' || group.choices.length === 0) return;
+                let defaultSet = false;
+                const preferredLabel = preferredDefaults[group.label];
+                if (preferredLabel) {
+                    const preferredChoice = group.choices.find(c => c.label === preferredLabel);
+                    if (preferredChoice) group.defaultValue = preferredChoice.value;
+                }
+                if (!group.defaultValue && (group.label === 'Raptor Health' || group.label === 'Queen Health') && group.choices.length > 1) {
+                    group.defaultValue = group.choices[1].value;
+                }
+                group.choices.forEach(choice => {
+                    if (choice.value === group.defaultValue) { choice.selected = true; defaultSet = true; } 
+                    else { choice.selected = false; }
+                });
+                if (!defaultSet) { group.choices[0].selected = true; }
+            });
+
             formOptionsConfig = [];
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
@@ -614,7 +634,6 @@
             if (groupedOptions.tweakdefs1.choices.length > 0) formOptionsConfig.push(groupedOptions.tweakdefs1);
             if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
-            formOptionsConfig.forEach(g=>{if(g.type==='select'&&g.choices.length>0){if(g.defaultValue){g.choices.forEach(c=>{if(c.value===g.defaultValue)c.selected=true})}else{g.choices[0].selected=true}}});
         }
         
         function generateCommands() {
@@ -661,7 +680,6 @@
             let currentSection = [];
             let currentLength = 0;
             const allCommands = [...finalCommands, renameCommand];
-
             for (const cmd of allCommands) {
                 if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
                     sections.push(currentSection.join('\n'));
@@ -673,7 +691,6 @@
                 }
             }
             if (currentSection.length > 0) sections.push(currentSection.join('\n'));
-
             return{lobbyName:renameCommand, sections: sections};
         }
 
