@@ -220,6 +220,27 @@
             color: #aaa;
             margin-left: 4px;
         }
+        .action-buttons-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+        .action-button {
+            padding: 8px 16px;
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            border: 1px solid #777;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+        .action-button:hover {
+            background-color: #666;
+        }
     </style>
 </head>
 <body>
@@ -242,6 +263,11 @@
                         <p>Loading configuration data...</p>
                     </div>
                     <div class="options-column" id="right-column"></div>
+                </div>
+                <!-- NEW: Action buttons container -->
+                <div class="action-buttons-container">
+                    <button id="reset-none-btn" class="action-button">None</button>
+                    <button id="reset-default-btn" class="action-button">Default</button>
                 </div>
             </div>
 
@@ -370,6 +396,8 @@
         const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
+        const resetNoneBtn = document.getElementById('reset-none-btn');
+        const resetDefaultBtn = document.getElementById('reset-default-btn');
         const MAX_SECTION_LENGTH = 50000;
         
         async function loadBaseCommands() {
@@ -606,7 +634,6 @@
             });
             groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
             
-            // --- Set preferred and fallback defaults for dropdowns ---
             const preferredDefaults = { 'Raptor Health': 'HP Epic (1.3x health)', 'Queen Health': 'QHP Epic (1.3x health)' };
             const allOptionGroups = [groupedOptions.mainTweaks, groupedOptions.evolvingCommanders, groupedOptions.tweakdefs2, groupedOptions.tweakdefs1, groupedOptions.extraRaptors, ...groupedOptions.otherCheckboxes.options];
             allOptionGroups.forEach(group => {
@@ -783,6 +810,31 @@
             }
         });
 
+        resetNoneBtn.addEventListener('click', () => {
+            const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
+            formElements.forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+            });
+            updateOutput();
+        });
+
+        resetDefaultBtn.addEventListener('click', () => {
+            formOptionsConfig.forEach(optionGroup => {
+                if (optionGroup.type === 'checkbox') {
+                    const label = Array.from(document.querySelectorAll('#left-column label, #right-column label')).find(l => l.textContent.trim().includes(optionGroup.label));
+                    if (label) {
+                        const checkbox = label.querySelector('input[type="checkbox"]');
+                        if (checkbox) checkbox.checked = optionGroup.default;
+                    }
+                } else if (optionGroup.type === 'select') {
+                    const select = optionsFormColumns.querySelector(`select[data-option-type="${optionGroup.label}"]`);
+                    if (select) select.value = optionGroup.defaultValue || "";
+                }
+            });
+            updateOutput();
+        });
+        
         customTweakForm.addEventListener('submit', addCustomTweak);
         customTweaksTableBody.addEventListener('click', event => {
             if (event.target.matches('.delete-tweak-btn')) {
