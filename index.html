@@ -130,7 +130,14 @@
             box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.4);
             outline: none;
         }
-        .command-output-section { margin-bottom: 15px; }
+        
+        .command-output-section { 
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 15px;
+            align-items: start;
+            margin-bottom: 12px;
+        }
         .command-output-section h3 { margin-top: 0; margin-bottom: 5px; }
         .command-output-section textarea {
             width: 100%; box-sizing: border-box; padding: 10px;
@@ -139,10 +146,11 @@
             resize: vertical; background-color: #1e1e1e; color: #f5f5f5;
         }
         .copy-button {
-            display: inline-block; margin-top: 5px; padding: 10px 15px;
+            display: inline-block; padding: 10px 15px;
             background-color: #4caf50; color: white;
             border: none; border-radius: 4px; cursor: pointer;
             font-size: 1em; transition: background-color 0.3s ease;
+            white-space: nowrap;
         }
         .copy-button:hover { background-color: #66bb6a; }
         .copy-button:active { background-color: #388e3c; }
@@ -204,13 +212,11 @@
             border: 1px solid #777; border-radius: 4px; padding: 6px; font-family: sans-serif;
         }
 
-        /* Set a specific width for the text and textarea inputs */
         #custom-tweak-form input[type="text"], 
         #custom-tweak-form textarea {
             width: 80%;
         }
-        /* Rule to override the width for the type dropdown */
-
+        
         #custom-tweak-form #custom-option-type {
             width: auto;
             justify-self: start;
@@ -224,12 +230,11 @@
         }
         #custom-tweak-form button:hover { background-color: #66bb6a; }
         
-        /* Rule for the Save Tweak button */
         #custom-tweak-form button[type="submit"] {
             width: auto;
-            justify-self: start; /* CHANGED: Aligns to the left */
+            justify-self: start;
         }
-        
+
         #slot-warning-messages p {
             color: #aaa;
             text-align: left;
@@ -304,39 +309,32 @@
                 <h2>Generated Commands</h2>
                 <p>Copy and paste all parts separately to the lobby</p>
                 <div id="part-1-section" class="command-output-section">
-                    <h3>Part 1</h3>
-                    <textarea id="command-output-1" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
+                    <textarea id="command-output-1" rows="5" readonly></textarea>
                 </div>
                 <div id="part-2-section" class="command-output-section" style="display: none;">
-                    <h3>Part 2</h3>
-                    <textarea id="command-output-2" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
+                    <textarea id="command-output-2" rows="5" readonly></textarea>
                 </div>
                 <div id="part-3-section" class="command-output-section" style="display: none;">
-                    <h3>Part 3</h3>
-                    <textarea id="command-output-3" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-3">Copy Part 3</button>
+                    <textarea id="command-output-3" rows="5" readonly></textarea>
                 </div>
                 <div id="part-4-section" class="command-output-section" style="display: none;">
-                    <h3>Part 4</h3>
-                    <textarea id="command-output-4" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-4">Copy Part 4</button>
+                    <textarea id="command-output-4" rows="5" readonly></textarea>
                 </div>
                 <div id="part-5-section" class="command-output-section" style="display: none;">
-                    <h3>Part 5</h3>
-                    <textarea id="command-output-5" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-5">Copy Part 5</button>
+                    <textarea id="command-output-5" rows="5" readonly></textarea>
                 </div>
                 <div id="part-6-section" class="command-output-section" style="display: none;">
-                    <h3>Part 6</h3>
-                    <textarea id="command-output-6" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-6">Copy Part 6</button>
+                    <textarea id="command-output-6" rows="5" readonly></textarea>
                 </div>
                 <div id="part-7-section" class="command-output-section" style="display: none;">
-                    <h3>Part 7</h3>
-                    <textarea id="command-output-7" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-7">Copy Part 7</button>
+                    <textarea id="command-output-7" rows="5" readonly></textarea>
                 </div>
 
                 <div class="lobby-name-output">
@@ -778,7 +776,7 @@
                 const textArea = document.getElementById(`command-output-${i}`);
                 if (generatedData.sections[i-1]) {
                     textArea.value = generatedData.sections[i-1];
-                    sectionDiv.style.display = 'block';
+                    sectionDiv.style.display = 'grid';
                 } else {
                     textArea.value = '';
                     sectionDiv.style.display = 'none';
