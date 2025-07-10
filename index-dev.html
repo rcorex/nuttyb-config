@@ -393,6 +393,7 @@
         let rawOptionsData = [];
         let formOptionsConfig = [];
         let customOptions = [];
+        let gameConfigs = { maps: [], modes: [] }; // NEW: Variable to hold parsed maps and modes.
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -442,6 +443,51 @@
             } catch (error) {
                 console.error("Could not load links content:", error);
                 linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
+            }
+        }
+
+        /**
+         * NEW: Fetches and parses a text file with a specific format for maps and modes.
+         * @param {string} filePath The path to the text file (e.g., 'mapsmodes.txt').
+         * @returns {Promise<object>} A promise that resolves to an object like { maps: [], modes: [] }.
+         */
+        async function parseMapsModes(filePath) {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Could not load ${filePath}: ${response.statusText}`);
+                }
+                const text = await response.text();
+                
+                const configs = { maps: [], modes: [] };
+                
+                const categoryBlocks = text.split('## CATEGORY:').slice(1);
+
+                for (const block of categoryBlocks) {
+                    const lines = block.trim().split(/\r?\n/);
+                    const categoryName = lines.shift().trim();
+                    const content = lines.join('\n');
+                    
+                    const items = content.split('---').filter(item => item.trim() !== '');
+
+                    for (const item of items) {
+                        const itemLines = item.trim().split(/\r?\n/).filter(line => line.trim() !== '');
+                        if (itemLines.length === 0) continue;
+
+                        const name = itemLines.shift().trim();
+                        const commands = itemLines;
+                        
+                        if (categoryName === 'maps' && configs.maps) {
+                            configs.maps.push({ name, commands });
+                        } else if (categoryName === 'modes' && configs.modes) {
+                            configs.modes.push({ name, commands });
+                        }
+                    }
+                }
+                return configs;
+            } catch (error) {
+                console.error("Failed to parse game configs:", error);
+                return { maps: [], modes: [] }; 
             }
         }
 
@@ -873,7 +919,18 @@
         async function initializeApp() {
             try {
                 loadCustomOptions();
-                await Promise.all([ loadBaseCommands(), loadConfigData(), loadLinksContent() ]);
+                
+                // NEW: Run all data-loading promises concurrently and handle the returned data
+                const [parsedConfigs] = await Promise.all([
+                    parseMapsModes('mapsmodes.txt'),
+                    loadBaseCommands(), 
+                    loadConfigData(), 
+                    loadLinksContent()
+                ]);
+
+                gameConfigs = parsedConfigs;
+                console.log("Maps & Modes configs loaded and parsed:", gameConfigs);
+
                 renderOptions();
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
