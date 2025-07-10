@@ -257,7 +257,6 @@
             <div class="output-container">
                 <h2>Generated Commands</h2>
                 <p>Copy and paste all parts separately to the lobby</p>
-                
                 <div id="part-1-section" class="command-output-section">
                     <h3>Part 1</h3>
                     <textarea id="command-output-1" rows="8" readonly></textarea>
@@ -273,7 +272,6 @@
                     <textarea id="command-output-3" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-3">Copy Part 3</button>
                 </div>
-                <!-- NEW: Added parts 4 through 7 -->
                 <div id="part-4-section" class="command-output-section" style="display: none;">
                     <h3>Part 4</h3>
                     <textarea id="command-output-4" rows="8" readonly></textarea>
@@ -564,7 +562,14 @@
 
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
-            const groupedOptions = { mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true, column: 'left' }, evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' }, tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' }, tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' }, extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } };
+            const groupedOptions = { 
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
+                tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
+                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
+                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
+            };
             rawOptionsData = [];
             lines.forEach(line => {
                 const parts = line.split('\t');
@@ -592,7 +597,9 @@
                          if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
                          groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Mandatory/Visible"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
+                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { 
+                        status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; 
+                    }
                     if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
@@ -650,7 +657,6 @@
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
             
-            // UPDATED: Dynamic splitting logic
             const sections = [];
             let currentSection = [];
             let currentLength = 0;
@@ -704,8 +710,7 @@
             updateCustomOptionUI();
             const generatedData = generateCommands();
             lobbyNameDisplay.textContent = generatedData.lobbyName;
-
-            // UPDATED: Loop up to 7 and handle showing/hiding sections
+            
             for (let i = 1; i <= 7; i++) {
                 const sectionDiv = document.getElementById(`part-${i}-section`);
                 const textArea = document.getElementById(`command-output-${i}`);
