@@ -7,7 +7,7 @@ Full Metal Plate
 ---
 Raptor Crater
 !map Raptor Crater
-!addbox 80 82 115 117 2
+!addbox 84 81 119 116 2
 !clearbox 1
 !teamsize 16
 ---
@@ -15,7 +15,7 @@ Raptor Crater Inverted
 !map Raptor Crater
 !disablemapdamage 0
 !debugcommands invertmap
-!addbox 80 82 115 117 2
+!addbox 84 81 119 116 2
 !clearbox 1
 !teamsize 16
 ---
