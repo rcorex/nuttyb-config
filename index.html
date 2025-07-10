@@ -196,7 +196,7 @@
         #links-tab ul { padding-left: 20px; }
         #links-tab li { margin-bottom: 10px; }
         #custom-tweak-form {
-            display: grid; grid-template-columns: 150px 1fr; gap: 10px;
+            display: grid; grid-template-columns: 180px 1fr; gap: 10px;
             align-items: center; margin-bottom: 30px;
         }
         #custom-tweak-form label { text-align: right; padding-right: 10px; }
@@ -228,7 +228,6 @@
         <h1>NuttyB Raptors Configurator</h1>
         
         <div class="tabs">
-            <!-- UPDATED: Reordered tabs -->
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="data">Data</button>
@@ -238,7 +237,6 @@
         <div id="config-tab" class="tab-content active">
              <p>Select your desired options and copy the generated commands into the lobby</p>
             <div class="settings-container">
-                <!-- UPDATED: Renamed section -->
                 <h2>NuttyB Tweaks</h2>
                 <div id="options-form-columns">
                     <div class="options-column" id="left-column">
@@ -249,7 +247,6 @@
             </div>
 
             <div id="custom-settings-container" class="settings-container" style="display: none;">
-                <!-- UPDATED: Renamed section -->
                 <h2>Custom Tweaks</h2>
                 <div id="custom-options-form-columns">
                     <div class="options-column" id="custom-left-column"></div>
@@ -290,18 +287,23 @@
             </table>
         </div>
 
+        <!-- UPDATED: All text changes are within this section -->
         <div id="custom-tab" class="tab-content">
+            <p>Save your custom tweaks for use in the configurator</p>
             <h2>Add Custom Tweak</h2>
             <form id="custom-tweak-form">
-                <label for="custom-option-desc">Option Description:</label>
+                <label for="custom-option-desc">Description:</label>
                 <input type="text" id="custom-option-desc" placeholder="e.g., Super Fast Tanks" required>
+                
                 <label for="custom-option-type">Type:</label>
                 <select id="custom-option-type">
                     <option value="tweakdefs">tweakdefs</option>
                     <option value="tweakunits">tweakunits</option>
                 </select>
-                <label for="custom-tweak-code">Tweak (Base64URL):</label>
-                <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded string here" required></textarea>
+
+                <label for="custom-tweak-code">Tweak Code (Base64URL):</label>
+                <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded tweak code here" required></textarea>
+                
                 <label></label>
                 <button type="submit">Save Tweak</button>
             </form>
@@ -309,7 +311,12 @@
             <h2>Saved Tweaks</h2>
             <table id="custom-tweaks-table">
                 <thead>
-                    <tr><th>Option</th><th>Type</th><th>Tweak</th><th>Actions</th></tr>
+                    <tr>
+                        <th>Tweak</th>
+                        <th>Type</th>
+                        <th>Code</th>
+                        <th>Actions</th>
+                    </tr>
                 </thead>
                 <tbody></tbody>
             </table>
