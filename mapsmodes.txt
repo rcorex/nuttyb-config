@@ -1,0 +1,49 @@
+## CATEGORY: maps
+---
+name: Full Metal Plate
+!map Full Metal Plate
+!addbox 80 82 115 117 2
+!clearbox 1
+---
+name: Raptor Crater
+!map Raptor Crater
+!addbox 80 82 115 117 2
+!clearbox 1
+!teamsize 16
+---
+name: Raptor Crater Inverted
+!map Raptor Crater
+!disablemapdamage 0
+!debugcommands invertmap
+---
+name: Special Hostepper
+!map Special Hotstepper
+!addbox 80 82 115 117 2
+!clearbox 1
+!map_lavatiderhythm disabled
+!teamsize 16
+---
+
+## CATEGORY: modes
+---
+name: No Rush
+!raptor_queentimemult 1.3
+!raptor_spawncountmult 3
+!raptor_firstwavesboost 6
+!raptor_graceperiodmult 3
+---
+name: Zero Grace
+!raptor_queentimemult 1.4
+!raptor_spawncountmult 3
+!raptor_firstwavesboost 3
+!raptor_graceperiodmult 0.1
+---
+name: Players in Middle
+!raptor_queentimemult 1.3
+!raptor_spawncountmult 3
+!raptor_firstwavesboost 6
+!raptor_graceperiodmult 3
+!addbox 60 60 140 140 1
+!raptor_raptorstart avoid
+!clearbox 2
+---
