@@ -212,6 +212,10 @@
         #custom-tweak-form button {
             grid-column: 2; background-color: #4caf50; cursor: pointer;
             font-weight: bold; transition: background-color 0.3s ease;
+            /* NEW: Let the button size itself */
+            width: auto; 
+            /* NEW: Align the smaller button to the left of its grid cell */
+            justify-self: start; 
         }
         #custom-tweak-form button:hover { background-color: #66bb6a; }
         #slot-warning-messages p {
@@ -703,7 +707,7 @@
             const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
-            let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
+            let renameCommand=`$rename [Mod] NuttyB Raptors `;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=renameParts.join('');renameCommand+=`[No Mex]`;
             
             const sections = [];
             let currentSection = [];
