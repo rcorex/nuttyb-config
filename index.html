@@ -159,19 +159,19 @@
             margin-top: 20px; padding: 10px; border: 1px dashed #555;
             background-color: #333; font-family: monospace; word-break: break-all;
         }
-        #data-table, #custom-tweaks-table {
+        #data-table, #custom-tweaks-table, #maps-modes-table {
             width: 100%; border-collapse: collapse;
             margin-top: 15px; table-layout: fixed;
         }
-        #data-table th, #data-table td, #custom-tweaks-table th, #custom-tweaks-table td {
+        #data-table th, #data-table td, #custom-tweaks-table th, #custom-tweaks-table td, #maps-modes-table th, #maps-modes-table td {
             border: 1px solid #444; padding: 8px;
-            text-align: left; vertical-align: middle;
+            text-align: left; vertical-align: top;
             font-family: monospace;
         }
-        #data-table th, #custom-tweaks-table th { background-color: #333; }
-        #data-table tr:nth-child(even), #custom-tweaks-table tr:nth-child(even) { background-color: #2c2c2c; }
+        #data-table th, #custom-tweaks-table th, #maps-modes-table th { background-color: #333; }
+        #data-table tr:nth-child(even), #custom-tweaks-table tr:nth-child(even), #maps-modes-table tr:nth-child(even) { background-color: #2c2c2c; }
         #data-table td:first-child, #data-table td:nth-child(2), #data-table td:nth-child(3),
-        #custom-tweaks-table td {
+        #custom-tweaks-table td, #maps-modes-table td {
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         #data-table th:first-child, #data-table td:first-child { width: 28%; }
@@ -182,6 +182,15 @@
         #custom-tweaks-table th:nth-child(2), #custom-tweaks-table td:nth-child(2) { width: 15%; }
         #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 45%; }
         #custom-tweaks-table th:last-child, #custom-tweaks-table td:last-child { width: 15%; text-align: center; }
+        
+        #maps-modes-table th:first-child, #maps-modes-table td:first-child { width: 15%; }
+        #maps-modes-table th:nth-child(2), #maps-modes-table td:nth-child(2) { width: 25%; }
+        #maps-modes-table th:last-child, #maps-modes-table td:last-child { width: 60%; }
+
+        #data-table td:last-child, #custom-tweaks-table td:nth-child(3), #maps-modes-table td:last-child { 
+            white-space: normal; overflow: visible; 
+        }
+
         .command-cell-wrapper {
             display: flex; justify-content: space-between;
             align-items: center; width: 100%; overflow: hidden;
@@ -198,7 +207,6 @@
         .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
         .delete-tweak-btn { background-color: #8c3a3a; }
         .delete-tweak-btn:hover { background-color: #a74848; }
-        #data-table td:last-child, #custom-tweaks-table td:nth-child(3) { white-space: normal; overflow: visible; }
         #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
         #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
         #links-tab ul { padding-left: 20px; }
@@ -355,6 +363,21 @@
                      <tr><td colspan="4">Loading data...</td></tr>
                 </tbody>
             </table>
+
+            <h2 style="margin-top: 30px;">Maps and Modes</h2>
+            <p>This table shows the available maps and modes</p>
+            <table id="maps-modes-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Name</th>
+                        <th>Commands</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="3">Loading data...</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <div id="custom-tab" class="tab-content">
@@ -393,6 +416,7 @@
         let rawOptionsData = [];
         let formOptionsConfig = [];
         let customOptions = [];
+        let gameConfigs = { maps: [], modes: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -442,6 +466,46 @@
             } catch (error) {
                 console.error("Could not load links content:", error);
                 linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
+            }
+        }
+
+        async function parseMapsModes(filePath) {
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error(`Could not load ${filePath}: ${response.statusText}`);
+                }
+                const text = await response.text();
+                
+                const configs = { maps: [], modes: [] };
+                
+                const categoryBlocks = text.split('## CATEGORY:').slice(1);
+
+                for (const block of categoryBlocks) {
+                    const lines = block.trim().split(/\r?\n/);
+                    const categoryName = lines.shift().trim();
+                    const content = lines.join('\n');
+                    
+                    const items = content.split('---').filter(item => item.trim() !== '');
+
+                    for (const item of items) {
+                        const itemLines = item.trim().split(/\r?\n/).filter(line => line.trim() !== '');
+                        if (itemLines.length === 0) continue;
+
+                        const name = itemLines.shift().trim();
+                        const commands = itemLines;
+                        
+                        if (categoryName === 'maps' && configs.maps) {
+                            configs.maps.push({ name, commands });
+                        } else if (categoryName === 'modes' && configs.modes) {
+                            configs.modes.push({ name, commands });
+                        }
+                    }
+                }
+                return configs;
+            } catch (error) {
+                console.error("Failed to parse game configs:", error);
+                return { maps: [], modes: [] }; 
             }
         }
 
@@ -533,8 +597,8 @@
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
                 let commands = [];
-                if (el.tagName === 'SELECT' && el.value) commands.push(el.value);
-                else if (el.type === 'checkbox' && el.checked) commands = JSON.parse(el.dataset.commandBlocks);
+                if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
+                else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
@@ -681,6 +745,26 @@
         }
         
         function generateCommands() {
+            // Get commands from Maps and Modes dropdowns
+            const presetCommands = [];
+            const mapsSelect = document.getElementById('maps-select');
+            const modesSelect = document.getElementById('modes-select');
+
+            if (mapsSelect && mapsSelect.value !== '') {
+                const selectedMap = gameConfigs.maps[mapsSelect.value];
+                if (selectedMap && selectedMap.commands) {
+                    presetCommands.push(...selectedMap.commands);
+                }
+            }
+
+            if (modesSelect && modesSelect.value !== '') {
+                const selectedMode = gameConfigs.modes[modesSelect.value];
+                if (selectedMode && selectedMode.commands) {
+                    presetCommands.push(...selectedMode.commands);
+                }
+            }
+
+            // Get commands from standard tweak options
             const standardCommands = [];
             const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
@@ -693,11 +777,17 @@
                     if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                 } else {
                     let commands = [];
-                    if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
-                    else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
+                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select')) {
+                        if (el.value) commands.push(el.value);
+                    } 
+                    else if (el.type === 'checkbox' && el.checked) { 
+                        commands = JSON.parse(el.dataset.commandBlocks);
+                    }
                     commands.forEach(cmd => { if (cmd) standardCommands.push(cmd.trim()); });
                 }
             });
+
+            // Process standard and custom tweak commands
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
@@ -715,9 +805,19 @@
                     targetSet.add(availableSlot);
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-            const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
+
+            // Assemble all commands in the correct order
+            const finalCommands = [
+                baseCommandsText.trim(),
+                ...presetCommands,
+                ...standardCommands,
+                ...customCommands
+            ];
+            
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
+            document.querySelectorAll('#options-form-columns select').forEach(el=>{
+                if (el.id.includes('maps-select') || el.id.includes('modes-select')) return;
+                const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors `;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=renameParts.join('');renameCommand+=`[No Mex]`;
             
             const sections = [];
@@ -725,6 +825,7 @@
             let currentLength = 0;
             const allCommands = [...finalCommands, renameCommand];
             for (const cmd of allCommands) {
+                if (!cmd) continue;
                 if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
                     sections.push(currentSection.join('\n'));
                     currentSection = [cmd];
@@ -739,7 +840,10 @@
         }
 
         function renderOptions() {
-            leftColumn.innerHTML = ''; rightColumn.innerHTML = '';
+            leftColumn.innerHTML = ''; 
+            rightColumn.innerHTML = '';
+            
+            // Render standard tweak options first
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
                 let inputElement;
@@ -763,6 +867,50 @@
                 if (optionGroup.column === 'right') rightColumn.appendChild(label);
                 else leftColumn.appendChild(label);
             });
+
+            // Now, create and insert Map/Mode dropdowns after "Extras"
+            if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
+                let mapsLabel, modesLabel;
+
+                if (gameConfigs.maps.length > 0) {
+                    mapsLabel = document.createElement('label');
+                    mapsLabel.textContent = 'Map: ';
+                    const mapsSelect = document.createElement('select');
+                    mapsSelect.id = 'maps-select';
+                    gameConfigs.maps.forEach((map, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = map.name;
+                        mapsSelect.appendChild(option);
+                    });
+                    mapsSelect.addEventListener('change', updateOutput);
+                    mapsLabel.appendChild(mapsSelect);
+                }
+                if (gameConfigs.modes.length > 0) {
+                    modesLabel = document.createElement('label');
+                    modesLabel.textContent = 'Mode: ';
+                    const modesSelect = document.createElement('select');
+                    modesSelect.id = 'modes-select';
+                    gameConfigs.modes.forEach((mode, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = mode.name;
+                        modesSelect.appendChild(option);
+                    });
+                    modesSelect.addEventListener('change', updateOutput);
+                    modesLabel.appendChild(modesSelect);
+                }
+
+                const extrasLabel = document.querySelector('select[data-option-type="Extras"]')?.parentElement;
+                if (extrasLabel) {
+                    if (modesLabel) extrasLabel.after(modesLabel);
+                    if (mapsLabel) extrasLabel.after(mapsLabel);
+                } else { // Fallback if "Extras" doesn't exist
+                    if (mapsLabel) leftColumn.appendChild(mapsLabel);
+                    if (modesLabel) leftColumn.appendChild(modesLabel);
+                }
+            }
+
             renderAllCustomComponents();
             updateOutput();
         }
@@ -797,19 +945,46 @@
             });
         }
 
+        function populateMapsModesTable() {
+            const tableBody = document.querySelector('#maps-modes-table tbody');
+            tableBody.innerHTML = ''; 
+
+            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No maps or modes found.</td></tr>';
+                return;
+            }
+
+            const populateCategory = (category, categoryName) => {
+                category.forEach(item => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = categoryName;
+                    row.insertCell().textContent = item.name;
+                    row.insertCell().innerHTML = item.commands.join('<br>');
+                });
+            };
+
+            populateCategory(gameConfigs.maps, 'maps');
+            populateCategory(gameConfigs.modes, 'modes');
+        }
+
         function switchTab(event) {
             const targetTabId = event.target.dataset.tab + '-tab';
             tabButtons.forEach(button => button.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById(targetTabId).classList.add('active');
-            if (event.target.dataset.tab === 'data' && rawOptionsData.length > 0) populateDataTable();
-            if (event.target.dataset.tab === 'custom') renderCustomTweaksTable();
+            
+            if (event.target.dataset.tab === 'data') {
+                if (rawOptionsData.length > 0) populateDataTable();
+                populateMapsModesTable();
+            }
+            if (event.target.dataset.tab === 'custom') {
+                renderCustomTweaksTable();
+            }
         }
 
         copyButtons.forEach(button => button.addEventListener('click', event => {
             const targetTextArea = document.getElementById(event.target.dataset.target);
-            // targetTextArea.select(); // REMOVED: This line caused the context menu to appear.
             const originalText = event.target.textContent;
             navigator.clipboard.writeText(targetTextArea.value)
                 .then(() => {
@@ -833,6 +1008,10 @@
                 if (el.type === 'checkbox') el.checked = false;
                 else if (el.tagName === 'SELECT') el.selectedIndex = 0;
             });
+            const mapsSelect = document.getElementById('maps-select');
+            if (mapsSelect) mapsSelect.selectedIndex = 0;
+            const modesSelect = document.getElementById('modes-select');
+            if (modesSelect) modesSelect.selectedIndex = 0;
             updateOutput();
         });
 
@@ -850,6 +1029,10 @@
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
+            const mapsSelect = document.getElementById('maps-select');
+            if (mapsSelect) mapsSelect.selectedIndex = 0;
+            const modesSelect = document.getElementById('modes-select');
+            if (modesSelect) modesSelect.selectedIndex = 0;
             updateOutput();
         });
         
@@ -873,7 +1056,17 @@
         async function initializeApp() {
             try {
                 loadCustomOptions();
-                await Promise.all([ loadBaseCommands(), loadConfigData(), loadLinksContent() ]);
+                
+                const [parsedConfigs] = await Promise.all([
+                    parseMapsModes('mapsmodes.txt'),
+                    loadBaseCommands(), 
+                    loadConfigData(), 
+                    loadLinksContent()
+                ]);
+
+                gameConfigs = parsedConfigs;
+                console.log("Maps & Modes configs loaded and parsed:", gameConfigs);
+
                 renderOptions();
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
