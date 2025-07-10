@@ -75,7 +75,7 @@
             border-radius: 5px;
             background-color: #2c2c2c;
         }
-        #options-form-columns {
+        #options-form-columns, #custom-options-form-columns {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
@@ -84,8 +84,7 @@
             flex: 1 1 45%;
             min-width: 250px;
         }
-        #left-column label,
-        #right-column label {
+        #left-column label, #right-column label, #custom-options-form-columns label {
             display: block;
             margin-bottom: 8px;
             cursor: pointer;
@@ -93,8 +92,7 @@
             border-radius: 4px;
             transition: background-color 0.2s ease;
         }
-        #left-column label:hover,
-        #right-column label:hover {
+        #left-column label:hover, #right-column label:hover, #custom-options-form-columns label:hover {
             background-color: #333;
         }
         input[type="checkbox"] {
@@ -104,6 +102,8 @@
             margin-right: 8px;
             vertical-align: middle;
         }
+        input[type="checkbox"]:disabled { cursor: not-allowed; }
+        input[type="checkbox"]:disabled + span { color: #888; }
         input[type="checkbox"]:disabled:checked {
             appearance: none; -webkit-appearance: none;
             background-color: #66bb6a;
@@ -173,7 +173,6 @@
         #custom-tweaks-table th:nth-child(2), #custom-tweaks-table td:nth-child(2) { width: 15%; }
         #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 40%; }
         #custom-tweaks-table th:last-child, #custom-tweaks-table td:last-child { width: 15%; text-align: center; }
-        
         .command-cell-wrapper {
             display: flex; justify-content: space-between;
             align-items: center; width: 100%; overflow: hidden;
@@ -198,18 +197,13 @@
         #links-tab li { margin-bottom: 10px; }
         
         #custom-tweak-form {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: 150px 1fr; gap: 10px;
+            align-items: center; margin-bottom: 30px;
         }
         #custom-tweak-form label { text-align: right; padding-right: 10px; }
         #custom-tweak-form input, #custom-tweak-form select, #custom-tweak-form textarea, #custom-tweak-form button {
-            width: 100%;
-            box-sizing: border-box;
-            background-color: #4a4a4a; color: #f0f0f0; border: 1px solid #777;
-            border-radius: 4px; padding: 6px; font-family: sans-serif;
+            width: 100%; box-sizing: border-box; background-color: #4a4a4a; color: #f0f0f0;
+            border: 1px solid #777; border-radius: 4px; padding: 6px; font-family: sans-serif;
         }
         #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
         #custom-tweak-form button {
@@ -217,7 +211,12 @@
             font-weight: bold; transition: background-color 0.3s ease;
         }
         #custom-tweak-form button:hover { background-color: #66bb6a; }
-        #custom-options-container { margin-top: 15px; border-top: 1px dashed #555; padding-top: 15px; }
+        
+        #slot-warning-messages p {
+            color: #ffcc80; /* Amber color for warnings */
+            text-align: center;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -239,9 +238,18 @@
                     <div class="options-column" id="left-column">
                         <p>Loading configuration data...</p>
                     </div>
-                    <div class="options-column" id="right-column">
-                    </div>
+                    <div class="options-column" id="right-column"></div>
                 </div>
+            </div>
+
+            <!-- NEW: Separate container for custom options -->
+            <div id="custom-settings-container" class="settings-container" style="display: none;">
+                <h2>Custom Options</h2>
+                <div id="custom-options-form-columns">
+                    <div class="options-column" id="custom-left-column"></div>
+                    <div class="options-column" id="custom-right-column"></div>
+                </div>
+                <div id="slot-warning-messages"></div>
             </div>
 
             <div class="output-container">
@@ -268,9 +276,7 @@
             <p>This table shows a summary for each configurable option</p>
             <table id="data-table">
                 <thead>
-                    <tr>
-                        <th>Option</th><th>Status</th><th>Summary</th><th>Command Blocks</th>
-                    </tr>
+                    <tr><th>Option</th><th>Status</th><th>Summary</th><th>Command Blocks</th></tr>
                 </thead>
                 <tbody>
                      <tr><td colspan="4">Loading data...</td></tr>
@@ -283,16 +289,13 @@
             <form id="custom-tweak-form">
                 <label for="custom-option-desc">Option Description:</label>
                 <input type="text" id="custom-option-desc" placeholder="e.g., Super Fast Tanks" required>
-                
                 <label for="custom-option-type">Type:</label>
                 <select id="custom-option-type">
                     <option value="tweakdefs">tweakdefs</option>
                     <option value="tweakunits">tweakunits</option>
                 </select>
-
                 <label for="custom-tweak-code">Tweak (Base64URL):</label>
                 <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded string here" required></textarea>
-                
                 <label></label>
                 <button type="submit">Save Tweak</button>
             </form>
@@ -300,12 +303,9 @@
             <h2>Saved Tweaks</h2>
             <table id="custom-tweaks-table">
                 <thead>
-                    <tr>
-                        <th>Option</th><th>Type</th><th>Tweak</th><th>Actions</th>
-                    </tr>
+                    <tr><th>Option</th><th>Type</th><th>Tweak</th><th>Actions</th></tr>
                 </thead>
-                <tbody>
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 
@@ -320,7 +320,6 @@
         let formOptionsConfig = [];
         let customOptions = [];
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
-
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
@@ -331,6 +330,12 @@
         const optionsFormColumns = document.getElementById('options-form-columns');
         const leftColumn = document.getElementById('left-column');
         const rightColumn = document.getElementById('right-column');
+        // NEW: References for custom options section
+        const customSettingsContainer = document.getElementById('custom-settings-container');
+        const customLeftColumn = document.getElementById('custom-left-column');
+        const customRightColumn = document.getElementById('custom-right-column');
+        const slotWarningContainer = document.getElementById('slot-warning-messages');
+        
         const commandOutput1 = document.getElementById('command-output-1');
         const commandOutput2 = document.getElementById('command-output-2');
         const copyButtons = document.querySelectorAll('.copy-button');
@@ -397,6 +402,8 @@
             updateOutput();
         }
 
+        // --- UPDATED RENDER & UI LOGIC ---
+
         function renderAllCustomComponents() {
             renderCustomTweaksTable();
             renderCustomTweaksAsCheckboxes();
@@ -420,15 +427,11 @@
         }
 
         function renderCustomTweaksAsCheckboxes() {
-            let container = document.getElementById('custom-options-container');
-            if (container) container.remove();
+            customLeftColumn.innerHTML = '';
+            customRightColumn.innerHTML = '';
             if (customOptions.length > 0) {
-                container = document.createElement('div');
-                container.id = 'custom-options-container';
-                const header = document.createElement('h3');
-                header.textContent = 'Custom Tweaks';
-                container.appendChild(header);
-                customOptions.forEach(tweak => {
+                customSettingsContainer.style.display = 'block';
+                customOptions.forEach((tweak, index) => {
                     const label = document.createElement('label');
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
@@ -436,13 +439,78 @@
                     checkbox.dataset.customData = JSON.stringify({ type: tweak.type, tweak: tweak.tweak });
                     checkbox.addEventListener('change', updateOutput);
                     
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = ` ${tweak.desc} (${tweak.type})`; // Indicate type
+                    
                     label.appendChild(checkbox);
-                    label.appendChild(document.createTextNode(` ${tweak.desc}`));
-                    container.appendChild(label);
+                    label.appendChild(textSpan);
+                    
+                    if (index % 2 === 0) {
+                        customLeftColumn.appendChild(label);
+                    } else {
+                        customRightColumn.appendChild(label);
+                    }
                 });
-                rightColumn.appendChild(container);
+            } else {
+                customSettingsContainer.style.display = 'none';
             }
         }
+
+        // NEW: Function to check slot availability and update UI
+        function updateCustomOptionAvailability() {
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select');
+            
+            // First, find all currently used slots from standard, checked options
+            allFormElements.forEach(el => {
+                let commands = [];
+                if (el.tagName === 'SELECT' && el.value) {
+                    commands.push(el.value);
+                } else if (el.type === 'checkbox' && el.checked) {
+                    commands = JSON.parse(el.dataset.commandBlocks);
+                }
+                
+                commands.forEach(cmd => {
+                    if (!cmd) return;
+                    const match = cmd.match(slotRegex);
+                    if (match) {
+                        if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2]));
+                        else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2]));
+                    }
+                });
+            });
+
+            const availableDefs = 9 - usedTweakDefs.size;
+            const availableUnits = 9 - usedTweakUnits.size;
+            
+            // Now, enable/disable custom options based on available slots
+            document.querySelectorAll('input[data-is-custom="true"]').forEach(checkbox => {
+                const tweakData = JSON.parse(checkbox.dataset.customData);
+                let shouldBeDisabled = false;
+                
+                if (!checkbox.checked) { // Only disable if it's not already taking up a slot
+                    if (tweakData.type === 'tweakdefs' && availableDefs <= 0) {
+                        shouldBeDisabled = true;
+                    }
+                    if (tweakData.type === 'tweakunits' && availableUnits <= 0) {
+                        shouldBeDisabled = true;
+                    }
+                }
+                checkbox.disabled = shouldBeDisabled;
+            });
+
+            // Finally, update the warning messages
+            slotWarningContainer.innerHTML = '';
+            if (availableDefs <= 0) {
+                slotWarningContainer.innerHTML += '<p>No available tweakdefs slots.</p>';
+            }
+            if (availableUnits <= 0) {
+                slotWarningContainer.innerHTML += '<p>No available tweakunits slots.</p>';
+            }
+        }
+
 
         function decodeBase64Url(base64Url) {
             if (!base64Url) return '';
@@ -526,40 +594,33 @@
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
             formOptionsConfig.forEach(g=>{if(g.type==='select'&&g.choices.length>0){if(g.defaultValue){g.choices.forEach(c=>{if(c.value===g.defaultValue)c.selected=true})}else{g.choices[0].selected=true}}});
         }
-
-        // --- COMMAND GENERATION (CORRECTED) ---
+        
         function generateCommands() {
             const standardCommands = [];
             const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
             const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
-            const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
+            const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
-            // 1. Collect commands from ALL standard selected options (checkboxes and dropdowns) first
             formElements.forEach(el => {
                 if (el.dataset.isCustom) {
-                    // If it's a custom checkbox and it's checked, save it for later processing
                     if (el.checked) {
                         customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                     }
                 } else {
-                    // This is a standard element (either a checkbox or a select dropdown)
                     let commands = [];
                     if (el.tagName === 'SELECT') {
                         if (el.value) commands.push(el.value);
                     } else if (el.type === 'checkbox' && el.checked) {
                         commands = JSON.parse(el.dataset.commandBlocks);
                     }
-                    
-                    // Add the collected commands to our standard list
                     commands.forEach(cmd => {
                         if (cmd) standardCommands.push(cmd.trim());
                     });
                 }
             });
 
-            // 2. Scan the collected standard commands to find which slots are used
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
@@ -570,7 +631,6 @@
                 }
             });
 
-            // 3. Now, process the custom tweaks, finding available slots from the remaining pool
             const customCommands = [];
             customTweaksToProcess.forEach(tweak => {
                 const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
@@ -583,7 +643,7 @@
                 }
                 if (availableSlot !== null) {
                     customCommands.push(`!bset ${tweak.type}${availableSlot} ${tweak.tweak}`);
-                    targetSet.add(availableSlot); // Mark as used for the next custom tweak
+                    targetSet.add(availableSlot);
                 } else {
                     console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`);
                 }
@@ -591,12 +651,10 @@
             
             const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
             
-            // 4. Generate lobby name
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            formElements.forEach(el=>{if(el.tagName==='SELECT'){const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}}});
+            document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
 
-            // 5. Split commands into two parts
             let s1=[],s2=[],l1=0;
             for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
             if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
@@ -640,6 +698,8 @@
         }
 
         function updateOutput() {
+            // UPDATED: This is now the central point of control
+            updateCustomOptionAvailability();
             const generatedData = generateCommands();
             commandOutput1.value = generatedData.section1;
             commandOutput2.value = generatedData.section2;
