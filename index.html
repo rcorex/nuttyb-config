@@ -257,17 +257,26 @@
 
             <div class="output-container">
                 <h2>Generated Commands</h2>
-                <p>Copy and paste both parts separately to the lobby</p>
-                <div class="command-output-section">
+                <!-- UPDATED: Text changed -->
+                <p>Copy and paste all parts separately to the lobby</p>
+                
+                <div id="part-1-section" class="command-output-section">
                     <h3>Part 1</h3>
                     <textarea id="command-output-1" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
                 </div>
-                <div class="command-output-section">
+                <div id="part-2-section" class="command-output-section" style="display: none;">
                     <h3>Part 2</h3>
                     <textarea id="command-output-2" rows="8" readonly></textarea>
                     <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
                 </div>
+                <!-- NEW: Added Part 3 section -->
+                <div id="part-3-section" class="command-output-section" style="display: none;">
+                    <h3>Part 3</h3>
+                    <textarea id="command-output-3" rows="8" readonly></textarea>
+                    <button class="copy-button" data-target="command-output-3">Copy Part 3</button>
+                </div>
+
                 <div class="lobby-name-output">
                     <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
                 </div>
@@ -287,23 +296,19 @@
             </table>
         </div>
 
-        <!-- UPDATED: All text changes are within this section -->
         <div id="custom-tab" class="tab-content">
             <p>Save your custom tweaks for use in the configurator</p>
             <h2>Add Custom Tweak</h2>
             <form id="custom-tweak-form">
                 <label for="custom-option-desc">Description:</label>
                 <input type="text" id="custom-option-desc" placeholder="e.g., Super Fast Tanks" required>
-                
                 <label for="custom-option-type">Type:</label>
                 <select id="custom-option-type">
                     <option value="tweakdefs">tweakdefs</option>
                     <option value="tweakunits">tweakunits</option>
                 </select>
-
                 <label for="custom-tweak-code">Tweak Code (Base64URL):</label>
                 <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded tweak code here" required></textarea>
-                
                 <label></label>
                 <button type="submit">Save Tweak</button>
             </form>
@@ -311,12 +316,7 @@
             <h2>Saved Tweaks</h2>
             <table id="custom-tweaks-table">
                 <thead>
-                    <tr>
-                        <th>Tweak</th>
-                        <th>Type</th>
-                        <th>Code</th>
-                        <th>Actions</th>
-                    </tr>
+                    <tr><th>Tweak</th><th>Type</th><th>Code</th><th>Actions</th></tr>
                 </thead>
                 <tbody></tbody>
             </table>
@@ -347,15 +347,13 @@
         const customLeftColumn = document.getElementById('custom-left-column');
         const customRightColumn = document.getElementById('custom-right-column');
         const slotWarningContainer = document.getElementById('slot-warning-messages');
-        const commandOutput1 = document.getElementById('command-output-1');
-        const commandOutput2 = document.getElementById('command-output-2');
+        const lobbyNameDisplay = document.getElementById('lobby-name-display');
         const copyButtons = document.querySelectorAll('.copy-button');
         const dataTableBody = document.querySelector('#data-table tbody');
         const customTweakForm = document.getElementById('custom-tweak-form');
         const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
-        const lobbyNameDisplay = document.getElementById('lobby-name-display');
         const MAX_SECTION_LENGTH = 50000;
         
         async function loadBaseCommands() {
@@ -630,13 +628,30 @@
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
             const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
+            
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
-            let s1=[],s2=[],l1=0;
-            for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
-            if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
-            return{lobbyName:renameCommand,section1:s1.join('\n'),section2:s2.join('\n')};
+            
+            // UPDATED: Use a dynamic function for splitting
+            const sections = [];
+            let currentSection = [];
+            let currentLength = 0;
+            const allCommands = [...finalCommands, renameCommand];
+
+            for (const cmd of allCommands) {
+                if (currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
+                    sections.push(currentSection.join('\n'));
+                    currentSection = [cmd];
+                    currentLength = cmd.length;
+                } else {
+                    currentSection.push(cmd);
+                    currentLength += cmd.length + 1;
+                }
+            }
+            if (currentSection.length > 0) sections.push(currentSection.join('\n'));
+
+            return{lobbyName:renameCommand, sections: sections};
         }
 
         function renderOptions() {
@@ -671,9 +686,19 @@
         function updateOutput() {
             updateCustomOptionUI();
             const generatedData = generateCommands();
-            commandOutput1.value = generatedData.section1;
-            commandOutput2.value = generatedData.section2;
             lobbyNameDisplay.textContent = generatedData.lobbyName;
+
+            for (let i = 1; i <= 3; i++) {
+                const sectionDiv = document.getElementById(`part-${i}-section`);
+                const textArea = document.getElementById(`command-output-${i}`);
+                if (generatedData.sections[i-1]) {
+                    textArea.value = generatedData.sections[i-1];
+                    sectionDiv.style.display = 'block';
+                } else {
+                    textArea.value = '';
+                    sectionDiv.style.display = 'none';
+                }
+            }
         }
 
         function populateDataTable() {
@@ -701,10 +726,11 @@
         copyButtons.forEach(button => button.addEventListener('click', event => {
             const targetTextArea = document.getElementById(event.target.dataset.target);
             targetTextArea.select();
+            const originalText = event.target.textContent;
             navigator.clipboard.writeText(targetTextArea.value)
                 .then(() => {
                     event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = `Copy ${event.target.dataset.target.replace('command-output-','Part ').trim()}`; }, 2000);
+                    setTimeout(() => { event.target.textContent = originalText; }, 2000);
                 }).catch(err => { console.error('Failed to copy: ', err); });
         }));
 
