@@ -432,7 +432,6 @@
                     const label = document.createElement('label');
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    // UPDATED: Store raw data, not a pre-built command
                     checkbox.dataset.isCustom = 'true';
                     checkbox.dataset.customData = JSON.stringify({ type: tweak.type, tweak: tweak.tweak });
                     checkbox.addEventListener('change', updateOutput);
@@ -444,7 +443,6 @@
                 rightColumn.appendChild(container);
             }
         }
-
 
         function decodeBase64Url(base64Url) {
             if (!base64Url) return '';
@@ -529,67 +527,81 @@
             formOptionsConfig.forEach(g=>{if(g.type==='select'&&g.choices.length>0){if(g.defaultValue){g.choices.forEach(c=>{if(c.value===g.defaultValue)c.selected=true})}else{g.choices[0].selected=true}}});
         }
 
-        // --- COMMAND GENERATION (HEAVILY MODIFIED) ---
+        // --- COMMAND GENERATION (CORRECTED) ---
         function generateCommands() {
-            const finalCommands = [baseCommandsText.trim()];
+            const standardCommands = [];
+            const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
             const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
-
             const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
             
-            // 1. Scan standard options to find used slots and collect their commands
+            // 1. Collect commands from ALL standard selected options (checkboxes and dropdowns) first
             formElements.forEach(el => {
-                if (el.checked && !el.dataset.isCustom) {
-                    const commands = (el.tagName === 'SELECT') ? [el.value] : JSON.parse(el.dataset.commandBlocks);
+                if (el.dataset.isCustom) {
+                    // If it's a custom checkbox and it's checked, save it for later processing
+                    if (el.checked) {
+                        customTweaksToProcess.push(JSON.parse(el.dataset.customData));
+                    }
+                } else {
+                    // This is a standard element (either a checkbox or a select dropdown)
+                    let commands = [];
+                    if (el.tagName === 'SELECT') {
+                        if (el.value) commands.push(el.value);
+                    } else if (el.type === 'checkbox' && el.checked) {
+                        commands = JSON.parse(el.dataset.commandBlocks);
+                    }
+                    
+                    // Add the collected commands to our standard list
                     commands.forEach(cmd => {
-                        if (!cmd) return;
-                        finalCommands.push(cmd.trim());
-                        const match = cmd.match(slotRegex);
-                        if (match) {
-                            const type = match[1];
-                            const number = parseInt(match[2], 10);
-                            if (type === 'tweakdefs') usedTweakDefs.add(number);
-                            else if (type === 'tweakunits') usedTweakUnits.add(number);
-                        }
+                        if (cmd) standardCommands.push(cmd.trim());
                     });
                 }
             });
 
-            // 2. Process selected custom tweaks and assign available slots
-            document.querySelectorAll('input[data-is-custom="true"]:checked').forEach(checkbox => {
-                const tweakData = JSON.parse(checkbox.dataset.customData);
-                const targetSet = (tweakData.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
-                let availableSlot = null;
+            // 2. Scan the collected standard commands to find which slots are used
+            standardCommands.forEach(cmd => {
+                const match = cmd.match(slotRegex);
+                if (match) {
+                    const type = match[1];
+                    const number = parseInt(match[2], 10);
+                    if (type === 'tweakdefs') usedTweakDefs.add(number);
+                    else if (type === 'tweakunits') usedTweakUnits.add(number);
+                }
+            });
 
+            // 3. Now, process the custom tweaks, finding available slots from the remaining pool
+            const customCommands = [];
+            customTweaksToProcess.forEach(tweak => {
+                const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
+                let availableSlot = null;
                 for (let i = 1; i <= 9; i++) {
                     if (!targetSet.has(i)) {
                         availableSlot = i;
                         break;
                     }
                 }
-
                 if (availableSlot !== null) {
-                    const newCommand = `!bset ${tweakData.type}${availableSlot} ${tweakData.tweak}`;
-                    finalCommands.push(newCommand);
-                    targetSet.add(availableSlot); // Mark this slot as used for the next custom tweak
+                    customCommands.push(`!bset ${tweak.type}${availableSlot} ${tweak.tweak}`);
+                    targetSet.add(availableSlot); // Mark as used for the next custom tweak
                 } else {
-                    console.warn(`All slots for '${tweakData.type}' are full. Could not add custom tweak.`);
+                    console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`);
                 }
             });
             
-            // 3. Generate lobby name (this part is unchanged)
+            const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
+            
+            // 4. Generate lobby name
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             formElements.forEach(el=>{if(el.tagName==='SELECT'){const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
 
-            // 4. Split commands into two parts
+            // 5. Split commands into two parts
             let s1=[],s2=[],l1=0;
             for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
             if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
             return{lobbyName:renameCommand,section1:s1.join('\n'),section2:s2.join('\n')};
         }
-
 
         function renderOptions() {
             leftColumn.innerHTML = ''; rightColumn.innerHTML = '';
