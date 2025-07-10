@@ -169,9 +169,9 @@
         #data-table th:nth-child(2), #data-table td:nth-child(2) { width: 15%; }
         #data-table th:nth-child(3), #data-table td:nth-child(3) { width: 27%; }
         #data-table th:last-child, #data-table td:last-child { width: 30%; }
-        #custom-tweaks-table th:first-child, #custom-tweaks-table td:first-child { width: 30%; }
+        #custom-tweaks-table th:first-child, #custom-tweaks-table td:first-child { width: 25%; }
         #custom-tweaks-table th:nth-child(2), #custom-tweaks-table td:nth-child(2) { width: 15%; }
-        #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 40%; }
+        #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 45%; }
         #custom-tweaks-table th:last-child, #custom-tweaks-table td:last-child { width: 15%; text-align: center; }
         .command-cell-wrapper {
             display: flex; justify-content: space-between;
@@ -189,7 +189,7 @@
         .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
         .delete-tweak-btn { background-color: #8c3a3a; }
         .delete-tweak-btn:hover { background-color: #a74848; }
-        #data-table td:last-child { white-space: normal; overflow: visible; }
+        #data-table td:last-child, #custom-tweaks-table td:nth-child(3) { white-space: normal; overflow: visible; }
         #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
         #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
         #links-tab ul { padding-left: 20px; }
@@ -202,6 +202,11 @@
         #custom-tweak-form input, #custom-tweak-form select, #custom-tweak-form textarea, #custom-tweak-form button {
             width: 100%; box-sizing: border-box; background-color: #4a4a4a; color: #f0f0f0;
             border: 1px solid #777; border-radius: 4px; padding: 6px; font-family: sans-serif;
+        }
+        /* NEW: Rule to override the width for the type dropdown */
+        #custom-tweak-form #custom-option-type {
+            width: auto;
+            justify-self: start;
         }
         #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
         #custom-tweak-form button {
@@ -264,10 +269,9 @@
                     </div>
                     <div class="options-column" id="right-column"></div>
                 </div>
-                <!-- NEW: Action buttons container -->
                 <div class="action-buttons-container">
-                    <button id="reset-none-btn" class="action-button">None</button>
                     <button id="reset-default-btn" class="action-button">Default</button>
+                    <button id="reset-none-btn" class="action-button">None</button>
                 </div>
             </div>
 
@@ -468,7 +472,7 @@
             }
             customOptions.forEach(tweak => {
                 const row = customTweaksTableBody.insertRow();
-                row.innerHTML = `<td title="${tweak.desc}">${tweak.desc}</td><td title="${tweak.type}">${tweak.type}</td><td title="${tweak.tweak}">${tweak.tweak}</td><td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>`;
+                row.innerHTML = `<td title="${tweak.desc}">${tweak.desc}</td><td title="${tweak.type}">${tweak.type}</td><td><div class="command-cell-wrapper"><span class="command-text" title="${tweak.tweak}">${tweak.tweak}</span><button class="copy-row-button" data-tweak-code="${tweak.tweak}">Copy</button></div></td><td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>`;
             });
         }
 
@@ -633,7 +637,6 @@
                 }
             });
             groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
-            
             const preferredDefaults = { 'Raptor Health': 'HP Epic (1.3x health)', 'Queen Health': 'QHP Epic (1.3x health)' };
             const allOptionGroups = [groupedOptions.mainTweaks, groupedOptions.evolvingCommanders, groupedOptions.tweakdefs2, groupedOptions.tweakdefs1, groupedOptions.extraRaptors, ...groupedOptions.otherCheckboxes.options];
             allOptionGroups.forEach(group => {
@@ -653,7 +656,6 @@
                 });
                 if (!defaultSet) { group.choices[0].selected = true; }
             });
-
             formOptionsConfig = [];
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
@@ -822,7 +824,8 @@
         resetDefaultBtn.addEventListener('click', () => {
             formOptionsConfig.forEach(optionGroup => {
                 if (optionGroup.type === 'checkbox') {
-                    const label = Array.from(document.querySelectorAll('#left-column label, #right-column label')).find(l => l.textContent.trim().includes(optionGroup.label));
+                    const allLabels = document.querySelectorAll('#options-form-columns label');
+                    const label = Array.from(allLabels).find(l => l.textContent.trim().includes(optionGroup.label));
                     if (label) {
                         const checkbox = label.querySelector('input[type="checkbox"]');
                         if (checkbox) checkbox.checked = optionGroup.default;
@@ -837,8 +840,16 @@
         
         customTweakForm.addEventListener('submit', addCustomTweak);
         customTweaksTableBody.addEventListener('click', event => {
-            if (event.target.matches('.delete-tweak-btn')) {
-                deleteCustomTweak(parseInt(event.target.dataset.id, 10));
+            const button = event.target;
+            if (button.matches('.delete-tweak-btn')) {
+                deleteCustomTweak(parseInt(button.dataset.id, 10));
+            } else if (button.matches('.copy-row-button')) {
+                const codeToCopy = button.dataset.tweakCode;
+                navigator.clipboard.writeText(codeToCopy).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => { button.textContent = originalText; }, 2000);
+                }).catch(err => { console.error('Failed to copy tweak code: ', err); });
             }
         });
         
