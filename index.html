@@ -156,7 +156,7 @@
         }
         #data-table th, #data-table td, #custom-tweaks-table th, #custom-tweaks-table td {
             border: 1px solid #444; padding: 8px;
-            text-align: left; vertical-align: middle; /* Centered vertically */
+            text-align: left; vertical-align: middle;
             font-family: monospace;
         }
         #data-table th, #custom-tweaks-table th { background-color: #333; }
@@ -197,7 +197,6 @@
         #links-tab ul { padding-left: 20px; }
         #links-tab li { margin-bottom: 10px; }
         
-        /* NEW: Styles for the Custom Tweak Form */
         #custom-tweak-form {
             display: grid;
             grid-template-columns: 150px 1fr;
@@ -228,7 +227,6 @@
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="data">Data</button>
-            <!-- NEW: Custom tab button -->
             <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="links">Links</button>
         </div>
@@ -242,7 +240,6 @@
                         <p>Loading configuration data...</p>
                     </div>
                     <div class="options-column" id="right-column">
-                         <!-- Custom tweaks will be added here by JS -->
                     </div>
                 </div>
             </div>
@@ -281,7 +278,6 @@
             </table>
         </div>
 
-        <!-- NEW: Custom Tab Content -->
         <div id="custom-tab" class="tab-content">
             <h2>Add Custom Tweak</h2>
             <form id="custom-tweak-form">
@@ -297,7 +293,7 @@
                 <label for="custom-tweak-code">Tweak (Base64URL):</label>
                 <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded string here" required></textarea>
                 
-                <label></label> <!-- Empty label for grid alignment -->
+                <label></label>
                 <button type="submit">Save Tweak</button>
             </form>
 
@@ -305,18 +301,13 @@
             <table id="custom-tweaks-table">
                 <thead>
                     <tr>
-                        <th>Option</th>
-                        <th>Type</th>
-                        <th>Tweak</th>
-                        <th>Actions</th>
+                        <th>Option</th><th>Type</th><th>Tweak</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Custom tweaks will be rendered here by JS -->
                 </tbody>
             </table>
         </div>
-
 
         <div id="links-tab" class="tab-content">
             <p>Loading links...</p>
@@ -327,10 +318,8 @@
         let baseCommandsText = '';
         let rawOptionsData = [];
         let formOptionsConfig = [];
-        // NEW: Global variable and key for custom options
         let customOptions = [];
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
-
 
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -353,8 +342,6 @@
         const lobbyNameDisplay = document.getElementById('lobby-name-display');
         const MAX_SECTION_LENGTH = 50000;
         
-        // --- DATA LOADING AND SAVING ---
-
         async function loadBaseCommands() {
             const response = await fetch('basecommands.txt');
             if (!response.ok) throw new Error(`Could not load basecommands.txt: ${response.statusText}`);
@@ -381,8 +368,6 @@
             }
         }
 
-        // --- CUSTOM TWEAKS LOGIC ---
-
         function loadCustomOptions() {
             const savedTweaks = localStorage.getItem(CUSTOM_TWEAKS_KEY);
             customOptions = savedTweaks ? JSON.parse(savedTweaks) : [];
@@ -397,16 +382,8 @@
             const desc = document.getElementById('custom-option-desc').value.trim();
             const type = document.getElementById('custom-option-type').value;
             const tweak = document.getElementById('custom-tweak-code').value.trim();
-
             if (!desc || !tweak) return;
-
-            const newTweak = {
-                id: Date.now(),
-                desc,
-                type,
-                tweak
-            };
-            customOptions.push(newTweak);
+            customOptions.push({ id: Date.now(), desc, type, tweak });
             saveCustomOptions();
             renderAllCustomComponents();
             updateOutput();
@@ -419,9 +396,6 @@
             renderAllCustomComponents();
             updateOutput();
         }
-
-
-        // --- RENDERING LOGIC ---
 
         function renderAllCustomComponents() {
             renderCustomTweaksTable();
@@ -447,24 +421,20 @@
 
         function renderCustomTweaksAsCheckboxes() {
             let container = document.getElementById('custom-options-container');
-            if (container) {
-                container.remove();
-            }
-
+            if (container) container.remove();
             if (customOptions.length > 0) {
                 container = document.createElement('div');
                 container.id = 'custom-options-container';
-                
                 const header = document.createElement('h3');
                 header.textContent = 'Custom Tweaks';
                 container.appendChild(header);
-
                 customOptions.forEach(tweak => {
                     const label = document.createElement('label');
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    const commandBlock = `!bset ${tweak.type} ${tweak.tweak}`;
-                    checkbox.dataset.commandBlocks = JSON.stringify([commandBlock]);
+                    // UPDATED: Store raw data, not a pre-built command
+                    checkbox.dataset.isCustom = 'true';
+                    checkbox.dataset.customData = JSON.stringify({ type: tweak.type, tweak: tweak.tweak });
                     checkbox.addEventListener('change', updateOutput);
                     
                     label.appendChild(checkbox);
@@ -481,12 +451,9 @@
             try {
                 let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const padding = base64.length % 4;
-                if (padding) {
-                    base64 += '===='.slice(padding);
-                }
+                if (padding) base64 += '===='.slice(padding);
                 const decodedData = atob(base64);
-                const utf8Decoder = new TextDecoder('utf-8');
-                return utf8Decoder.decode(Uint8Array.from(decodedData, c => c.charCodeAt(0)));
+                return new TextDecoder('utf-8').decode(Uint8Array.from(decodedData, c => c.charCodeAt(0)));
             } catch (e) {
                 console.error(`Base64URL decoding failed for: ${base64Url}`, e);
                 return 'Error decoding data';
@@ -513,13 +480,11 @@
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) {
-                            const encodedData = commandParts[2];
-                            summary = decodeBase64Url(encodedData).split('\n')[0].trim();
+                            summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
                         }
                     }
                     let status = "Optional", addedToFormGroup = false;
-                    const isExtraRaptor = extraRaptorsPrefixes.some(p => commandBlock.startsWith(p));
-                    if (isExtraRaptor) {
+                    if (extraRaptorsPrefixes.some(p => commandBlock.startsWith(p))) {
                         status = "Optional/Grouped";
                         let shortLabel = (label === "Mini Bosses") ? "[Mini Bosses]" : (label === "Experimental Wave Challenge") ? "[Expo Waves]" : "";
                         groupedOptions.extraRaptors.choices.push({ label, value: commandBlock, shortLabel });
@@ -529,29 +494,22 @@
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
                          status = "Optional/Grouped";
                          let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' QHP';
-                         else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' QHP'; }
+                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' QHP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' QHP'; }
                          groupedOptions.tweakdefs1.choices.push({ label, value: commandBlock, shortLabel });
                          addedToFormGroup = true;
                     }
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
                          status = "Optional/Grouped";
                          let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP';
-                         else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
+                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
                          groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel });
                          addedToFormGroup = true;
                     }
                     if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) {
-                        status = "Mandatory/Visible";
-                        groupedOptions.mainTweaks.commandBlocks.push(commandBlock);
-                        addedToFormGroup = true;
+                        status = "Mandatory/Visible"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true;
                     }
                     if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) {
-                         status = "Optional";
-                         groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock);
-                         if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true;
-                         addedToFormGroup = true;
+                         status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true;
                     }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
@@ -560,10 +518,7 @@
                     }
                 }
             });
-            groupedOptions.otherCheckboxes.options.sort((a,b) => {
-                const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label);
-                return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib);
-            });
+            groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
             formOptionsConfig = [];
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
@@ -574,21 +529,67 @@
             formOptionsConfig.forEach(g=>{if(g.type==='select'&&g.choices.length>0){if(g.defaultValue){g.choices.forEach(c=>{if(c.value===g.defaultValue)c.selected=true})}else{g.choices[0].selected=true}}});
         }
 
+        // --- COMMAND GENERATION (HEAVILY MODIFIED) ---
         function generateCommands() {
-            let coreCommands = [baseCommandsText.trim()];
+            const finalCommands = [baseCommandsText.trim()];
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+
+            const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
+            
+            // 1. Scan standard options to find used slots and collect their commands
+            formElements.forEach(el => {
+                if (el.checked && !el.dataset.isCustom) {
+                    const commands = (el.tagName === 'SELECT') ? [el.value] : JSON.parse(el.dataset.commandBlocks);
+                    commands.forEach(cmd => {
+                        if (!cmd) return;
+                        finalCommands.push(cmd.trim());
+                        const match = cmd.match(slotRegex);
+                        if (match) {
+                            const type = match[1];
+                            const number = parseInt(match[2], 10);
+                            if (type === 'tweakdefs') usedTweakDefs.add(number);
+                            else if (type === 'tweakunits') usedTweakUnits.add(number);
+                        }
+                    });
+                }
+            });
+
+            // 2. Process selected custom tweaks and assign available slots
+            document.querySelectorAll('input[data-is-custom="true"]:checked').forEach(checkbox => {
+                const tweakData = JSON.parse(checkbox.dataset.customData);
+                const targetSet = (tweakData.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
+                let availableSlot = null;
+
+                for (let i = 1; i <= 9; i++) {
+                    if (!targetSet.has(i)) {
+                        availableSlot = i;
+                        break;
+                    }
+                }
+
+                if (availableSlot !== null) {
+                    const newCommand = `!bset ${tweakData.type}${availableSlot} ${tweakData.tweak}`;
+                    finalCommands.push(newCommand);
+                    targetSet.add(availableSlot); // Mark this slot as used for the next custom tweak
+                } else {
+                    console.warn(`All slots for '${tweakData.type}' are full. Could not add custom tweak.`);
+                }
+            });
+            
+            // 3. Generate lobby name (this part is unchanged)
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            const formElements=optionsFormColumns.querySelectorAll('input[type="checkbox"],select');
-            formElements.forEach(el=>{if(el.type==='checkbox'){if(el.checked){JSON.parse(el.dataset.commandBlocks).forEach(b=>coreCommands.push(b.trim()))}}else if(el.tagName==='SELECT'){const o=el.options[el.selectedIndex];if(o.value){coreCommands.push(o.value.trim());const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}else{if(el.dataset.optionType==="Extras")extraRaptorsPart="";if(el.dataset.optionType==="Raptor Health")raptorHealthPart="";if(el.dataset.optionType==="Queen Health")queenHealthPart="";}}});
-            let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];
-            if(extraRaptorsPart)renameParts.push(extraRaptorsPart);
-            let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;
-            if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);
-            if(renameParts.length>0)renameCommand+=' '+renameParts.join('');
-            renameCommand+=`[No Mex]`;let s1=[],s2=[],l1=0;
-            for(const cmd of coreCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
+            formElements.forEach(el=>{if(el.tagName==='SELECT'){const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}}});
+            let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
+
+            // 4. Split commands into two parts
+            let s1=[],s2=[],l1=0;
+            for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
             if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
             return{lobbyName:renameCommand,section1:s1.join('\n'),section2:s2.join('\n')};
         }
+
 
         function renderOptions() {
             leftColumn.innerHTML = ''; rightColumn.innerHTML = '';
@@ -622,7 +623,7 @@
                 if (optionGroup.column === 'right') rightColumn.appendChild(label);
                 else leftColumn.appendChild(label);
             });
-            renderAllCustomComponents(); // Render custom tweaks after standard ones
+            renderAllCustomComponents();
             updateOutput();
         }
 
@@ -635,26 +636,16 @@
 
         function populateDataTable() {
             dataTableBody.innerHTML = ''; 
-            const visibleOptions = rawOptionsData.filter(item => item.status !== 'Hidden');
-            visibleOptions.forEach(item => {
+            rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
                 const row = dataTableBody.insertRow();
                 row.insertCell().textContent = item.label;
                 row.insertCell().textContent = item.status;
                 row.insertCell().textContent = item.summary;
                 const commandsCell = row.insertCell();
-                const wrapper = document.createElement('div');
-                wrapper.className = 'command-cell-wrapper';
-                const textSpan = document.createElement('span');
-                textSpan.className = 'command-text';
-                textSpan.textContent = item.commandBlock;
-                textSpan.title = item.commandBlock;
-                const copyBtn = document.createElement('button');
-                copyBtn.textContent = 'Copy';
-                copyBtn.className = 'copy-row-button';
-                copyBtn.dataset.command = item.commandBlock;
-                wrapper.appendChild(textSpan);
-                wrapper.appendChild(copyBtn);
-                commandsCell.appendChild(wrapper);
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
         }
 
@@ -668,28 +659,21 @@
             if (event.target.dataset.tab === 'custom') renderCustomTweaksTable();
         }
 
-        // --- EVENT LISTENERS & INITIALIZATION ---
-
         copyButtons.forEach(button => button.addEventListener('click', event => {
-            const targetId = event.target.dataset.target;
-            const targetTextArea = document.getElementById(targetId);
+            const targetTextArea = document.getElementById(event.target.dataset.target);
             targetTextArea.select();
             navigator.clipboard.writeText(targetTextArea.value)
                 .then(() => {
                     event.target.textContent = 'Copied!';
-                    setTimeout(() => {
-                        event.target.textContent = `Copy ${targetId.replace('command-output-','Part ').trim()}`;
-                    }, 2000);
+                    setTimeout(() => { event.target.textContent = `Copy ${event.target.dataset.target.replace('command-output-','Part ').trim()}`; }, 2000);
                 }).catch(err => { console.error('Failed to copy: ', err); });
         }));
 
         dataTableBody.addEventListener('click', event => {
             if (event.target.matches('.copy-row-button')) {
-                const button = event.target;
-                navigator.clipboard.writeText(button.dataset.command).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = 'Copied!';
-                    setTimeout(() => { button.textContent = originalText; }, 2000);
+                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
+                    event.target.textContent = 'Copied!';
+                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
                 }).catch(err => { console.error('Failed to copy command: ', err); });
             }
         });
@@ -697,8 +681,7 @@
         customTweakForm.addEventListener('submit', addCustomTweak);
         customTweaksTableBody.addEventListener('click', event => {
             if (event.target.matches('.delete-tweak-btn')) {
-                const id = parseInt(event.target.dataset.id, 10);
-                deleteCustomTweak(id);
+                deleteCustomTweak(parseInt(event.target.dataset.id, 10));
             }
         });
         
@@ -706,17 +689,12 @@
 
         async function initializeApp() {
             try {
-                loadCustomOptions(); // Load custom tweaks first
-                await Promise.all([
-                    loadBaseCommands(),
-                    loadConfigData(),
-                    loadLinksContent()
-                ]);
+                loadCustomOptions();
+                await Promise.all([ loadBaseCommands(), loadConfigData(), loadLinksContent() ]);
                 renderOptions();
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
-                const container = document.querySelector('.container');
-                container.innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
             }
         }
 
