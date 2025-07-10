@@ -103,7 +103,8 @@
             vertical-align: middle;
         }
         input[type="checkbox"]:disabled { cursor: not-allowed; }
-        input[type="checkbox"]:disabled + span { color: #888; }
+        .custom-option-label-text.disabled { color: #777; } /* Disabled text color */
+
         input[type="checkbox"]:disabled:checked {
             appearance: none; -webkit-appearance: none;
             background-color: #66bb6a;
@@ -213,9 +214,15 @@
         #custom-tweak-form button:hover { background-color: #66bb6a; }
         
         #slot-warning-messages p {
-            color: #ffcc80; /* Amber color for warnings */
+            color: #ffcc80;
             text-align: center;
             margin: 5px 0;
+            font-style: italic;
+        }
+        .custom-option-type-display {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-left: 4px;
         }
     </style>
 </head>
@@ -242,7 +249,6 @@
                 </div>
             </div>
 
-            <!-- NEW: Separate container for custom options -->
             <div id="custom-settings-container" class="settings-container" style="display: none;">
                 <h2>Custom Options</h2>
                 <div id="custom-options-form-columns">
@@ -330,12 +336,10 @@
         const optionsFormColumns = document.getElementById('options-form-columns');
         const leftColumn = document.getElementById('left-column');
         const rightColumn = document.getElementById('right-column');
-        // NEW: References for custom options section
         const customSettingsContainer = document.getElementById('custom-settings-container');
         const customLeftColumn = document.getElementById('custom-left-column');
         const customRightColumn = document.getElementById('custom-right-column');
         const slotWarningContainer = document.getElementById('slot-warning-messages');
-        
         const commandOutput1 = document.getElementById('command-output-1');
         const commandOutput2 = document.getElementById('command-output-2');
         const copyButtons = document.querySelectorAll('.copy-button');
@@ -402,8 +406,6 @@
             updateOutput();
         }
 
-        // --- UPDATED RENDER & UI LOGIC ---
-
         function renderAllCustomComponents() {
             renderCustomTweaksTable();
             renderCustomTweaksAsCheckboxes();
@@ -417,12 +419,7 @@
             }
             customOptions.forEach(tweak => {
                 const row = customTweaksTableBody.insertRow();
-                row.innerHTML = `
-                    <td title="${tweak.desc}">${tweak.desc}</td>
-                    <td title="${tweak.type}">${tweak.type}</td>
-                    <td title="${tweak.tweak}">${tweak.tweak}</td>
-                    <td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>
-                `;
+                row.innerHTML = `<td title="${tweak.desc}">${tweak.desc}</td><td title="${tweak.type}">${tweak.type}</td><td title="${tweak.tweak}">${tweak.tweak}</td><td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>`;
             });
         }
 
@@ -440,38 +437,36 @@
                     checkbox.addEventListener('change', updateOutput);
                     
                     const textSpan = document.createElement('span');
-                    textSpan.textContent = ` ${tweak.desc} (${tweak.type})`; // Indicate type
+                    textSpan.className = 'custom-option-label-text';
+                    textSpan.textContent = ` ${tweak.desc}`;
+                    
+                    const typeSpan = document.createElement('span');
+                    typeSpan.className = 'custom-option-type-display';
+                    typeSpan.textContent = `(${tweak.type})`;
                     
                     label.appendChild(checkbox);
                     label.appendChild(textSpan);
+                    label.appendChild(typeSpan);
                     
-                    if (index % 2 === 0) {
-                        customLeftColumn.appendChild(label);
-                    } else {
-                        customRightColumn.appendChild(label);
-                    }
+                    if (index % 2 === 0) customLeftColumn.appendChild(label);
+                    else customRightColumn.appendChild(label);
                 });
             } else {
                 customSettingsContainer.style.display = 'none';
             }
         }
 
-        // NEW: Function to check slot availability and update UI
-        function updateCustomOptionAvailability() {
+        function updateCustomOptionUI() {
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
             const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
-            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select');
+            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
-            // First, find all currently used slots from standard, checked options
             allFormElements.forEach(el => {
+                if(el.dataset.isCustom) return; // Skip custom for this pass
                 let commands = [];
-                if (el.tagName === 'SELECT' && el.value) {
-                    commands.push(el.value);
-                } else if (el.type === 'checkbox' && el.checked) {
-                    commands = JSON.parse(el.dataset.commandBlocks);
-                }
-                
+                if (el.tagName === 'SELECT' && el.value) commands.push(el.value);
+                else if (el.type === 'checkbox' && el.checked) commands = JSON.parse(el.dataset.commandBlocks);
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
@@ -482,35 +477,54 @@
                 });
             });
 
-            const availableDefs = 9 - usedTweakDefs.size;
-            const availableUnits = 9 - usedTweakUnits.size;
-            
-            // Now, enable/disable custom options based on available slots
-            document.querySelectorAll('input[data-is-custom="true"]').forEach(checkbox => {
-                const tweakData = JSON.parse(checkbox.dataset.customData);
-                let shouldBeDisabled = false;
-                
-                if (!checkbox.checked) { // Only disable if it's not already taking up a slot
-                    if (tweakData.type === 'tweakdefs' && availableDefs <= 0) {
-                        shouldBeDisabled = true;
+            const customCheckboxes = document.querySelectorAll('input[data-is-custom="true"]');
+            customCheckboxes.forEach(checkbox => {
+                const typeSpan = checkbox.nextElementSibling.nextElementSibling;
+                const textSpan = checkbox.nextElementSibling;
+                textSpan.classList.remove('disabled');
+
+                if (checkbox.checked) {
+                    const tweakData = JSON.parse(checkbox.dataset.customData);
+                    const targetSet = (tweakData.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
+                    let assignedSlot = null;
+                    for (let i = 1; i <= 9; i++) {
+                        if (!targetSet.has(i)) {
+                            assignedSlot = i;
+                            break;
+                        }
                     }
-                    if (tweakData.type === 'tweakunits' && availableUnits <= 0) {
-                        shouldBeDisabled = true;
+                    if (assignedSlot !== null) {
+                        typeSpan.textContent = `(${tweakData.type}${assignedSlot})`;
+                        targetSet.add(assignedSlot);
+                    } else {
+                        typeSpan.textContent = `(${tweakData.type} - No Slot!)`;
                     }
+                } else {
+                     const tweakData = JSON.parse(checkbox.dataset.customData);
+                     typeSpan.textContent = `(${tweakData.type})`;
                 }
-                checkbox.disabled = shouldBeDisabled;
             });
 
-            // Finally, update the warning messages
-            slotWarningContainer.innerHTML = '';
-            if (availableDefs <= 0) {
-                slotWarningContainer.innerHTML += '<p>No available tweakdefs slots.</p>';
-            }
-            if (availableUnits <= 0) {
-                slotWarningContainer.innerHTML += '<p>No available tweakunits slots.</p>';
-            }
-        }
+            let defsAvailable = 9 - usedTweakDefs.size > 0;
+            let unitsAvailable = 9 - usedTweakUnits.size > 0;
+            
+            customCheckboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    const tweakData = JSON.parse(checkbox.dataset.customData);
+                    if ((tweakData.type === 'tweakdefs' && !defsAvailable) || (tweakData.type === 'tweakunits' && !unitsAvailable)) {
+                        checkbox.disabled = true;
+                        checkbox.nextElementSibling.classList.add('disabled');
+                    } else {
+                        checkbox.disabled = false;
+                        checkbox.nextElementSibling.classList.remove('disabled');
+                    }
+                }
+            });
 
+            slotWarningContainer.innerHTML = '';
+            if (!defsAvailable) slotWarningContainer.innerHTML += '<p>No available tweakdefs slots</p>';
+            if (!unitsAvailable) slotWarningContainer.innerHTML += '<p>No available tweakunits slots</p>';
+        }
 
         function decodeBase64Url(base64Url) {
             if (!base64Url) return '';
@@ -520,36 +534,22 @@
                 if (padding) base64 += '===='.slice(padding);
                 const decodedData = atob(base64);
                 return new TextDecoder('utf-8').decode(Uint8Array.from(decodedData, c => c.charCodeAt(0)));
-            } catch (e) {
-                console.error(`Base64URL decoding failed for: ${base64Url}`, e);
-                return 'Error decoding data';
-            }
+            } catch (e) { console.error(`Base64URL decoding failed for: ${base64Url}`, e); return 'Error decoding data'; }
         }
 
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
-            const groupedOptions = {
-                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true, column: 'left' },
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
-                tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' },
-                tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' },
-                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
-                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
-            };
+            const groupedOptions = { mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: true, column: 'left' }, evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' }, tweakdefs2: { label: "Raptor Health", type: "select", choices: [], column: 'left' }, tweakdefs1: { label: "Queen Health", type: "select", choices: [], column: 'left' }, extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' }, otherCheckboxes: { type: "checkboxes", options: [], column: 'right' } };
             rawOptionsData = [];
             lines.forEach(line => {
                 const parts = line.split('\t');
                 if (parts.length >= 2) {
-                    const label = parts[0].trim();
-                    const commandBlock = parts[1].trim();
-                    let summary = '';
+                    const label = parts[0].trim(), commandBlock = parts[1].trim();
+                    let summary = '', status = "Optional", addedToFormGroup = false;
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
-                        if (commandParts.length >= 3) {
-                            summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
-                        }
+                        if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
                     }
-                    let status = "Optional", addedToFormGroup = false;
                     if (extraRaptorsPrefixes.some(p => commandBlock.startsWith(p))) {
                         status = "Optional/Grouped";
                         let shortLabel = (label === "Mini Bosses") ? "[Mini Bosses]" : (label === "Experimental Wave Challenge") ? "[Expo Waves]" : "";
@@ -558,30 +558,20 @@
                         addedToFormGroup = true;
                     }
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
-                         status = "Optional/Grouped";
-                         let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
+                         status = "Optional/Grouped"; let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
                          if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' QHP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' QHP'; }
-                         groupedOptions.tweakdefs1.choices.push({ label, value: commandBlock, shortLabel });
-                         addedToFormGroup = true;
+                         groupedOptions.tweakdefs1.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
                     }
                     if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
-                         status = "Optional/Grouped";
-                         let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
+                         status = "Optional/Grouped"; let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
                          if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
-                         groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel });
-                         addedToFormGroup = true;
+                         groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) {
-                        status = "Mandatory/Visible"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true;
-                    }
-                    if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) {
-                         status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true;
-                    }
+                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Mandatory/Visible"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
+                    if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
-                    if (!addedToFormGroup && !hiddenLabels.includes(label)) {
-                         groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' });
-                    }
+                    if (!addedToFormGroup && !hiddenLabels.includes(label)) { groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); }
                 }
             });
             groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
@@ -605,56 +595,35 @@
             
             formElements.forEach(el => {
                 if (el.dataset.isCustom) {
-                    if (el.checked) {
-                        customTweaksToProcess.push(JSON.parse(el.dataset.customData));
-                    }
+                    if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                 } else {
                     let commands = [];
-                    if (el.tagName === 'SELECT') {
-                        if (el.value) commands.push(el.value);
-                    } else if (el.type === 'checkbox' && el.checked) {
-                        commands = JSON.parse(el.dataset.commandBlocks);
-                    }
-                    commands.forEach(cmd => {
-                        if (cmd) standardCommands.push(cmd.trim());
-                    });
+                    if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
+                    else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
+                    commands.forEach(cmd => { if (cmd) standardCommands.push(cmd.trim()); });
                 }
             });
-
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
-                    const type = match[1];
-                    const number = parseInt(match[2], 10);
-                    if (type === 'tweakdefs') usedTweakDefs.add(number);
-                    else if (type === 'tweakunits') usedTweakUnits.add(number);
+                    if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2], 10));
+                    else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2], 10));
                 }
             });
-
             const customCommands = [];
             customTweaksToProcess.forEach(tweak => {
                 const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
                 let availableSlot = null;
-                for (let i = 1; i <= 9; i++) {
-                    if (!targetSet.has(i)) {
-                        availableSlot = i;
-                        break;
-                    }
-                }
+                for (let i = 1; i <= 9; i++) { if (!targetSet.has(i)) { availableSlot = i; break; } }
                 if (availableSlot !== null) {
                     customCommands.push(`!bset ${tweak.type}${availableSlot} ${tweak.tweak}`);
                     targetSet.add(availableSlot);
-                } else {
-                    console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`);
-                }
+                } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-            
             const finalCommands = [baseCommandsText.trim(), ...standardCommands, ...customCommands];
-            
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
             let renameCommand=`$rename [Mod] NuttyB Raptors`;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=' '+renameParts.join('');renameCommand+=`[No Mex]`;
-
             let s1=[],s2=[],l1=0;
             for(const cmd of finalCommands){if(l1+cmd.length+1<=MAX_SECTION_LENGTH){s1.push(cmd);l1+=cmd.length+1}else{s2.push(cmd)}}
             if(s2.length>0)s2.push(renameCommand);else s1.push(renameCommand);
@@ -667,27 +636,20 @@
                 const label = document.createElement('label');
                 let inputElement;
                 if (optionGroup.type === 'checkbox') {
-                    inputElement = document.createElement('input');
-                    inputElement.type = 'checkbox';
+                    inputElement = document.createElement('input'); inputElement.type = 'checkbox';
                     inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
-                    inputElement.checked = optionGroup.default;
-                    inputElement.disabled = optionGroup.disabled || false;
-                    label.appendChild(inputElement);
-                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    inputElement.checked = optionGroup.default; inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); label.appendChild(document.createTextNode(' ' + optionGroup.label));
                     if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
                 } else if (optionGroup.type === 'select') {
-                    inputElement = document.createElement('select');
-                    inputElement.dataset.optionType = optionGroup.label;
+                    inputElement = document.createElement('select'); inputElement.dataset.optionType = optionGroup.label;
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = choice.value;
-                        optionElement.textContent = choice.label;
-                        optionElement.selected = choice.selected || false;
-                        optionElement.dataset.shortLabel = choice.shortLabel || "";
+                        optionElement.value = choice.value; optionElement.textContent = choice.label;
+                        optionElement.selected = choice.selected || false; optionElement.dataset.shortLabel = choice.shortLabel || "";
                         inputElement.appendChild(optionElement);
                     });
-                    label.textContent = optionGroup.label + ': ';
-                    label.appendChild(inputElement);
+                    label.textContent = optionGroup.label + ': '; label.appendChild(inputElement);
                     inputElement.addEventListener('change', updateOutput);
                 }
                 if (optionGroup.column === 'right') rightColumn.appendChild(label);
@@ -698,8 +660,7 @@
         }
 
         function updateOutput() {
-            // UPDATED: This is now the central point of control
-            updateCustomOptionAvailability();
+            updateCustomOptionUI();
             const generatedData = generateCommands();
             commandOutput1.value = generatedData.section1;
             commandOutput2.value = generatedData.section2;
@@ -710,11 +671,8 @@
             dataTableBody.innerHTML = ''; 
             rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
                 const row = dataTableBody.insertRow();
-                row.insertCell().textContent = item.label;
-                row.insertCell().textContent = item.status;
-                row.insertCell().textContent = item.summary;
-                const commandsCell = row.insertCell();
-                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                row.insertCell().textContent = item.label; row.insertCell().textContent = item.status; row.insertCell().textContent = item.summary;
+                const commandsCell = row.insertCell(); const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
                 const textSpan = document.createElement('span'); textSpan.className = 'command-text'; textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
                 const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
                 wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
