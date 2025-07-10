@@ -190,13 +190,11 @@
         .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
         .delete-tweak-btn { background-color: #8c3a3a; }
         .delete-tweak-btn:hover { background-color: #a74848; }
-
         #data-table td:last-child { white-space: normal; overflow: visible; }
         #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
         #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
         #links-tab ul { padding-left: 20px; }
         #links-tab li { margin-bottom: 10px; }
-        
         #custom-tweak-form {
             display: grid; grid-template-columns: 150px 1fr; gap: 10px;
             align-items: center; margin-bottom: 30px;
@@ -213,11 +211,12 @@
         }
         #custom-tweak-form button:hover { background-color: #66bb6a; }
         
+        /* UPDATED: New styles for the availability message */
         #slot-warning-messages p {
-            color: #ffcc80;
-            text-align: center;
-            margin: 5px 0;
-            font-style: italic;
+            color: #aaa;
+            text-align: left;
+            font-size: 0.9em;
+            margin: 10px 0 0 0;
         }
         .custom-option-type-display {
             font-size: 0.85em;
@@ -463,7 +462,7 @@
             const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             allFormElements.forEach(el => {
-                if(el.dataset.isCustom) return; // Skip custom for this pass
+                if(el.dataset.isCustom) return;
                 let commands = [];
                 if (el.tagName === 'SELECT' && el.value) commands.push(el.value);
                 else if (el.type === 'checkbox' && el.checked) commands = JSON.parse(el.dataset.commandBlocks);
@@ -505,25 +504,27 @@
                 }
             });
 
-            let defsAvailable = 9 - usedTweakDefs.size > 0;
-            let unitsAvailable = 9 - usedTweakUnits.size > 0;
+            let defsAvailable = 9 - usedTweakDefs.size;
+            let unitsAvailable = 9 - usedTweakUnits.size;
             
             customCheckboxes.forEach(checkbox => {
                 if (!checkbox.checked) {
                     const tweakData = JSON.parse(checkbox.dataset.customData);
-                    if ((tweakData.type === 'tweakdefs' && !defsAvailable) || (tweakData.type === 'tweakunits' && !unitsAvailable)) {
-                        checkbox.disabled = true;
-                        checkbox.nextElementSibling.classList.add('disabled');
-                    } else {
-                        checkbox.disabled = false;
-                        checkbox.nextElementSibling.classList.remove('disabled');
+                    let shouldBeDisabled = false;
+                    if ((tweakData.type === 'tweakdefs' && defsAvailable <= 0) || (tweakData.type === 'tweakunits' && unitsAvailable <= 0)) {
+                        shouldBeDisabled = true;
                     }
+                    checkbox.disabled = shouldBeDisabled;
+                    checkbox.nextElementSibling.classList.toggle('disabled', shouldBeDisabled);
                 }
             });
 
             slotWarningContainer.innerHTML = '';
-            if (!defsAvailable) slotWarningContainer.innerHTML += '<p>No available tweakdefs slots</p>';
-            if (!unitsAvailable) slotWarningContainer.innerHTML += '<p>No available tweakunits slots</p>';
+            const defsSlotWord = defsAvailable === 1 ? 'slot' : 'slots';
+            const unitsSlotWord = unitsAvailable === 1 ? 'slot' : 'slots';
+            const message = document.createElement('p');
+            message.textContent = `${defsAvailable} available tweakdefs ${defsSlotWord} and ${unitsAvailable} available tweakunits ${unitsSlotWord}`;
+            slotWarningContainer.appendChild(message);
         }
 
         function decodeBase64Url(base64Url) {
