@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NuttyB Raptors Configurator</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- 1. ADDED: Dependencies for Lua minification and encoding -->
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
 
@@ -687,7 +686,7 @@ end`;
                 if(el.dataset.isCustom) return;
                 if (el.dataset.isHpGenerator) {
                     const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
-                    if (el.value !== '1') usedTweakDefs.add(slot); // Only uses a slot if not default
+                    if (el.value) usedTweakDefs.add(slot); // Only uses a slot if not "" (Default)
                     return;
                 }
 
@@ -776,11 +775,13 @@ end`;
             };
             rawOptionsData = [];
 
+            // --- 1. MODIFIED: Selector defaults updated ---
             const dynamicHPGroup = {
                 label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
-                defaultValue: "1.3",
+                defaultValue: "", // Default is now the empty option
                 choices: [
-                    { label: "1x HP (Default)", value: "1", shortLabel: "" },
+                    { label: "Default", value: "", shortLabel: "" },
+                    { label: "1x HP", value: "1", shortLabel: "1x HP" },
                     { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" },
                     { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
                     { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" },
@@ -793,9 +794,10 @@ end`;
             };
             const dynamicQHPGroup = {
                 label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left',
-                defaultValue: "1.3",
+                defaultValue: "", // Default is now the empty option
                 choices: [
-                     { label: "1x QHP (Default)", value: "1", shortLabel: "" },
+                     { label: "Default", value: "", shortLabel: "" },
+                     { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
                      { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" },
                      { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
                      { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" },
@@ -818,7 +820,7 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
-                        return; // Skip this line, it will be handled by our dynamic generators
+                        return;
                     }
 
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
@@ -887,8 +889,8 @@ end`;
                 } 
                 else if (el.dataset.isHpGenerator) {
                     const multiplier = el.value;
-                    if (multiplier !== "1") { // Don't generate a command for the default 1x value
-                        const type = el.dataset.hpType; // 'hp' or 'qhp'
+                    if (multiplier) { // Only generate if value is not "" (Default)
+                        const type = el.dataset.hpType;
                         const commandSlot = type === 'qhp' ? 'tweakdefs1' : 'tweakdefs2';
                         const base64string = generateLuaTweak(type, multiplier);
                         if (!base64string.startsWith("Error")) {
@@ -990,7 +992,7 @@ end`;
                     if (optionGroup.isHpGenerator) {
                         inputElement.dataset.isHpGenerator = true;
                         inputElement.dataset.hpType = optionGroup.hpType;
-                        inputElement.disabled = true; // Disabled until lib loads
+                        inputElement.disabled = true;
                     }
 
                     optionGroup.choices.forEach(choice => {
@@ -1030,7 +1032,7 @@ end`;
                         option.textContent = map.name;
                         mapsSelect.appendChild(option);
                     });
-                    mapsSelect.selectedIndex = 1; // Set default to the first real map
+                    mapsSelect.selectedIndex = 1;
                     mapsSelect.addEventListener('change', updateOutput);
                     mapsLabel.appendChild(mapsSelect);
                 }
@@ -1051,7 +1053,7 @@ end`;
                         option.textContent = mode.name;
                         modesSelect.appendChild(option);
                     });
-                    modesSelect.selectedIndex = 1; // Set default to the first real mode
+                    modesSelect.selectedIndex = 1;
                     modesSelect.addEventListener('change', updateOutput);
                     modesLabel.appendChild(modesSelect);
                 }
@@ -1088,7 +1090,7 @@ end`;
             }
         }
 
-        // --- MODIFIED: This function now also displays the dynamically generated HP/QHP commands ---
+        // --- 2. MODIFIED: This function now shows ONLY the selected HP/QHP command ---
         function populateDataTable() {
             dataTableBody.innerHTML = ''; 
             
@@ -1114,23 +1116,26 @@ end`;
                 commandsCell.appendChild(wrapper);
             });
 
-            // Second, add the dynamically generated options
+            // Second, add the currently selected generated options
             const hpGeneratorConfigs = formOptionsConfig.filter(group => group.isHpGenerator);
             hpGeneratorConfigs.forEach(config => {
-                const type = config.hpType; // 'hp' or 'qhp'
-                const commandSlot = (type === 'qhp') ? 'tweakdefs1' : 'tweakdefs2';
+                const selector = document.querySelector(`select[data-hp-type="${config.hpType}"]`);
+                if (!selector) return;
 
-                config.choices.forEach(choice => {
-                    // Skip the default '1x' option as it generates no command
-                    if (choice.value === "1") return;
+                const selectedValue = selector.value;
+                // Only add a row if a non-default value is selected
+                if (selectedValue) {
+                    const choice = config.choices.find(c => c.value === selectedValue);
+                    if (!choice) return;
 
-                    const base64tweak = generateLuaTweak(type, choice.value);
-                    if (base64tweak.startsWith("Error")) return; 
+                    const type = config.hpType;
+                    const commandSlot = (type === 'qhp') ? 'tweakdefs1' : 'tweakdefs2';
+                    const base64tweak = generateLuaTweak(type, selectedValue);
+                    if (base64tweak.startsWith("Error")) return;
 
                     const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
                     const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
 
-                    // Create and append the table row
                     const row = dataTableBody.insertRow();
                     row.insertCell().textContent = choice.label;
                     row.insertCell().textContent = 'Optional/Generated';
@@ -1139,21 +1144,18 @@ end`;
                     const commandsCell = row.insertCell();
                     const wrapper = document.createElement('div');
                     wrapper.className = 'command-cell-wrapper';
-                    
                     const textSpan = document.createElement('span');
                     textSpan.className = 'command-text';
                     textSpan.textContent = fullCommand;
                     textSpan.title = fullCommand;
-
                     const copyBtn = document.createElement('button');
                     copyBtn.textContent = 'Copy';
                     copyBtn.className = 'copy-row-button';
                     copyBtn.dataset.command = fullCommand;
-                    
                     wrapper.appendChild(textSpan);
                     wrapper.appendChild(copyBtn);
                     commandsCell.appendChild(wrapper);
-                });
+                }
             });
         }
 
@@ -1187,7 +1189,7 @@ end`;
             document.getElementById(targetTabId).classList.add('active');
             
             if (event.target.dataset.tab === 'data') {
-                populateDataTable(); // This will now include the generated commands
+                populateDataTable();
                 populateMapsModesTable();
             }
             if (event.target.dataset.tab === 'custom') {
@@ -1221,9 +1223,9 @@ end`;
                     el.checked = false;
                 } else if (el.tagName === 'SELECT') {
                     if (el.id === 'maps-select' || el.id === 'modes-select') {
-                        el.value = ""; // Set to N/A
+                        el.value = "";
                     } else if (el.dataset.isHpGenerator) {
-                        el.value = "1"; // Reset HP generators to 1x
+                        el.value = ""; // Reset HP generators to "" (Default)
                     }
                     else {
                         el.selectedIndex = 0;
@@ -1244,6 +1246,7 @@ end`;
                     }
                 } else if (optionGroup.type === 'select') {
                     const select = optionsFormColumns.querySelector(`select[data-option-type="${optionGroup.label}"]`);
+                    // This now correctly resets HP/QHP to "" as it's the new defaultValue
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
@@ -1293,7 +1296,7 @@ end`;
                         document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
                             select.disabled = false;
                         });
-                        updateOutput(); // Perform initial generation
+                        updateOutput();
                     }
                 }, 100);
 
