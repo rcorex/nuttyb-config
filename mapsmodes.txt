@@ -1,3 +1,58 @@
+## CATEGORY: base
+!preset coop
+!teamsize 12
+!autobalance off
+!assistdronesbuildpowermultiplier 1
+!assistdronesenabled enabled
+!commanderbuildersbuildpower 1000
+!commanderbuildersenabled enabled
+!commanderbuildersrange 1000
+!disablemapdamage 1
+!experimentalextraunits 1
+!experimentallegionfaction 1
+!experimentalshields bounceeverything
+!maxunits 10000
+!multiplier_builddistance 1.5
+!multiplier_buildpower 1
+!multiplier_buildtimecost 1
+!multiplier_energyconversion 1
+!multiplier_energycost 1
+!multiplier_energyproduction 1
+!multiplier_losrange 1
+!multiplier_maxdamage 1
+!multiplier_maxvelocity 1
+!multiplier_metalcost 1
+!multiplier_metalextraction 1
+!multiplier_radarrange 1
+!multiplier_resourceincome 1
+!multiplier_shieldpower 2
+!multiplier_turnrate 1
+!multiplier_weapondamage 1
+!multiplier_weaponrange 1
+!raptor_difficulty epic
+!raptor_spawntimemult 1
+!releasecandidates 1
+!startenergy 10000
+!startenergystorage 10000
+!startmetal 10000
+!startmetalstorage 10000
+!scavunitsforplayers 1
+!forceallunits 1
+!unit_restrictions_noair 0
+!unit_restrictions_noendgamelrpc 0
+!unit_restrictions_noextractors 1
+!unit_restrictions_nolrpc 0
+!unit_restrictions_nonukes 0
+!draft_mode disabled
+!unit_restrictions_notacnukes 0
+$welcome-message Settings made with NuttyB Configurator https://rcorex.github.io/nuttyb-config/
+!unit_market 0
+!evocom 0
+!nowasting all
+!bSet unit_restrictions_nonukes 1
+!bSet raptor_queen_count 8
+!balance
+
 ## CATEGORY: maps
 ---
 Full Metal Plate
