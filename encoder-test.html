@@ -65,7 +65,7 @@
             box-sizing: border-box;
         }
         textarea {
-            min-height: 150px;
+            min-height: 200px;
             resize: vertical;
             font-family: "Courier New", Courier, monospace;
         }
@@ -109,13 +109,24 @@
     <div class="container">
         <h1>Lua Toolchain</h1>
 
+        <!-- QHP GENERATOR -->
         <div class="section">
             <h2>QHP Code Generator</h2>
             <div class="input-group">
-                <label for="multiplierInput">Health Multiplier (e.g., 1.3)</label>
-                <input type="number" id="multiplierInput" value="1.3" step="0.1" min="0.1">
+                <label for="qhpMultiplierInput">Queen Health Multiplier</label>
+                <input type="number" id="qhpMultiplierInput" value="1.3" step="0.1" min="0.1">
             </div>
-            <button id="generateFromTemplateBtn" class="action-btn">Generate Code</button>
+            <button id="generateQhpBtn" class="action-btn">Generate QHP Code</button>
+        </div>
+
+        <!-- HP GENERATOR -->
+        <div class="section">
+            <h2>HP Code Generator</h2>
+            <div class="input-group">
+                <label for="hpMultiplierInput">Raptor Health Multiplier</label>
+                <input type="number" id="hpMultiplierInput" value="1.3" step="0.1" min="0.1">
+            </div>
+            <button id="generateHpBtn" class="action-btn">Generate HP Code</button>
         </div>
 
         <div class="input-group">
@@ -125,7 +136,7 @@
         
         <div class="options-group">
             <input type="checkbox" id="minifyCheckbox" checked>
-            <label for="minifyCheckbox">Minify Lua code before encoding</label>
+            <label for="minifyCheckbox">Minify Lua code before encoding (preserves first line)</label>
         </div>
 
         <div class="button-group">
@@ -143,16 +154,19 @@
 
     <script>
         // --- DOM Element References ---
-        const multiplierInput = document.getElementById('multiplierInput');
-        const generateFromTemplateBtn = document.getElementById('generateFromTemplateBtn');
+        const qhpMultiplierInput = document.getElementById('qhpMultiplierInput');
+        const generateQhpBtn = document.getElementById('generateQhpBtn');
+        const hpMultiplierInput = document.getElementById('hpMultiplierInput');
+        const generateHpBtn = document.getElementById('generateHpBtn');
+        
         const luaCodeInput = document.getElementById('luaCodeInput');
         const base64UrlOutput = document.getElementById('base64UrlOutput');
         const encodeBtn = document.getElementById('encodeBtn');
         const copyBtn = document.getElementById('copyBtn');
         const minifyCheckbox = document.getElementById('minifyCheckbox');
 
-        // --- Lua Template ---
-        const luaTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
+        // --- Lua Templates ---
+        const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
 -- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 for b, c in pairs(UnitDefs) do
 	if b:match('^raptor_queen_.*') then
@@ -164,16 +178,60 @@ for b, c in pairs(UnitDefs) do
 		c.health = c.health * __HEALTH_MULTIPLIER__
 	end
 end`;
+
+        const luaHpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X HP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for f, g in pairs(UnitDefs) do
+	if string.sub(f, 1, 24) == 'raptor_land_swarmer_heal' then
+		g.reclaimspeed = 100
+		g.stealth = 0
+		g.builder = false
+		g.workertime = g.workertime * 0.5
+		g.canassist = 0
+		g.maxthisunit = 0
+	end
+	if
+		g.customparams and g.customparams.subfolder and g.customparams.subfolder == 'other/raptors' and g.health and
+			not f:match('^raptor_queen_.*')
+	 then
+		g.health = __HEALTH_MULTIPLIER__ * g.health
+	end
+end
+
+local h = UnitDef_Post
+function UnitDef_Post(i, j)
+	h(i, j)
+	for i, k in pairs(UnitDefs) do
+		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
+			if k then
+				k.metalcost = math.floor(k.metalcost)
+				k.nochasecategory = "OBJECT"
+			end
+		end
+	end
+end`;
         
         // --- Core Functions ---
 
-        function generateCode() {
-            const multiplierValue = multiplierInput.value;
+        function generateQhpCode() {
+            const multiplierValue = qhpMultiplierInput.value;
             if (!multiplierValue || isNaN(multiplierValue)) {
-                alert('Please enter a valid number for the multiplier.');
+                alert('Please enter a valid number for the QHP multiplier.');
                 return;
             }
-            const generatedCode = luaTemplate
+            const generatedCode = luaQhpTemplate
+                .replace('__MULTIPLIER_TEXT__', multiplierValue)
+                .replace('__HEALTH_MULTIPLIER__', multiplierValue);
+            luaCodeInput.value = generatedCode;
+        }
+        
+        function generateHpCode() {
+            const multiplierValue = hpMultiplierInput.value;
+            if (!multiplierValue || isNaN(multiplierValue)) {
+                alert('Please enter a valid number for the HP multiplier.');
+                return;
+            }
+            const generatedCode = luaHpTemplate
                 .replace('__MULTIPLIER_TEXT__', multiplierValue)
                 .replace('__HEALTH_MULTIPLIER__', multiplierValue);
             luaCodeInput.value = generatedCode;
@@ -190,25 +248,17 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
-                    // Step 1: Capture the first line from the original code.
                     const firstLineComment = originalCode.split('\n')[0];
-
-                    // Step 2: Minify the original code.
                     const minifiedCode = luamin.minify(originalCode);
-
-                    // Step 3: Combine the first line comment and the minified code.
                     finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
-
                 } catch (e) {
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
                     return;
                 }
             } else {
-                // If not minifying, just use the original code as-is.
                 finalCodeToEncode = originalCode;
             }
             
-            // Step 4: Encode the final resulting string to Base64URL.
             const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
             const base64String = btoa(utf8SafeString);
             const base64UrlString = base64String
@@ -232,12 +282,14 @@ end`;
         }
         
         // --- Event Listeners & Initializer ---
-        generateFromTemplateBtn.addEventListener('click', generateCode);
+        generateQhpBtn.addEventListener('click', generateQhpCode);
+        generateHpBtn.addEventListener('click', generateHpCode);
         encodeBtn.addEventListener('click', processAndEncode);
         copyBtn.addEventListener('click', copyOutput);
         
         document.addEventListener('DOMContentLoaded', () => {
-            generateCode();
+            // Generate the first template by default on page load.
+            generateQhpCode();
 
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
