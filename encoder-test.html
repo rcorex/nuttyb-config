@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lua Generator, Minifier & Encoder</title>
+    <!-- Include the luamin library from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/luamin/dist/luamin.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1a1a1a;
+            margin-top: 0;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        h2 { font-size: 1.2em; border: none; padding-bottom: 5px; margin-bottom: 15px; text-align: left;}
+        .section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .input-group, .fetch-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        input[type="url"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: "Courier New", Courier, monospace;
+        }
+        .options-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+        .options-group label {
+            margin-bottom: 0;
+            font-weight: normal;
+            cursor: pointer;
+            user-select: none;
+        }
+        .button-group { display: flex; gap: 10px; }
+        button {
+            flex-grow: 1; padding: 12px 20px; border: none; border-radius: 6px;
+            background-color: #007bff; color: white; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        button:hover { background-color: #0056b3; }
+        button:active { transform: scale(0.98); }
+        button.secondary { background-color: #6c757d; }
+        button.secondary:hover { background-color: #5a6268; }
+        button.action-btn { background-color: #28a745; margin-top: 10px; width: 100%; }
+        button.action-btn:hover { background-color: #218838; }
+        .output-container { position: relative; }
+        #copyBtn {
+            position: absolute; top: 10px; right: 10px; padding: 5px 10px;
+            font-size: 12px; background-color: #28a745;
+        }
+        #copyBtn:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Lua Toolchain</h1>
+
+        <!-- TEMPLATE GENERATOR SECTION -->
+        <div class="section">
+            <h2>QHP Code Generator</h2>
+            <div class="input-group">
+                <label for="multiplierInput">Health Multiplier (e.g., 1.3)</label>
+                <input type="number" id="multiplierInput" value="1.3" step="0.1" min="0.1">
+            </div>
+            <button id="generateFromTemplateBtn" class="action-btn">Generate Code</button>
+        </div>
+
+        <div class="input-group">
+            <label for="luaCodeInput">Generated Lua Code</label>
+            <textarea id="luaCodeInput" spellcheck="false" placeholder="Generated code will appear here..."></textarea>
+        </div>
+        
+        <div class="options-group">
+            <input type="checkbox" id="minifyCheckbox" checked>
+            <label for="minifyCheckbox">Minify Lua code before encoding</label>
+        </div>
+
+        <div class="button-group">
+            <button id="encodeBtn">Minify & Encode</button>
+        </div>
+        
+        <div class="input-group">
+            <label for="base64UrlOutput">Base64URL Result</label>
+            <div class="output-container">
+                <textarea id="base64UrlOutput" readonly placeholder="Encoded result will appear here..."></textarea>
+                <button id="copyBtn">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const multiplierInput = document.getElementById('multiplierInput');
+        const generateFromTemplateBtn = document.getElementById('generateFromTemplateBtn');
+        const luaCodeInput = document.getElementById('luaCodeInput');
+        const base64UrlOutput = document.getElementById('base64UrlOutput');
+        const encodeBtn = document.getElementById('encodeBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const minifyCheckbox = document.getElementById('minifyCheckbox');
+
+        // --- Lua Template with Placeholders ---
+        // We use special placeholders like __HEALTH_MULTIPLIER__ to make replacement safe and easy.
+        const luaTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for b, c in pairs(UnitDefs) do
+	if b:match('^raptor_queen_.*') then
+		c.repairable = false
+		c.canbehealed = false
+		c.buildtime = 9999999
+		c.autoheal = 2
+		c.canSelfRepair = false
+		c.health = c.health * __HEALTH_MULTIPLIER__
+	end
+end`;
+
+        // --- Core Functions ---
+
+        /**
+         * Generates Lua code from the template using the multiplier value.
+         */
+        function generateCode() {
+            const multiplierValue = multiplierInput.value;
+
+            if (!multiplierValue || isNaN(multiplierValue)) {
+                alert('Please enter a valid number for the multiplier.');
+                return;
+            }
+
+            // Replace the placeholders in the template string
+            const generatedCode = luaTemplate
+                .replace('__MULTIPLIER_TEXT__', multiplierValue)
+                .replace('__HEALTH_MULTIPLIER__', multiplierValue);
+
+            // Put the result into the main editor
+            luaCodeInput.value = generatedCode;
+        }
+
+        /**
+         * Minifies (if checked) and encodes the content of the Lua editor.
+         */
+        function processAndEncode() {
+            let luaCode = luaCodeInput.value;
+            if (!luaCode) {
+                alert('The code editor is empty. Generate some code first!');
+                return;
+            }
+
+            if (minifyCheckbox.checked) {
+                try {
+                    luaCode = luamin.minify(luaCode);
+                } catch (e) {
+                    alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
+                    return;
+                }
+            }
+            
+            const utf8SafeString = unescape(encodeURIComponent(luaCode));
+            const base64String = btoa(utf8SafeString);
+            const base64UrlString = base64String
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+            base64UrlOutput.value = base64UrlString;
+        }
+        
+        /**
+         * Copies the output text to the clipboard.
+         */
+        function copyOutput() {
+            const textToCopy = base64UrlOutput.value;
+            if (!textToCopy) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => { copyBtn.textContent = originalText; }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy text to clipboard.');
+            });
+        }
+        
+        // --- Event Listeners ---
+        generateFromTemplateBtn.addEventListener('click', generateCode);
+        encodeBtn.addEventListener('click', processAndEncode);
+        copyBtn.addEventListener('click', copyOutput);
+        
+        // --- Initial Generation on Page Load ---
+        // Generate the initial code when the page loads so the editor isn't empty.
+        document.addEventListener('DOMContentLoaded', generateCode);
+
+    </script>
+</body>
+</html>
