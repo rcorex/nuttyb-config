@@ -236,7 +236,7 @@
         #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
         #custom-tweak-form button {
             grid-column: 2; background-color: #4caf50; cursor: pointer;
-            font-weight: bold; transition: background-color 0.3s ease;
+            font-weight: bold; transition: background-color: 0.3s ease;
             width: auto; 
             justify-self: start; 
         }
@@ -851,7 +851,6 @@ end`;
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
         }
         
-        // --- MODIFIED: This function now conditionally sets the lobby name base ---
         function generateCommands() {
             let includeBaseCommands = false;
 
@@ -1094,7 +1093,30 @@ end`;
             updateOutput();
         }
 
+        // --- MODIFIED: Added logic for all Scavengers mode dependencies ---
         function updateOutput() {
+            const modesSelect = document.getElementById('modes-select');
+            const extrasSelect = document.querySelector('select[data-option-type="Extras"]');
+            const raptorHpSelect = document.querySelector('select[data-hp-type="hp"]');
+            const queenHpSelect = document.querySelector('select[data-hp-type="qhp"]');
+
+            if (modesSelect) {
+                const selectedModeIndex = modesSelect.value;
+                const isScavengers = selectedModeIndex !== "" && gameConfigs.modes[selectedModeIndex].name === 'Scavengers';
+
+                // Handle dependent selectors
+                [extrasSelect, raptorHpSelect, queenHpSelect].forEach(selector => {
+                    if (selector) {
+                        if (isScavengers) {
+                            selector.value = ""; // Set to "None" or "Default"
+                            selector.disabled = true;
+                        } else {
+                            selector.disabled = false;
+                        }
+                    }
+                });
+            }
+            
             updateCustomOptionUI();
             const generatedData = generateCommands();
             lobbyNameDisplay.textContent = generatedData.lobbyName;
