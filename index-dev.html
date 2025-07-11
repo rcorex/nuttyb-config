@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NuttyB Raptors Configurator</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 1. ADDED: Dependencies for Lua minification and encoding -->
+    <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
+
     <style>
         body {
             font-family: sans-serif;
@@ -290,6 +294,7 @@
         </div>
 
         <div id="config-tab" class="tab-content active">
+             <p>Select your desired options and copy the generated commands into the lobby</p>
             <div class="settings-container">
                 <h2>NuttyB Tweaks</h2>
                 <div id="options-form-columns">
@@ -440,6 +445,95 @@
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
         const MAX_SECTION_LENGTH = 50000;
+
+        // --- 2. ADDED: Lua Templates and Generator Logic ---
+        const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for b, c in pairs(UnitDefs) do
+	if b:match('^raptor_queen_.*') then
+		c.repairable = false
+		c.canbehealed = false
+		c.buildtime = 9999999
+		c.autoheal = 2
+		c.canSelfRepair = false
+		c.health = c.health * __HEALTH_MULTIPLIER__
+	end
+end`;
+
+        const luaHpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X HP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for f, g in pairs(UnitDefs) do
+	if string.sub(f, 1, 24) == 'raptor_land_swarmer_heal' then
+		g.reclaimspeed = 100
+		g.stealth = 0
+		g.builder = false
+		__WORKERTIME_LINE__
+		g.canassist = 0
+		g.maxthisunit = 0
+	end
+	if
+		g.customparams and g.customparams.subfolder and g.customparams.subfolder == 'other/raptors' and g.health and
+			not f:match('^raptor_queen_.*')
+	 then
+		g.health = __HEALTH_MULTIPLIER__ * g.health
+	end
+end
+
+local h = UnitDef_Post
+function UnitDef_Post(i, j)
+	h(i, j)
+	for i, k in pairs(UnitDefs) do
+		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
+			if k then
+				__METAL_COST_LINE__
+				k.nochasecategory = "OBJECT"
+			end
+		end
+	end
+end`;
+
+        function generateLuaTweak(type, multiplierValue) {
+            let originalCode;
+            
+            if (typeof luamin === 'undefined') {
+                console.error("luamin library not loaded yet!");
+                return "Error: Lib not loaded";
+            }
+
+            if (type === 'qhp') {
+                originalCode = luaQhpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+            } else { // type === 'hp'
+                const multiplierNum = parseFloat(multiplierValue);
+                let metalCostLine, workerTimeLine;
+                switch (multiplierNum) {
+                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * .35)'; workerTimeLine = 'g.workertime = g.workertime * 0.65'; break;
+                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * .34)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
+                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * .33)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
+                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * .25)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
+                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * .15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
+                    default: metalCostLine = 'k.metalcost = math.floor(k.metalcost)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                }
+                originalCode = luaHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
+                    .replace('__METAL_COST_LINE__', metalCostLine)
+                    .replace('__WORKERTIME_LINE__', workerTimeLine);
+            }
+
+            try {
+                const firstLineComment = originalCode.split('\n')[0];
+                const minifiedCode = luamin.minify(originalCode);
+                const finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
+                const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
+                const base64String = btoa(utf8SafeString);
+                return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            } catch (e) {
+                console.error(`Lua Minify Error: ${e.message}`);
+                return `Error: ${e.message}`;
+            }
+        }
         
         async function loadConfigData() {
             const response = await fetch('tweakdata.txt');
@@ -591,6 +685,13 @@
             
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
+                 // --- MODIFIED: Handle new dynamic HP selects ---
+                if (el.dataset.isHpGenerator) {
+                    const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
+                    if (el.value !== '1') usedTweakDefs.add(slot); // Only uses a slot if not default
+                    return;
+                }
+
                 let commands = [];
                 if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
                 else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
@@ -671,17 +772,58 @@
             const groupedOptions = { 
                 mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
-                tweakdefs2: { label: "Raptor Health", type: "select", choices: [{ label: "Default", value: "", shortLabel: "" }], column: 'left' },
-                tweakdefs1: { label: "Queen Health", type: "select", choices: [{ label: "Default", value: "", shortLabel: "" }], column: 'left' },
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
             rawOptionsData = [];
+
+             // --- 3. MODIFIED: Manually define HP/QHP generators instead of parsing from file ---
+            const dynamicHPGroup = {
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
+                defaultValue: "1.3",
+                choices: [
+                    { label: "1x HP (Default)", value: "1", shortLabel: "" },
+                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" },
+                    { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
+                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" },
+                    { label: "2x HP", value: "2", shortLabel: "2x HP" },
+                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" },
+                    { label: "3x HP", value: "3", shortLabel: "3x HP" },
+                    { label: "4x HP", value: "4", shortLabel: "4x HP" },
+                    { label: "5x HP", value: "5", shortLabel: "5x HP" },
+                ]
+            };
+            const dynamicQHPGroup = {
+                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left',
+                defaultValue: "1.3",
+                choices: [
+                     { label: "1x QHP (Default)", value: "1", shortLabel: "" },
+                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" },
+                     { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
+                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" },
+                     { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
+                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" },
+                     { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
+                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" },
+                     { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
+                     { label: "7x QHP", value: "7", shortLabel: "7x QHP" },
+                     { label: "9x QHP", value: "9", shortLabel: "9x QHP" },
+                     { label: "11x QHP", value: "11", shortLabel: "11x QHP" },
+                     { label: "13x QHP", value: "13", shortLabel: "13x QHP" },
+                ]
+            };
+
             lines.forEach(line => {
                 const parts = line.split('\t');
                 if (parts.length >= 2) {
                     const label = parts[0].trim(), commandBlock = parts[1].trim();
                     let summary = '', status = "Optional", addedToFormGroup = false;
+
+                    // --- MODIFIED: Skip file parsing for tweakdefs1 and tweakdefs2
+                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
+                        return; // Skip this line, it will be handled by our dynamic generators
+                    }
+
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
@@ -693,16 +835,6 @@
                         if (commandBlock.startsWith('!bset tweakdefs4')) groupedOptions.extraRaptors.defaultValue = commandBlock;
                         addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs1')) {
-                         status = "Optional/Grouped"; let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' QHP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' QHP'; }
-                         groupedOptions.tweakdefs1.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
-                    }
-                    if (!addedToFormGroup && commandBlock.startsWith('!bset tweakdefs2')) {
-                         status = "Optional/Grouped"; let match = label.match(/(\d+\.?\d*x)/), shortLabel = label;
-                         if (match && match[1]) shortLabel = match[1].replace(/\./g, '_') + ' HP'; else { let p = label.match(/\((.*?)\)/); if(p&&p[1]) shortLabel = p[1].replace(' health','').replace(/\./g,'_')+' HP'; }
-                         groupedOptions.tweakdefs2.choices.push({ label, value: commandBlock, shortLabel }); addedToFormGroup = true;
-                    }
                     if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
                     if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
@@ -711,30 +843,14 @@
                 }
             });
             groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
-            const preferredDefaults = { 'Raptor Health': 'HP Epic (1.3x health)', 'Queen Health': 'QHP Epic (1.3x health)' };
-            const allOptionGroups = [groupedOptions.mainTweaks, groupedOptions.evolvingCommanders, groupedOptions.tweakdefs2, groupedOptions.tweakdefs1, groupedOptions.extraRaptors, ...groupedOptions.otherCheckboxes.options];
-            allOptionGroups.forEach(group => {
-                if (group.type !== 'select' || group.choices.length === 0) return;
-                let defaultSet = false;
-                const preferredLabel = preferredDefaults[group.label];
-                if (preferredLabel) {
-                    const preferredChoice = group.choices.find(c => c.label === preferredLabel);
-                    if (preferredChoice) group.defaultValue = preferredChoice.value;
-                }
-                if (!group.defaultValue && (group.label === 'Raptor Health' || group.label === 'Queen Health') && group.choices.length > 1) {
-                    group.defaultValue = group.choices[1].value;
-                }
-                group.choices.forEach(choice => {
-                    if (choice.value === group.defaultValue) { choice.selected = true; defaultSet = true; } 
-                    else { choice.selected = false; }
-                });
-                if (!defaultSet) { group.choices[0].selected = true; }
-            });
+            
             formOptionsConfig = [];
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
-            if (groupedOptions.tweakdefs2.choices.length > 0) formOptionsConfig.push(groupedOptions.tweakdefs2);
-            if (groupedOptions.tweakdefs1.choices.length > 0) formOptionsConfig.push(groupedOptions.tweakdefs1);
+            
+            // --- MODIFIED: Add our new dynamic groups to the config
+            formOptionsConfig.push(dynamicHPGroup, dynamicQHPGroup);
+
             if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
         }
@@ -772,7 +888,20 @@
             formElements.forEach(el => {
                 if (el.dataset.isCustom) {
                     if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
-                } else {
+                } 
+                // --- 4. MODIFIED: Intercept HP/QHP selects and generate command dynamically ---
+                else if (el.dataset.isHpGenerator) {
+                    const multiplier = el.value;
+                    if (multiplier !== "1") { // Don't generate a command for the default 1x value
+                        const type = el.dataset.hpType; // 'hp' or 'qhp'
+                        const commandSlot = type === 'qhp' ? 'tweakdefs1' : 'tweakdefs2';
+                        const base64string = generateLuaTweak(type, multiplier);
+                        if (!base64string.startsWith("Error")) {
+                            standardCommands.push(`!bset ${commandSlot} ${base64string}`);
+                        }
+                    }
+                }
+                else {
                     let commands = [];
                     if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select')) {
                         if (el.value) commands.push(el.value);
@@ -811,7 +940,19 @@
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{
                 if (el.id.includes('maps-select') || el.id.includes('modes-select')) return;
-                const o=el.options[el.selectedIndex];if(o.value){const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);if(g){const c=g.choices.find(ch=>ch.value===o.value);if(c&&c.shortLabel!==undefined){if(g.label==="Extras")extraRaptorsPart=c.shortLabel;else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;}}}});
+                const o=el.options[el.selectedIndex];
+                if(o.value){
+                    const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);
+                    if(g){
+                        const c = g.choices.find(ch => (g.isHpGenerator ? ch.value === o.value : ch.value === o.value));
+                        if(c&&c.shortLabel!==undefined){
+                           if(g.label==="Extras")extraRaptorsPart=c.shortLabel;
+                           else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;
+                           else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;
+                        }
+                    }
+                }
+            });
             let renameCommand=`$rename [Mod] NuttyB Raptors `;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=renameParts.join('');renameCommand+=`[No Mex]`;
             
             const sections = [];
@@ -848,11 +989,25 @@
                     label.appendChild(inputElement); label.appendChild(document.createTextNode(' ' + optionGroup.label));
                     if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
                 } else if (optionGroup.type === 'select') {
-                    inputElement = document.createElement('select'); inputElement.dataset.optionType = optionGroup.label;
+                    inputElement = document.createElement('select'); 
+                    inputElement.dataset.optionType = optionGroup.label;
+
+                    // --- MODIFIED: Add data attributes for our dynamic generators ---
+                    if (optionGroup.isHpGenerator) {
+                        inputElement.dataset.isHpGenerator = true;
+                        inputElement.dataset.hpType = optionGroup.hpType;
+                        inputElement.disabled = true; // Disabled until lib loads
+                    }
+
                     optionGroup.choices.forEach(choice => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = choice.value; optionElement.textContent = choice.label;
-                        optionElement.selected = choice.selected || false; optionElement.dataset.shortLabel = choice.shortLabel || "";
+                        optionElement.value = choice.value; 
+                        optionElement.textContent = choice.label;
+                        // Use the group's defaultValue to set the selected option
+                        if (optionGroup.defaultValue && choice.value === optionGroup.defaultValue) {
+                            optionElement.selected = true;
+                        }
+                        optionElement.dataset.shortLabel = choice.shortLabel || "";
                         inputElement.appendChild(optionElement);
                     });
                     label.textContent = optionGroup.label + ': '; label.appendChild(inputElement);
@@ -1017,7 +1172,10 @@
                 } else if (el.tagName === 'SELECT') {
                     if (el.id === 'maps-select' || el.id === 'modes-select') {
                         el.value = ""; // Set to N/A
-                    } else {
+                    } else if (el.dataset.isHpGenerator) {
+                        el.value = "1"; // Reset HP generators to 1x
+                    }
+                    else {
                         el.selectedIndex = 0;
                     }
                 }
@@ -1077,6 +1235,24 @@
                 console.log("Maps & Modes configs loaded and parsed:", gameConfigs);
 
                 renderOptions();
+
+                // --- 5. ADDED: Wait for Lua libs and then enable HP/QHP dropdowns ---
+                const libraryCheckInterval = setInterval(() => {
+                    if (typeof luamin !== 'undefined') {
+                        clearInterval(libraryCheckInterval);
+                        console.log("Lua libraries loaded.");
+                        document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
+                            select.disabled = false;
+                            const label = select.parentElement;
+                            if (label.textContent.includes('(Loading...)')) {
+                                label.textContent = label.textContent.replace(' (Loading...)', ': ');
+                                label.appendChild(select);
+                            }
+                        });
+                        updateOutput(); // Perform initial generation
+                    }
+                }, 100);
+
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
                 document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., basecommands.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
