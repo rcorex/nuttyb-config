@@ -145,7 +145,6 @@
         const minifyCheckbox = document.getElementById('minifyCheckbox');
 
         // --- Lua Template with Placeholders ---
-        // We use special placeholders like __HEALTH_MULTIPLIER__ to make replacement safe and easy.
         const luaTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
 -- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 for b, c in pairs(UnitDefs) do
@@ -158,32 +157,36 @@ for b, c in pairs(UnitDefs) do
 		c.health = c.health * __HEALTH_MULTIPLIER__
 	end
 end`;
-
+        
         // --- Core Functions ---
 
         /**
-         * Generates Lua code from the template using the multiplier value.
+         * (NEW) Removes single-line and block comments from a string of Lua code.
+         * This prevents bugs in the minifier library.
+         * @param {string} code - The raw Lua code.
+         * @returns {string} - The code with comments removed.
          */
+        function removeLuaComments(code) {
+            // Remove single-line comments (-- ... until end of line)
+            // It correctly handles not removing -- inside a string literal.
+            code = code.replace(/--(?![\[=]).*$/gm, '');
+            // Remove multi-line comments (--[[ ... ]])
+            code = code.replace(/--\[\[[\s\S]*?\]\]/g, '');
+            return code;
+        }
+
         function generateCode() {
             const multiplierValue = multiplierInput.value;
-
             if (!multiplierValue || isNaN(multiplierValue)) {
                 alert('Please enter a valid number for the multiplier.');
                 return;
             }
-
-            // Replace the placeholders in the template string
             const generatedCode = luaTemplate
                 .replace('__MULTIPLIER_TEXT__', multiplierValue)
                 .replace('__HEALTH_MULTIPLIER__', multiplierValue);
-
-            // Put the result into the main editor
             luaCodeInput.value = generatedCode;
         }
-
-        /**
-         * Minifies (if checked) and encodes the content of the Lua editor.
-         */
+        
         function processAndEncode() {
             let luaCode = luaCodeInput.value;
             if (!luaCode) {
@@ -193,8 +196,12 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
-                    luaCode = luamin.minify(luaCode);
+                    // FIX: First, remove comments to avoid minifier bugs.
+                    const codeWithoutComments = removeLuaComments(luaCode);
+                    // Then, minify the remaining code.
+                    luaCode = luamin.minify(codeWithoutComments);
                 } catch (e) {
+                    // This will now only catch genuine syntax errors in the Lua code itself.
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
                     return;
                 }
@@ -209,13 +216,9 @@ end`;
             base64UrlOutput.value = base64UrlString;
         }
         
-        /**
-         * Copies the output text to the clipboard.
-         */
         function copyOutput() {
             const textToCopy = base64UrlOutput.value;
             if (!textToCopy) return;
-
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'Copied!';
@@ -232,7 +235,6 @@ end`;
         copyBtn.addEventListener('click', copyOutput);
         
         // --- Initial Generation on Page Load ---
-        // Generate the initial code when the page loads so the editor isn't empty.
         document.addEventListener('DOMContentLoaded', generateCode);
 
     </script>
