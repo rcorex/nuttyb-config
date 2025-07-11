@@ -109,7 +109,6 @@
     <div class="container">
         <h1>Lua Toolchain</h1>
 
-        <!-- QHP GENERATOR -->
         <div class="section">
             <h2>QHP Code Generator</h2>
             <div class="input-group">
@@ -119,7 +118,6 @@
             <button id="generateQhpBtn" class="action-btn">Generate QHP Code</button>
         </div>
 
-        <!-- HP GENERATOR -->
         <div class="section">
             <h2>HP Code Generator</h2>
             <div class="input-group">
@@ -186,7 +184,7 @@ for f, g in pairs(UnitDefs) do
 		g.reclaimspeed = 100
 		g.stealth = 0
 		g.builder = false
-		g.workertime = g.workertime * 0.5
+		__WORKERTIME_LINE__
 		g.canassist = 0
 		g.maxthisunit = 0
 	end
@@ -204,7 +202,7 @@ function UnitDef_Post(i, j)
 	for i, k in pairs(UnitDefs) do
 		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
 			if k then
-				k.metalcost = math.floor(k.metalcost)
+				__METAL_COST_LINE__
 				k.nochasecategory = "OBJECT"
 			end
 		end
@@ -227,13 +225,52 @@ end`;
         
         function generateHpCode() {
             const multiplierValue = hpMultiplierInput.value;
-            if (!multiplierValue || isNaN(multiplierValue)) {
+            const multiplierNum = parseFloat(multiplierValue);
+
+            if (!multiplierValue || isNaN(multiplierNum)) {
                 alert('Please enter a valid number for the HP multiplier.');
                 return;
             }
+
+            let metalCostLine;
+            let workerTimeLine;
+
+            // Determine the correct line based on the multiplier
+            switch (multiplierNum) {
+                case 2:
+                    metalCostLine = 'k.metalcost = math.floor(k.health * .35)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.65';
+                    break;
+                case 2.5:
+                    metalCostLine = 'k.metalcost = math.floor(k.health * .34)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.6';
+                    break;
+                case 3:
+                    metalCostLine = 'k.metalcost = math.floor(k.health * .33)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.55';
+                    break;
+                case 4:
+                    metalCostLine = 'k.metalcost = math.floor(k.health * .25)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.45';
+                    break;
+                case 5:
+                    metalCostLine = 'k.metalcost = math.floor(k.health * .15)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.25';
+                    break;
+                default:
+                    // If the number doesn't match a special case, use the defaults
+                    metalCostLine = 'k.metalcost = math.floor(k.metalcost)';
+                    workerTimeLine = 'g.workertime = g.workertime * 0.5';
+                    break;
+            }
+
+            // Perform all replacements
             const generatedCode = luaHpTemplate
                 .replace('__MULTIPLIER_TEXT__', multiplierValue)
-                .replace('__HEALTH_MULTIPLIER__', multiplierValue);
+                .replace('__HEALTH_MULTIPLIER__', multiplierValue)
+                .replace('__METAL_COST_LINE__', metalCostLine)
+                .replace('__WORKERTIME_LINE__', workerTimeLine);
+
             luaCodeInput.value = generatedCode;
         }
         
@@ -243,9 +280,7 @@ end`;
                 alert('The code editor is empty. Generate some code first!');
                 return;
             }
-
             let finalCodeToEncode;
-
             if (minifyCheckbox.checked) {
                 try {
                     const firstLineComment = originalCode.split('\n')[0];
@@ -258,13 +293,9 @@ end`;
             } else {
                 finalCodeToEncode = originalCode;
             }
-            
             const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
             const base64String = btoa(utf8SafeString);
-            const base64UrlString = base64String
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=/g, '');
+            const base64UrlString = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
             base64UrlOutput.value = base64UrlString;
         }
         
@@ -288,9 +319,7 @@ end`;
         copyBtn.addEventListener('click', copyOutput);
         
         document.addEventListener('DOMContentLoaded', () => {
-            // Generate the first template by default on page load.
             generateQhpCode();
-
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
                     clearInterval(libraryCheckInterval);
@@ -300,7 +329,6 @@ end`;
                 }
             }, 100);
         });
-
     </script>
 </body>
 </html>
