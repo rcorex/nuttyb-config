@@ -302,7 +302,6 @@
                     <div class="options-column" id="right-column"></div>
                 </div>
                 <div class="action-buttons-container">
-                    <!-- 2. MODIFIED: Button text changed -->
                     <button id="reset-default-btn" class="action-button">Reset</button>
                     <button id="reset-none-btn" class="action-button">None</button>
                 </div>
@@ -775,7 +774,6 @@ end`;
             };
             rawOptionsData = [];
 
-            // --- 1. MODIFIED: Default value for HP/QHP is now 1.3 ---
             const dynamicHPGroup = {
                 label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
                 defaultValue: "1.3",
@@ -950,7 +948,21 @@ end`;
                     }
                 }
             });
-            let renameCommand=`$rename [Mod] NuttyB Raptors `;let renameParts=[];if(extraRaptorsPart)renameParts.push(extraRaptorsPart);let combinedHealthPart="";if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;else if(queenHealthPart)combinedHealthPart=queenHealthPart;if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);if(renameParts.length>0)renameCommand+=renameParts.join('');renameCommand+=`[No Mex]`;
+            let renameCommand=`$rename [Mod] NuttyB Raptors `;
+            let renameParts=[];
+            if(extraRaptorsPart)renameParts.push(extraRaptorsPart);
+            let combinedHealthPart="";
+            if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;
+            else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;
+            else if(queenHealthPart)combinedHealthPart=queenHealthPart;
+            if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);
+            if(renameParts.length>0)renameCommand+=renameParts.join(' ');
+            
+            // --- MODIFIED: Logic to conditionally add [No Mex] to the lobby name ---
+            const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
+            if (noMexEnabled) {
+                renameCommand += `[No Mex]`;
+            }
             
             const sections = [];
             let currentSection = [];
