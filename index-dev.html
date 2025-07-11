@@ -303,7 +303,8 @@
                     <div class="options-column" id="right-column"></div>
                 </div>
                 <div class="action-buttons-container">
-                    <button id="reset-default-btn" class="action-button">Default</button>
+                    <!-- 2. MODIFIED: Button text changed -->
+                    <button id="reset-default-btn" class="action-button">Reset</button>
                     <button id="reset-none-btn" class="action-button">None</button>
                 </div>
             </div>
@@ -686,7 +687,7 @@ end`;
                 if(el.dataset.isCustom) return;
                 if (el.dataset.isHpGenerator) {
                     const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
-                    if (el.value) usedTweakDefs.add(slot); // Only uses a slot if not "" (Default)
+                    if (el.value) usedTweakDefs.add(slot);
                     return;
                 }
 
@@ -775,10 +776,10 @@ end`;
             };
             rawOptionsData = [];
 
-            // --- 1. MODIFIED: Selector defaults updated ---
+            // --- 1. MODIFIED: Default value for HP/QHP is now 1.3 ---
             const dynamicHPGroup = {
                 label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
-                defaultValue: "", // Default is now the empty option
+                defaultValue: "1.3",
                 choices: [
                     { label: "Default", value: "", shortLabel: "" },
                     { label: "1x HP", value: "1", shortLabel: "1x HP" },
@@ -794,7 +795,7 @@ end`;
             };
             const dynamicQHPGroup = {
                 label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left',
-                defaultValue: "", // Default is now the empty option
+                defaultValue: "1.3",
                 choices: [
                      { label: "Default", value: "", shortLabel: "" },
                      { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
@@ -889,7 +890,7 @@ end`;
                 } 
                 else if (el.dataset.isHpGenerator) {
                     const multiplier = el.value;
-                    if (multiplier) { // Only generate if value is not "" (Default)
+                    if (multiplier) {
                         const type = el.dataset.hpType;
                         const commandSlot = type === 'qhp' ? 'tweakdefs1' : 'tweakdefs2';
                         const base64string = generateLuaTweak(type, multiplier);
@@ -1090,11 +1091,9 @@ end`;
             }
         }
 
-        // --- 2. MODIFIED: This function now shows ONLY the selected HP/QHP command ---
         function populateDataTable() {
             dataTableBody.innerHTML = ''; 
             
-            // First, populate with data from the text file
             rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
                 const row = dataTableBody.insertRow();
                 row.insertCell().textContent = item.label; 
@@ -1116,14 +1115,12 @@ end`;
                 commandsCell.appendChild(wrapper);
             });
 
-            // Second, add the currently selected generated options
             const hpGeneratorConfigs = formOptionsConfig.filter(group => group.isHpGenerator);
             hpGeneratorConfigs.forEach(config => {
                 const selector = document.querySelector(`select[data-hp-type="${config.hpType}"]`);
                 if (!selector) return;
 
                 const selectedValue = selector.value;
-                // Only add a row if a non-default value is selected
                 if (selectedValue) {
                     const choice = config.choices.find(c => c.value === selectedValue);
                     if (!choice) return;
@@ -1225,7 +1222,7 @@ end`;
                     if (el.id === 'maps-select' || el.id === 'modes-select') {
                         el.value = "";
                     } else if (el.dataset.isHpGenerator) {
-                        el.value = ""; // Reset HP generators to "" (Default)
+                        el.value = "";
                     }
                     else {
                         el.selectedIndex = 0;
@@ -1246,7 +1243,6 @@ end`;
                     }
                 } else if (optionGroup.type === 'select') {
                     const select = optionsFormColumns.querySelector(`select[data-option-type="${optionGroup.label}"]`);
-                    // This now correctly resets HP/QHP to "" as it's the new defaultValue
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
