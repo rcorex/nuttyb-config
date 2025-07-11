@@ -883,6 +883,7 @@
                         option.textContent = map.name;
                         mapsSelect.appendChild(option);
                     });
+                    mapsSelect.selectedIndex = 1; // Set default to the first real map
                     mapsSelect.addEventListener('change', updateOutput);
                     mapsLabel.appendChild(mapsSelect);
                 }
@@ -903,6 +904,7 @@
                         option.textContent = mode.name;
                         modesSelect.appendChild(option);
                     });
+                    modesSelect.selectedIndex = 1; // Set default to the first real mode
                     modesSelect.addEventListener('change', updateOutput);
                     modesLabel.appendChild(modesSelect);
                 }
