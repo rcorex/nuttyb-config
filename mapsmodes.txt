@@ -96,7 +96,7 @@ Zero Grace
 !raptor_firstwavesboost 3
 !raptor_graceperiodmult 0.1
 ---
-Players in Middle
+Surrounded
 !raptor_queentimemult 1.3
 !raptor_spawncountmult 3
 !raptor_firstwavesboost 6
