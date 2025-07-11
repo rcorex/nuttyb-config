@@ -6,7 +6,8 @@
     <title>Lua Generator, Minifier & Encoder</title>
     
     <!-- Correct, working CDN URL for luamin.js -->
-    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js"></script>
+    <!-- The 'defer' attribute helps control load order, but our JS will be even safer. -->
+    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
     
     <style>
         body {
@@ -82,7 +83,12 @@
         button {
             flex-grow: 1; padding: 12px 20px; border: none; border-radius: 6px;
             background-color: #007bff; color: white; font-size: 16px; font-weight: 600;
-            cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
+        }
+        button:disabled {
+            background-color: #9abdda;
+            cursor: not-allowed;
+            opacity: 0.7;
         }
         button:hover { background-color: #0056b3; }
         button:active { transform: scale(0.98); }
@@ -101,7 +107,6 @@
     <div class="container">
         <h1>Lua Toolchain</h1>
 
-        <!-- TEMPLATE GENERATOR SECTION -->
         <div class="section">
             <h2>QHP Code Generator</h2>
             <div class="input-group">
@@ -122,7 +127,7 @@
         </div>
 
         <div class="button-group">
-            <button id="encodeBtn">Minify & Encode</button>
+            <button id="encodeBtn" disabled>Loading Minifier...</button>
         </div>
         
         <div class="input-group">
@@ -144,7 +149,7 @@
         const copyBtn = document.getElementById('copyBtn');
         const minifyCheckbox = document.getElementById('minifyCheckbox');
 
-        // --- Lua Template with Placeholders ---
+        // --- Lua Template ---
         const luaTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
 -- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 for b, c in pairs(UnitDefs) do
@@ -181,7 +186,6 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
-                    // Pass the original code directly to the luamin library
                     luaCode = luamin.minify(luaCode);
                 } catch (e) {
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
@@ -216,8 +220,26 @@ end`;
         encodeBtn.addEventListener('click', processAndEncode);
         copyBtn.addEventListener('click', copyOutput);
         
-        // --- Initial Generation on Page Load ---
-        document.addEventListener('DOMContentLoaded', generateCode);
+        // --- Initializer and Library Checker ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Generate the initial code when the page loads.
+            generateCode();
+
+            // This is the race condition fix.
+            // We will check every 100ms to see if the `luamin` object has been
+            // created by the external script.
+            const libraryCheckInterval = setInterval(() => {
+                // 'typeof luamin' is a safe way to check without throwing an error.
+                if (typeof luamin !== 'undefined') {
+                    // It exists! Stop checking.
+                    clearInterval(libraryCheckInterval);
+                    // Enable the button and set its final text.
+                    encodeBtn.disabled = false;
+                    encodeBtn.textContent = 'Minify & Encode';
+                    console.log('luamin library loaded successfully.');
+                }
+            }, 100);
+        });
 
     </script>
 </body>
