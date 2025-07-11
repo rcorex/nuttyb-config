@@ -10,8 +10,11 @@
 
 *   **[Discord Channel for NuttyB](https://discord.com/channels/549281623154229250/1168959237641216131)**
     *   Official Discord channel for NuttyB tweaks.
+ 
+*   **[NuttyB Raptors v1.52 Guide](https://docs.google.com/document/d/1hNRO7ZIpy76v2aBitme2VgR0H0dw1nKilAQELgnaOV4/)**
+    *   The Original NuttyB Raptors guide.
 
-*   **[NuttyB Raptors Guide for Noobs](https://docs.google.com/document/d/11FfEiKAjp0NSKTwvmywqUNefrOqVapnW5e3o5azSmXY/edit?tab=t.0)**
+*   **[NuttyB Raptors Guide for Noobs](https://docs.google.com/document/d/11FfEiKAjp0NSKTwvmywqUNefrOqVapnW5e3o5azSmXY/)**
     *   A simple guide for how to play for new players.
 
 *   **[Beyond All Reason Website](https://www.beyondallreason.info/)**
