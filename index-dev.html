@@ -412,11 +412,10 @@
     </div>
 
     <script>
-        let baseCommandsText = '';
         let rawOptionsData = [];
         let formOptionsConfig = [];
         let customOptions = [];
-        let gameConfigs = { maps: [], modes: [] };
+        let gameConfigs = { maps: [], modes: [], base: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -443,12 +442,6 @@
         const resetDefaultBtn = document.getElementById('reset-default-btn');
         const MAX_SECTION_LENGTH = 50000;
         
-        async function loadBaseCommands() {
-            const response = await fetch('basecommands.txt');
-            if (!response.ok) throw new Error(`Could not load basecommands.txt: ${response.statusText}`);
-            baseCommandsText = await response.text();
-        }
-
         async function loadConfigData() {
             const response = await fetch('tweakdata.txt');
             if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
@@ -477,35 +470,38 @@
                 }
                 const text = await response.text();
                 
-                const configs = { maps: [], modes: [] };
+                const configs = { maps: [], modes: [], base: [] };
                 
                 const categoryBlocks = text.split('## CATEGORY:').slice(1);
 
                 for (const block of categoryBlocks) {
                     const lines = block.trim().split(/\r?\n/);
                     const categoryName = lines.shift().trim();
-                    const content = lines.join('\n');
-                    
-                    const items = content.split('---').filter(item => item.trim() !== '');
+                    const content = lines.join('\n').trim();
 
-                    for (const item of items) {
-                        const itemLines = item.trim().split(/\r?\n/).filter(line => line.trim() !== '');
-                        if (itemLines.length === 0) continue;
+                    if (categoryName === 'base') {
+                        configs.base = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    } else {
+                        const items = content.split('---').filter(item => item.trim() !== '');
+                        for (const item of items) {
+                            const itemLines = item.trim().split(/\r?\n/).filter(line => line.trim() !== '');
+                            if (itemLines.length === 0) continue;
 
-                        const name = itemLines.shift().trim();
-                        const commands = itemLines;
-                        
-                        if (categoryName === 'maps' && configs.maps) {
-                            configs.maps.push({ name, commands });
-                        } else if (categoryName === 'modes' && configs.modes) {
-                            configs.modes.push({ name, commands });
+                            const name = itemLines.shift().trim();
+                            const commands = itemLines;
+                            
+                            if (categoryName === 'maps' && configs.maps) {
+                                configs.maps.push({ name, commands });
+                            } else if (categoryName === 'modes' && configs.modes) {
+                                configs.modes.push({ name, commands });
+                            }
                         }
                     }
                 }
                 return configs;
             } catch (error) {
                 console.error("Failed to parse game configs:", error);
-                return { maps: [], modes: [] }; 
+                return { maps: [], modes: [], base: [] }; 
             }
         }
 
@@ -745,26 +741,28 @@
         }
         
         function generateCommands() {
-            // Get commands from Maps and Modes dropdowns
+            let includeBaseCommands = false;
+
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
             const modesSelect = document.getElementById('modes-select');
 
-            if (mapsSelect && mapsSelect.value !== '') {
+            if (mapsSelect && mapsSelect.value !== "") {
                 const selectedMap = gameConfigs.maps[mapsSelect.value];
                 if (selectedMap && selectedMap.commands) {
                     presetCommands.push(...selectedMap.commands);
+                    includeBaseCommands = true;
                 }
             }
 
-            if (modesSelect && modesSelect.value !== '') {
+            if (modesSelect && modesSelect.value !== "") {
                 const selectedMode = gameConfigs.modes[modesSelect.value];
                 if (selectedMode && selectedMode.commands) {
                     presetCommands.push(...selectedMode.commands);
+                    includeBaseCommands = true;
                 }
             }
 
-            // Get commands from standard tweak options
             const standardCommands = [];
             const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
@@ -787,7 +785,6 @@
                 }
             });
 
-            // Process standard and custom tweak commands
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
@@ -805,14 +802,12 @@
                     targetSet.add(availableSlot);
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-
-            // Assemble all commands in the correct order
-            const finalCommands = [
-                baseCommandsText.trim(),
-                ...presetCommands,
-                ...standardCommands,
-                ...customCommands
-            ];
+            
+            const finalCommands = [];
+            if (includeBaseCommands && gameConfigs.base.length > 0) {
+                finalCommands.push(...gameConfigs.base);
+            }
+            finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{
@@ -823,8 +818,9 @@
             const sections = [];
             let currentSection = [];
             let currentLength = 0;
-            const allCommands = [...finalCommands, renameCommand];
-            for (const cmd of allCommands) {
+            const allCommandsToSection = finalCommands.length > 0 ? [...finalCommands, renameCommand] : [];
+
+            for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
                 if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
                     sections.push(currentSection.join('\n'));
@@ -836,14 +832,13 @@
                 }
             }
             if (currentSection.length > 0) sections.push(currentSection.join('\n'));
-            return{lobbyName:renameCommand, sections: sections};
+            return{lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: sections};
         }
 
         function renderOptions() {
             leftColumn.innerHTML = ''; 
             rightColumn.innerHTML = '';
             
-            // Render standard tweak options first
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
                 let inputElement;
@@ -868,7 +863,6 @@
                 else leftColumn.appendChild(label);
             });
 
-            // Now, create and insert Map/Mode dropdowns after "Extras"
             if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
                 let mapsLabel, modesLabel;
 
@@ -877,6 +871,12 @@
                     mapsLabel.textContent = 'Map: ';
                     const mapsSelect = document.createElement('select');
                     mapsSelect.id = 'maps-select';
+
+                    const naMapOption = document.createElement('option');
+                    naMapOption.value = "";
+                    naMapOption.textContent = "N/A";
+                    mapsSelect.appendChild(naMapOption);
+
                     gameConfigs.maps.forEach((map, index) => {
                         const option = document.createElement('option');
                         option.value = index;
@@ -891,6 +891,12 @@
                     modesLabel.textContent = 'Mode: ';
                     const modesSelect = document.createElement('select');
                     modesSelect.id = 'modes-select';
+
+                    const naModeOption = document.createElement('option');
+                    naModeOption.value = "";
+                    naModeOption.textContent = "N/A";
+                    modesSelect.appendChild(naModeOption);
+
                     gameConfigs.modes.forEach((mode, index) => {
                         const option = document.createElement('option');
                         option.value = index;
@@ -905,7 +911,7 @@
                 if (extrasLabel) {
                     if (modesLabel) extrasLabel.after(modesLabel);
                     if (mapsLabel) extrasLabel.after(mapsLabel);
-                } else { // Fallback if "Extras" doesn't exist
+                } else {
                     if (mapsLabel) leftColumn.appendChild(mapsLabel);
                     if (modesLabel) leftColumn.appendChild(modesLabel);
                 }
@@ -1003,15 +1009,18 @@
         });
 
         resetNoneBtn.addEventListener('click', () => {
-            const formElements = optionsFormColumns.querySelectorAll('input[type="checkbox"], select');
+            const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select');
             formElements.forEach(el => {
-                if (el.type === 'checkbox') el.checked = false;
-                else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else if (el.tagName === 'SELECT') {
+                    if (el.id === 'maps-select' || el.id === 'modes-select') {
+                        el.value = ""; // Set to N/A
+                    } else {
+                        el.selectedIndex = 0;
+                    }
+                }
             });
-            const mapsSelect = document.getElementById('maps-select');
-            if (mapsSelect) mapsSelect.selectedIndex = 0;
-            const modesSelect = document.getElementById('modes-select');
-            if (modesSelect) modesSelect.selectedIndex = 0;
             updateOutput();
         });
 
@@ -1030,9 +1039,9 @@
                 }
             });
             const mapsSelect = document.getElementById('maps-select');
-            if (mapsSelect) mapsSelect.selectedIndex = 0;
+            if (mapsSelect) mapsSelect.selectedIndex = 1;
             const modesSelect = document.getElementById('modes-select');
-            if (modesSelect) modesSelect.selectedIndex = 0;
+            if (modesSelect) modesSelect.selectedIndex = 1;
             updateOutput();
         });
         
@@ -1059,7 +1068,6 @@
                 
                 const [parsedConfigs] = await Promise.all([
                     parseMapsModes('mapsmodes.txt'),
-                    loadBaseCommands(), 
                     loadConfigData(), 
                     loadLinksContent()
                 ]);
