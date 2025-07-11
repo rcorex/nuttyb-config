@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lua Generator, Minifier & Encoder</title>
     
-    <!-- THIS LINE WAS MISSING. IT LOADS THE MINIFIER LIBRARY. -->
-    <script src="https://cdn.jsdelivr.net/npm/luamin/dist/luamin.js"></script>
+    <!-- Correct, working CDN URL for luamin.js -->
+    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js"></script>
     
     <style>
         body {
@@ -44,7 +44,7 @@
             border-radius: 8px;
             margin-bottom: 25px;
         }
-        .input-group, .fetch-group {
+        .input-group {
             margin-bottom: 20px;
         }
         label {
@@ -53,7 +53,7 @@
             margin-bottom: 8px;
             color: #555;
         }
-        input[type="url"], input[type="number"], textarea {
+        input[type="number"], textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -86,8 +86,6 @@
         }
         button:hover { background-color: #0056b3; }
         button:active { transform: scale(0.98); }
-        button.secondary { background-color: #6c757d; }
-        button.secondary:hover { background-color: #5a6268; }
         button.action-btn { background-color: #28a745; margin-top: 10px; width: 100%; }
         button.action-btn:hover { background-color: #218838; }
         .output-container { position: relative; }
@@ -162,16 +160,6 @@ end`;
         
         // --- Core Functions ---
 
-        /**
-         * Removes single-line and block comments from a string of Lua code.
-         * This is kept to prevent bugs in the minifier library with certain comments.
-         */
-        function removeLuaComments(code) {
-            code = code.replace(/--(?![\[=]).*$/gm, '');
-            code = code.replace(/--\[\[[\s\S]*?\]\]/g, '');
-            return code;
-        }
-
         function generateCode() {
             const multiplierValue = multiplierInput.value;
             if (!multiplierValue || isNaN(multiplierValue)) {
@@ -193,10 +181,8 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
-                    // Step 1: Remove comments to avoid minifier library bugs.
-                    const codeWithoutComments = removeLuaComments(luaCode);
-                    // Step 2: Minify the remaining code using the now-loaded library.
-                    luaCode = luamin.minify(codeWithoutComments);
+                    // Pass the original code directly to the luamin library
+                    luaCode = luamin.minify(luaCode);
                 } catch (e) {
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
                     return;
