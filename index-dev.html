@@ -851,6 +851,7 @@ end`;
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
         }
         
+        // --- MODIFIED: This function now conditionally sets the lobby name base ---
         function generateCommands() {
             let includeBaseCommands = false;
 
@@ -948,7 +949,14 @@ end`;
                     }
                 }
             });
-            let renameCommand=`$rename [Mod] NuttyB Raptors `;
+
+            let renameCommand;
+            if (modesSelect && modesSelect.value !== "" && gameConfigs.modes[modesSelect.value].name === 'Scavengers') {
+                renameCommand = `$rename [Mod] NuttyB Scavengers `;
+            } else {
+                renameCommand = `$rename [Mod] NuttyB Raptors `;
+            }
+            
             let renameParts=[];
             if(extraRaptorsPart)renameParts.push(extraRaptorsPart);
             let combinedHealthPart="";
@@ -956,9 +964,11 @@ end`;
             else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;
             else if(queenHealthPart)combinedHealthPart=queenHealthPart;
             if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);
-            if(renameParts.length>0)renameCommand+=renameParts.join('');
             
-            // --- MODIFIED: Logic to conditionally add [No Mex] to the lobby name ---
+            if(renameParts.length > 0) {
+                renameCommand += renameParts.join('');
+            }
+            
             const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
             if (noMexEnabled) {
                 renameCommand += `[No Mex]`;
