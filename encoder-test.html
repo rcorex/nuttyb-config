@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lua Generator, Minifier & Encoder</title>
     
-    <!-- Correct, working CDN URL for luamin.js -->
-    <!-- The 'defer' attribute helps control load order, but our JS will be even safer. -->
+    <!-- THE FIX: Load the required dependency FIRST, then the main library. -->
+    
+    <!-- 1. Load the dependency: luaparse -->
+    <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
+    
+    <!-- 2. Load the main library: luamin -->
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
     
     <style>
@@ -127,7 +131,7 @@
         </div>
 
         <div class="button-group">
-            <button id="encodeBtn" disabled>Loading Minifier...</button>
+            <button id="encodeBtn" disabled>Loading Libraries...</button>
         </div>
         
         <div class="input-group">
@@ -186,6 +190,7 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
+                    // This will now work because luaparse was loaded first.
                     luaCode = luamin.minify(luaCode);
                 } catch (e) {
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
@@ -215,28 +220,22 @@ end`;
             });
         }
         
-        // --- Event Listeners ---
+        // --- Event Listeners & Initializer ---
         generateFromTemplateBtn.addEventListener('click', generateCode);
         encodeBtn.addEventListener('click', processAndEncode);
         copyBtn.addEventListener('click', copyOutput);
         
-        // --- Initializer and Library Checker ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Generate the initial code when the page loads.
             generateCode();
 
-            // This is the race condition fix.
-            // We will check every 100ms to see if the `luamin` object has been
-            // created by the external script.
+            // We will check to see if the final library, `luamin`, has loaded.
+            // If it has, we can be confident its dependency `luaparse` also loaded.
             const libraryCheckInterval = setInterval(() => {
-                // 'typeof luamin' is a safe way to check without throwing an error.
                 if (typeof luamin !== 'undefined') {
-                    // It exists! Stop checking.
                     clearInterval(libraryCheckInterval);
-                    // Enable the button and set its final text.
                     encodeBtn.disabled = false;
                     encodeBtn.textContent = 'Minify & Encode';
-                    console.log('luamin library loaded successfully.');
+                    console.log('luaparse and luamin libraries loaded successfully.');
                 }
             }, 100);
         });
