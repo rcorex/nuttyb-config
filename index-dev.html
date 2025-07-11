@@ -446,7 +446,7 @@
         const resetDefaultBtn = document.getElementById('reset-default-btn');
         const MAX_SECTION_LENGTH = 50000;
 
-        // --- 2. ADDED: Lua Templates and Generator Logic ---
+        // --- Lua Templates and Generator Logic ---
         const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
 -- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
 for b, c in pairs(UnitDefs) do
@@ -685,7 +685,6 @@ end`;
             
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
-                 // --- MODIFIED: Handle new dynamic HP selects ---
                 if (el.dataset.isHpGenerator) {
                     const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
                     if (el.value !== '1') usedTweakDefs.add(slot); // Only uses a slot if not default
@@ -777,7 +776,6 @@ end`;
             };
             rawOptionsData = [];
 
-             // --- 3. MODIFIED: Manually define HP/QHP generators instead of parsing from file ---
             const dynamicHPGroup = {
                 label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
                 defaultValue: "1.3",
@@ -819,7 +817,6 @@ end`;
                     const label = parts[0].trim(), commandBlock = parts[1].trim();
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
-                    // --- MODIFIED: Skip file parsing for tweakdefs1 and tweakdefs2
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
                         return; // Skip this line, it will be handled by our dynamic generators
                     }
@@ -848,7 +845,6 @@ end`;
             if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
             if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
             
-            // --- MODIFIED: Add our new dynamic groups to the config
             formOptionsConfig.push(dynamicHPGroup, dynamicQHPGroup);
 
             if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
@@ -889,7 +885,6 @@ end`;
                 if (el.dataset.isCustom) {
                     if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                 } 
-                // --- 4. MODIFIED: Intercept HP/QHP selects and generate command dynamically ---
                 else if (el.dataset.isHpGenerator) {
                     const multiplier = el.value;
                     if (multiplier !== "1") { // Don't generate a command for the default 1x value
@@ -992,7 +987,6 @@ end`;
                     inputElement = document.createElement('select'); 
                     inputElement.dataset.optionType = optionGroup.label;
 
-                    // --- MODIFIED: Add data attributes for our dynamic generators ---
                     if (optionGroup.isHpGenerator) {
                         inputElement.dataset.isHpGenerator = true;
                         inputElement.dataset.hpType = optionGroup.hpType;
@@ -1003,7 +997,6 @@ end`;
                         const optionElement = document.createElement('option');
                         optionElement.value = choice.value; 
                         optionElement.textContent = choice.label;
-                        // Use the group's defaultValue to set the selected option
                         if (optionGroup.defaultValue && choice.value === optionGroup.defaultValue) {
                             optionElement.selected = true;
                         }
@@ -1095,15 +1088,72 @@ end`;
             }
         }
 
+        // --- MODIFIED: This function now also displays the dynamically generated HP/QHP commands ---
         function populateDataTable() {
             dataTableBody.innerHTML = ''; 
+            
+            // First, populate with data from the text file
             rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
                 const row = dataTableBody.insertRow();
-                row.insertCell().textContent = item.label; row.insertCell().textContent = item.status; row.insertCell().textContent = item.summary;
-                const commandsCell = row.insertCell(); const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
-                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
-                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
-                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+                row.insertCell().textContent = item.label; 
+                row.insertCell().textContent = item.status; 
+                row.insertCell().textContent = item.summary;
+                const commandsCell = row.insertCell(); 
+                const wrapper = document.createElement('div'); 
+                wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); 
+                textSpan.className = 'command-text'; 
+                textSpan.textContent = item.commandBlock; 
+                textSpan.title = item.commandBlock;
+                const copyBtn = document.createElement('button'); 
+                copyBtn.textContent = 'Copy'; 
+                copyBtn.className = 'copy-row-button'; 
+                copyBtn.dataset.command = item.commandBlock;
+                wrapper.appendChild(textSpan); 
+                wrapper.appendChild(copyBtn); 
+                commandsCell.appendChild(wrapper);
+            });
+
+            // Second, add the dynamically generated options
+            const hpGeneratorConfigs = formOptionsConfig.filter(group => group.isHpGenerator);
+            hpGeneratorConfigs.forEach(config => {
+                const type = config.hpType; // 'hp' or 'qhp'
+                const commandSlot = (type === 'qhp') ? 'tweakdefs1' : 'tweakdefs2';
+
+                config.choices.forEach(choice => {
+                    // Skip the default '1x' option as it generates no command
+                    if (choice.value === "1") return;
+
+                    const base64tweak = generateLuaTweak(type, choice.value);
+                    if (base64tweak.startsWith("Error")) return; 
+
+                    const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
+                    const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+
+                    // Create and append the table row
+                    const row = dataTableBody.insertRow();
+                    row.insertCell().textContent = choice.label;
+                    row.insertCell().textContent = 'Optional/Generated';
+                    row.insertCell().textContent = summary;
+                    
+                    const commandsCell = row.insertCell();
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'command-cell-wrapper';
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'command-text';
+                    textSpan.textContent = fullCommand;
+                    textSpan.title = fullCommand;
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.className = 'copy-row-button';
+                    copyBtn.dataset.command = fullCommand;
+                    
+                    wrapper.appendChild(textSpan);
+                    wrapper.appendChild(copyBtn);
+                    commandsCell.appendChild(wrapper);
+                });
             });
         }
 
@@ -1137,7 +1187,7 @@ end`;
             document.getElementById(targetTabId).classList.add('active');
             
             if (event.target.dataset.tab === 'data') {
-                if (rawOptionsData.length > 0) populateDataTable();
+                populateDataTable(); // This will now include the generated commands
                 populateMapsModesTable();
             }
             if (event.target.dataset.tab === 'custom') {
@@ -1236,18 +1286,12 @@ end`;
 
                 renderOptions();
 
-                // --- 5. ADDED: Wait for Lua libs and then enable HP/QHP dropdowns ---
                 const libraryCheckInterval = setInterval(() => {
                     if (typeof luamin !== 'undefined') {
                         clearInterval(libraryCheckInterval);
                         console.log("Lua libraries loaded.");
                         document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
                             select.disabled = false;
-                            const label = select.parentElement;
-                            if (label.textContent.includes('(Loading...)')) {
-                                label.textContent = label.textContent.replace(' (Loading...)', ': ');
-                                label.appendChild(select);
-                            }
                         });
                         updateOutput(); // Perform initial generation
                     }
