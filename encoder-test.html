@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lua Generator, Minifier & Encoder</title>
+    <title>Live Lua Generator & Encoder</title>
     
     <!-- 1. Load the dependency: luaparse -->
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
@@ -18,7 +18,7 @@
             color: #333;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align to top */
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -45,9 +45,10 @@
         }
         .input-group { margin-bottom: 20px; }
         label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
-        input[type="number"], textarea {
+        select, textarea {
             width: 100%; padding: 10px; border: 1px solid #ccc;
             border-radius: 6px; font-size: 14px; box-sizing: border-box;
+            background-color: #fff;
         }
         textarea {
             min-height: 180px; resize: vertical;
@@ -58,33 +59,32 @@
             margin-bottom: 25px; gap: 8px;
         }
         .options-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; user-select: none; }
-        .button-group { display: flex; gap: 10px; }
-        button {
-            flex-grow: 1; padding: 12px 20px; border: none; border-radius: 6px;
-            background-color: #007bff; color: white; font-size: 16px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease;
-        }
-        button:disabled { background-color: #9abdda; cursor: not-allowed; opacity: 0.7; }
-        button:hover:not(:disabled) { background-color: #0056b3; }
-        button:active:not(:disabled) { transform: scale(0.98); }
-        button.action-btn { background-color: #28a745; margin-top: 10px; width: 100%; }
-        button.action-btn:hover:not(:disabled) { background-color: #218838; }
         .output-container { position: relative; }
         .copyBtn {
             position: absolute; top: 10px; right: 10px; padding: 5px 10px;
-            font-size: 12px; background-color: #6c757d;
+            font-size: 12px; background-color: #6c757d; color: white; border: none;
+            border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
         }
         .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
+        .status-label {
+            display: block;
+            text-align: center;
+            margin-top: -15px;
+            margin-bottom: 15px;
+            color: #888;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Lua Toolchain</h1>
+        <h1>Live Lua Toolchain</h1>
         <div class="options-group">
             <input type="checkbox" id="minifyCheckbox" checked>
             <label for="minifyCheckbox">Minify Lua code before encoding (preserves first line)</label>
         </div>
+        <div id="statusLabel" class="status-label">Loading libraries...</div>
 
         <div class="main-layout">
             <!-- QHP PIPELINE -->
@@ -92,17 +92,29 @@
                 <div class="section">
                     <h2>QHP Generator</h2>
                     <div class="input-group">
-                        <label for="qhpMultiplierInput">Queen Health Multiplier</label>
-                        <input type="number" id="qhpMultiplierInput" value="1.3" step="0.1" min="0.1">
+                        <label for="qhpMultiplierSelect">Queen Health Multiplier</label>
+                        <select id="qhpMultiplierSelect">
+                            <option value="1">1x HP</option>
+                            <option value="1.3" selected>1.3x HP</option>
+                            <option value="1.5">1.5x HP</option>
+                            <option value="1.7">1.7x HP</option>
+                            <option value="2">2x HP</option>
+                            <option value="2.5">2.5x HP</option>
+                            <option value="3">3x HP</option>
+                            <option value="4">4x HP</option>
+                            <option value="5">5x HP</option>
+                            <option value="7">7x HP</option>
+                            <option value="9">9x HP</option>
+                            <option value="11">11x HP</option>
+                            <option value="13">13x HP</option>
+                        </select>
                     </div>
-                    <button id="generateQhpBtn" class="action-btn">Generate QHP Code</button>
                 </div>
                 <div class="input-group">
                     <label for="qhpLuaOutput">QHP Lua Code</label>
-                    <textarea id="qhpLuaOutput" spellcheck="false"></textarea>
+                    <textarea id="qhpLuaOutput" spellcheck="false" readonly></textarea>
                 </div>
                 <div class="input-group">
-                    <button class="encodeBtn" data-type="qhp" disabled>Loading...</button>
                     <label for="qhpBase64Output">QHP Base64URL Result</label>
                     <div class="output-container">
                         <textarea id="qhpBase64Output" readonly></textarea>
@@ -116,17 +128,25 @@
                 <div class="section">
                     <h2>HP Generator</h2>
                     <div class="input-group">
-                        <label for="hpMultiplierInput">Raptor Health Multiplier</label>
-                        <input type="number" id="hpMultiplierInput" value="1.3" step="0.1" min="0.1">
+                        <label for="hpMultiplierSelect">Raptor Health Multiplier</label>
+                        <select id="hpMultiplierSelect">
+                            <option value="1">1x HP</option>
+                            <option value="1.3" selected>1.3x HP</option>
+                            <option value="1.5">1.5x HP</option>
+                            <option value="1.7">1.7x HP</option>
+                            <option value="2">2x HP</option>
+                            <option value="2.5">2.5x HP</option>
+                            <option value="3">3x HP</option>
+                            <option value="4">4x HP</option>
+                            <option value="5">5x HP</option>
+                        </select>
                     </div>
-                    <button id="generateHpBtn" class="action-btn">Generate HP Code</button>
                 </div>
                 <div class="input-group">
                     <label for="hpLuaOutput">HP Lua Code</label>
-                    <textarea id="hpLuaOutput" spellcheck="false"></textarea>
+                    <textarea id="hpLuaOutput" spellcheck="false" readonly></textarea>
                 </div>
                 <div class="input-group">
-                    <button class="encodeBtn" data-type="hp" disabled>Loading...</button>
                     <label for="hpBase64Output">HP Base64URL Result</label>
                     <div class="output-container">
                         <textarea id="hpBase64Output" readonly></textarea>
@@ -139,18 +159,16 @@
 
     <script>
         // --- DOM Element References ---
-        const qhpMultiplierInput = document.getElementById('qhpMultiplierInput');
-        const generateQhpBtn = document.getElementById('generateQhpBtn');
+        const qhpMultiplierSelect = document.getElementById('qhpMultiplierSelect');
         const qhpLuaOutput = document.getElementById('qhpLuaOutput');
         const qhpBase64Output = document.getElementById('qhpBase64Output');
 
-        const hpMultiplierInput = document.getElementById('hpMultiplierInput');
-        const generateHpBtn = document.getElementById('generateHpBtn');
+        const hpMultiplierSelect = document.getElementById('hpMultiplierSelect');
         const hpLuaOutput = document.getElementById('hpLuaOutput');
         const hpBase64Output = document.getElementById('hpBase64Output');
 
         const minifyCheckbox = document.getElementById('minifyCheckbox');
-        const encodeBtns = document.querySelectorAll('.encodeBtn');
+        const statusLabel = document.getElementById('statusLabel');
         const copyBtns = document.querySelectorAll('.copyBtn');
         
         // --- Lua Templates ---
@@ -199,68 +217,60 @@ function UnitDef_Post(i, j)
 	end
 end`;
 
-        // --- Generator Functions ---
-        function generateQhpCode() {
-            const multiplierValue = qhpMultiplierInput.value;
-            if (!multiplierValue || isNaN(multiplierValue)) return;
-            const generatedCode = luaQhpTemplate
-                .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
-                .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
-            qhpLuaOutput.value = generatedCode;
-        }
-        
-        function generateHpCode() {
-            const multiplierValue = hpMultiplierInput.value;
-            const multiplierNum = parseFloat(multiplierValue);
-            if (!multiplierValue || isNaN(multiplierNum)) return;
+        // --- Master Update Function ---
+        function updatePipeline(type) {
+            let originalCode, targetLuaTextarea, targetBase64Textarea;
 
-            let metalCostLine, workerTimeLine;
-            switch (multiplierNum) {
-                case 2:
-                    metalCostLine = 'k.metalcost = math.floor(k.health * .35)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.65';
-                    break;
-                case 2.5:
-                    metalCostLine = 'k.metalcost = math.floor(k.health * .34)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.6';
-                    break;
-                case 3:
-                    metalCostLine = 'k.metalcost = math.floor(k.health * .33)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.55';
-                    break;
-                case 4:
-                    metalCostLine = 'k.metalcost = math.floor(k.health * .25)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.45';
-                    break;
-                case 5:
-                    metalCostLine = 'k.metalcost = math.floor(k.health * .15)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.25';
-                    break;
-                default:
-                    metalCostLine = 'k.metalcost = math.floor(k.metalcost)';
-                    workerTimeLine = 'g.workertime = g.workertime * 0.5';
-                    break;
-            }
-            const generatedCode = luaHpTemplate
-                .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
-                .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
-                .replace('__METAL_COST_LINE__', metalCostLine)
-                .replace('__WORKERTIME_LINE__', workerTimeLine);
-            hpLuaOutput.value = generatedCode;
-        }
-        
-        // --- Encoder and Copy Functions ---
-        function handleEncode(event) {
-            const type = event.target.dataset.type;
-            const sourceTextarea = (type === 'qhp') ? qhpLuaOutput : hpLuaOutput;
-            const targetTextarea = (type === 'qhp') ? qhpBase64Output : hpBase64Output;
-
-            const originalCode = sourceTextarea.value;
-            if (!originalCode) {
-                alert('Source code is empty. Generate some code first!');
-                return;
+            if (type === 'qhp') {
+                const multiplierValue = qhpMultiplierSelect.value;
+                originalCode = luaQhpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+                targetLuaTextarea = qhpLuaOutput;
+                targetBase64Textarea = qhpBase64Output;
+            } else { // type === 'hp'
+                const multiplierValue = hpMultiplierSelect.value;
+                const multiplierNum = parseFloat(multiplierValue);
+                let metalCostLine, workerTimeLine;
+                switch (multiplierNum) {
+                    case 2:
+                        metalCostLine = 'k.metalcost = math.floor(k.health * .35)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.65';
+                        break;
+                    case 2.5:
+                        metalCostLine = 'k.metalcost = math.floor(k.health * .34)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.6';
+                        break;
+                    case 3:
+                        metalCostLine = 'k.metalcost = math.floor(k.health * .33)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.55';
+                        break;
+                    case 4:
+                        metalCostLine = 'k.metalcost = math.floor(k.health * .25)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.45';
+                        break;
+                    case 5:
+                        metalCostLine = 'k.metalcost = math.floor(k.health * .15)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.25';
+                        break;
+                    default:
+                        metalCostLine = 'k.metalcost = math.floor(k.metalcost)';
+                        workerTimeLine = 'g.workertime = g.workertime * 0.5';
+                        break;
+                }
+                originalCode = luaHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
+                    .replace('__METAL_COST_LINE__', metalCostLine)
+                    .replace('__WORKERTIME_LINE__', workerTimeLine);
+                targetLuaTextarea = hpLuaOutput;
+                targetBase64Textarea = hpBase64Output;
             }
 
+            // Update the Lua code textarea
+            targetLuaTextarea.value = originalCode;
+
+            // --- Encoding Process ---
             let finalCodeToEncode;
             if (minifyCheckbox.checked) {
                 try {
@@ -268,53 +278,50 @@ end`;
                     const minifiedCode = luamin.minify(originalCode);
                     finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
                 } catch (e) {
-                    alert(`Invalid Lua syntax in ${type.toUpperCase()} code. Could not minify.\n\nError: ` + e.message);
+                    targetBase64Textarea.value = `Minify Error: ${e.message}`;
                     return;
                 }
             } else {
                 finalCodeToEncode = originalCode;
             }
+            
             const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
             const base64String = btoa(utf8SafeString);
-            targetTextarea.value = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            targetBase64Textarea.value = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         }
 
         function handleCopy(event) {
             const type = event.target.dataset.type;
             const sourceTextarea = (type === 'qhp') ? qhpBase64Output : hpBase64Output;
-            const textToCopy = sourceTextarea.value;
-            if (!textToCopy) return;
-
-            navigator.clipboard.writeText(textToCopy).then(() => {
+            if (!sourceTextarea.value || sourceTextarea.value.startsWith('Minify Error')) return;
+            navigator.clipboard.writeText(sourceTextarea.value).then(() => {
                 const originalText = event.target.textContent;
                 event.target.textContent = 'Copied!';
-                setTimeout(() => { event.target.textContent = originalText; }, 1500);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+                setTimeout(() => { event.target.textContent = 'Copy'; }, 1500);
+            }).catch(err => console.error('Failed to copy text: ', err));
         }
         
         // --- Event Listeners & Initializer ---
-        generateQhpBtn.addEventListener('click', generateQhpCode);
-        generateHpBtn.addEventListener('click', generateHpCode);
+        function runAllUpdates() {
+            updatePipeline('qhp');
+            updatePipeline('hp');
+        }
 
-        encodeBtns.forEach(btn => btn.addEventListener('click', handleEncode));
+        qhpMultiplierSelect.addEventListener('change', () => updatePipeline('qhp'));
+        hpMultiplierSelect.addEventListener('change', () => updatePipeline('hp'));
+        minifyCheckbox.addEventListener('change', runAllUpdates);
         copyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
         
         document.addEventListener('DOMContentLoaded', () => {
-            generateQhpCode();
-            generateHpCode();
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
                     clearInterval(libraryCheckInterval);
-                    encodeBtns.forEach(btn => {
-                        btn.disabled = false;
-                        btn.textContent = `Encode ${btn.dataset.type.toUpperCase()} to Base64URL`;
-                    });
-                    console.log('luaparse and luamin libraries loaded successfully.');
+                    statusLabel.textContent = 'Libraries Loaded. Ready.';
+                    setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
+                    runAllUpdates(); // Run initial generation and encoding
                 }
             }, 100);
         });
     </script>
 </body>
-</html>
+</html>```
