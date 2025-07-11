@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lua Generator, Minifier & Encoder</title>
     
-    <!-- THE FIX: Load the required dependency FIRST, then the main library. -->
-    
     <!-- 1. Load the dependency: luaparse -->
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
     
@@ -182,23 +180,36 @@ end`;
         }
         
         function processAndEncode() {
-            let luaCode = luaCodeInput.value;
-            if (!luaCode) {
+            const originalCode = luaCodeInput.value;
+            if (!originalCode) {
                 alert('The code editor is empty. Generate some code first!');
                 return;
             }
 
+            let finalCodeToEncode;
+
             if (minifyCheckbox.checked) {
                 try {
-                    // This will now work because luaparse was loaded first.
-                    luaCode = luamin.minify(luaCode);
+                    // Step 1: Capture the first line from the original code.
+                    const firstLineComment = originalCode.split('\n')[0];
+
+                    // Step 2: Minify the original code.
+                    const minifiedCode = luamin.minify(originalCode);
+
+                    // Step 3: Combine the first line comment and the minified code.
+                    finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
+
                 } catch (e) {
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
                     return;
                 }
+            } else {
+                // If not minifying, just use the original code as-is.
+                finalCodeToEncode = originalCode;
             }
             
-            const utf8SafeString = unescape(encodeURIComponent(luaCode));
+            // Step 4: Encode the final resulting string to Base64URL.
+            const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
             const base64String = btoa(utf8SafeString);
             const base64UrlString = base64String
                 .replace(/\+/g, '-')
@@ -228,8 +239,6 @@ end`;
         document.addEventListener('DOMContentLoaded', () => {
             generateCode();
 
-            // We will check to see if the final library, `luamin`, has loaded.
-            // If it has, we can be confident its dependency `luaparse` also loaded.
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
                     clearInterval(libraryCheckInterval);
