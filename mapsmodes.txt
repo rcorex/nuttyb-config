@@ -105,3 +105,18 @@ Surrounded
 !raptor_raptorstart avoid
 !clearbox 2
 ---
+Scavengers
+!scav_boss_count 8
+!scav_bosstimemult 1.4
+!scav_difficulty epic
+!scav_spawncountmult 2
+!unit_restrictions_noextractors 0
+!bSet ruins disabled
+!shieldsrework 1
+!teamsize 14
+!raptor_firstwavesboost 1
+!raptor_queen_count 1
+!raptor_spawncountmult 1
+!raptor_graceperiodmult 1
+!raptor_queentimemult 1
+---
