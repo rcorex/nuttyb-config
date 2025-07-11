@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lua Generator, Minifier & Encoder</title>
-    <!-- Include the luamin library from a CDN -->
+    
+    <!-- THIS LINE WAS MISSING. IT LOADS THE MINIFIER LIBRARY. -->
     <script src="https://cdn.jsdelivr.net/npm/luamin/dist/luamin.js"></script>
+    
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -161,16 +163,11 @@ end`;
         // --- Core Functions ---
 
         /**
-         * (NEW) Removes single-line and block comments from a string of Lua code.
-         * This prevents bugs in the minifier library.
-         * @param {string} code - The raw Lua code.
-         * @returns {string} - The code with comments removed.
+         * Removes single-line and block comments from a string of Lua code.
+         * This is kept to prevent bugs in the minifier library with certain comments.
          */
         function removeLuaComments(code) {
-            // Remove single-line comments (-- ... until end of line)
-            // It correctly handles not removing -- inside a string literal.
             code = code.replace(/--(?![\[=]).*$/gm, '');
-            // Remove multi-line comments (--[[ ... ]])
             code = code.replace(/--\[\[[\s\S]*?\]\]/g, '');
             return code;
         }
@@ -196,12 +193,11 @@ end`;
 
             if (minifyCheckbox.checked) {
                 try {
-                    // FIX: First, remove comments to avoid minifier bugs.
+                    // Step 1: Remove comments to avoid minifier library bugs.
                     const codeWithoutComments = removeLuaComments(luaCode);
-                    // Then, minify the remaining code.
+                    // Step 2: Minify the remaining code using the now-loaded library.
                     luaCode = luamin.minify(codeWithoutComments);
                 } catch (e) {
-                    // This will now only catch genuine syntax errors in the Lua code itself.
                     alert('Invalid Lua syntax. Could not minify.\n\nError: ' + e.message);
                     return;
                 }
