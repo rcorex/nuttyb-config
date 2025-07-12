@@ -235,8 +235,11 @@
         }
         #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
         #custom-tweak-form button {
-            grid-column: 2; background-color: #4caf50; cursor: pointer;
-            font-weight: bold; transition: background-color: 0.3s ease;
+            grid-column: 2;
+            background-color: #4caf50;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
             width: auto; 
             justify-self: start; 
         }
@@ -293,29 +296,6 @@
         </div>
 
         <div id="config-tab" class="tab-content active">
-            <div class="settings-container">
-                <h2>NuttyB Tweaks</h2>
-                <div id="options-form-columns">
-                    <div class="options-column" id="left-column">
-                        <p>Loading configuration data...</p>
-                    </div>
-                    <div class="options-column" id="right-column"></div>
-                </div>
-                <div class="action-buttons-container">
-                    <button id="reset-default-btn" class="action-button">Reset</button>
-                    <button id="reset-none-btn" class="action-button">None</button>
-                </div>
-            </div>
-
-            <div id="custom-settings-container" class="settings-container" style="display: none;">
-                <h2>Custom Tweaks</h2>
-                <div id="custom-options-form-columns">
-                    <div class="options-column" id="custom-left-column"></div>
-                    <div class="options-column" id="custom-right-column"></div>
-                </div>
-                <div id="slot-warning-messages"></div>
-            </div>
-
             <div class="output-container">
                 <h2>Generated Commands</h2>
                 <p>Copy and paste all parts separately to the lobby</p>
@@ -351,6 +331,30 @@
                 <div class="lobby-name-output">
                     <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
                 </div>
+            </div>
+
+            <div class="settings-container">
+                <h2>NuttyB Tweaks</h2>
+                <p>Select your desired options below.</p>
+                <div id="options-form-columns">
+                    <div class="options-column" id="left-column">
+                        <p>Loading configuration data...</p>
+                    </div>
+                    <div class="options-column" id="right-column"></div>
+                </div>
+                <div class="action-buttons-container">
+                    <button id="reset-default-btn" class="action-button">Reset</button>
+                    <button id="reset-none-btn" class="action-button">None</button>
+                </div>
+            </div>
+
+            <div id="custom-settings-container" class="settings-container" style="display: none;">
+                <h2>Custom Tweaks</h2>
+                <div id="custom-options-form-columns">
+                    <div class="options-column" id="custom-left-column"></div>
+                    <div class="options-column" id="custom-right-column"></div>
+                </div>
+                <div id="slot-warning-messages"></div>
             </div>
         </div>
 
@@ -442,6 +446,8 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
+        
+        // --- MODIFIED: Constant value updated ---
         const MAX_SECTION_LENGTH = 55000;
 
         // --- Lua Templates and Generator Logic ---
@@ -1093,7 +1099,6 @@ end`;
             updateOutput();
         }
 
-        // --- MODIFIED: Added logic for all Scavengers mode dependencies ---
         function updateOutput() {
             const modesSelect = document.getElementById('modes-select');
             const extrasSelect = document.querySelector('select[data-option-type="Extras"]');
@@ -1108,7 +1113,7 @@ end`;
                 [extrasSelect, raptorHpSelect, queenHpSelect].forEach(selector => {
                     if (selector) {
                         if (isScavengers) {
-                            selector.value = ""; // Set to "None" or "Default"
+                            selector.value = ""; 
                             selector.disabled = true;
                         } else {
                             selector.disabled = false;
