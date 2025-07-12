@@ -235,8 +235,11 @@
         }
         #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
         #custom-tweak-form button {
-            grid-column: 2; background-color: #4caf50; cursor: pointer;
-            font-weight: bold; transition: background-color: 0.3s ease;
+            grid-column: 2;
+            background-color: #4caf50;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
             width: auto; 
             justify-self: start; 
         }
@@ -293,7 +296,6 @@
         </div>
 
         <div id="config-tab" class="tab-content active">
-            <!-- MODIFIED: Sections reordered -->
             <div class="output-container">
                 <h2>Generated Commands</h2>
                 <p>Copy and paste all parts separately to the lobby</p>
@@ -333,6 +335,7 @@
 
             <div class="settings-container">
                 <h2>NuttyB Tweaks</h2>
+                <p>Select your desired options below.</p>
                 <div id="options-form-columns">
                     <div class="options-column" id="left-column">
                         <p>Loading configuration data...</p>
@@ -443,7 +446,9 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
-        const MAX_SECTION_LENGTH = 50000;
+        
+        // --- MODIFIED: Constant value updated ---
+        const MAX_SECTION_LENGTH = 55000;
 
         // --- Lua Templates and Generator Logic ---
         const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
