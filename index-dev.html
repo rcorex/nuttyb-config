@@ -926,9 +926,6 @@ end`;
 
             const standardCommands = [];
             const customTweaksToProcess = [];
-            const usedTweakDefs = new Set();
-            const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
             const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             formElements.forEach(el => {
@@ -960,7 +957,11 @@ end`;
                 }
             });
 
-            standardCommands.forEach(cmd => {
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
+
+            [...standardCommands].forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
                     const slotNum = parseInt(match[2] || 0, 10);
@@ -970,6 +971,7 @@ end`;
                     }
                 }
             });
+
             const customCommands = [];
             customTweaksToProcess.forEach(tweak => {
                 const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
@@ -996,45 +998,54 @@ end`;
             
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
-            let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            document.querySelectorAll('#raptor-only-options select').forEach(el=>{
-                const o=el.options[el.selectedIndex];
-                if(o.value){
-                    const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);
-                    if(g){
-                        const c = g.choices.find(ch => (g.isHpGenerator ? ch.value === o.value : ch.value === o.value));
-                        if(c&&c.shortLabel!==undefined){
-                           if(g.label==="Extras")extraRaptorsPart=c.shortLabel;
-                           else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;
-                           else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
+
+            let renameCommand = isScavengers ? `$rename [Mod] NuttyB Scavengers ` : `$rename [Mod] NuttyB Raptors `;
+            const renameParts = [];
+
+            if (isScavengers) {
+                const scavHpSelect = document.getElementById('scav-hp-select');
+                const bossHpSelect = document.getElementById('boss-hp-select');
+                const scavHpText = scavHpSelect && scavHpSelect.value ? scavHpSelect.options[scavHpSelect.selectedIndex].text : '';
+                const bossHpText = bossHpSelect && bossHpSelect.value ? bossHpSelect.options[bossHpSelect.selectedIndex].text : '';
+
+                const combinedScavHp = [scavHpText, bossHpText].filter(Boolean).join(' ');
+                if (combinedScavHp) {
+                    const formattedHpPart = combinedScavHp.replace(/\./g, '_');
+                    renameParts.push(`[${formattedHpPart}]`);
+                }
+
+            } else { 
+                let extraRaptorsPart = "", raptorHealthPart = "", queenHealthPart = "";
+                document.querySelectorAll('#raptor-only-options select').forEach(el => {
+                    const o = el.options[el.selectedIndex];
+                    if (o.value) {
+                        const g = formOptionsConfig.find(gr => gr.label === el.dataset.optionType);
+                        if (g) {
+                            const c = g.choices.find(ch => ch.value === o.value);
+                            if (c && c.shortLabel !== undefined) {
+                                if (g.label === "Extras") extraRaptorsPart = c.shortLabel;
+                                else if (g.label === "Raptor Health") raptorHealthPart = c.shortLabel;
+                                else if (g.label === "Queen Health") queenHealthPart = c.shortLabel;
+                            }
                         }
                     }
-                }
-            });
+                });
+                
+                if (extraRaptorsPart) renameParts.push(extraRaptorsPart);
+                
+                const combinedRaptorHp = [queenHealthPart, raptorHealthPart].filter(Boolean).join(' ');
+                if (combinedRaptorHp) renameParts.push(`[${combinedRaptorHp}]`);
+            }
 
-            let renameCommand;
-            const primaryModeSelect = document.getElementById('primary-mode-select');
-            if (primaryModeSelect && primaryModeSelect.value === 'Scavengers') {
-                renameCommand = `$rename [Mod] NuttyB Scavengers `;
-            } else {
-                renameCommand = `$rename [Mod] NuttyB Raptors `;
-            }
-            
-            let renameParts=[];
-            if(extraRaptorsPart)renameParts.push(extraRaptorsPart);
-            let combinedHealthPart="";
-            if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;
-            else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;
-            else if(queenHealthPart)combinedHealthPart=queenHealthPart;
-            if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);
-            
-            if(renameParts.length > 0) {
-                renameCommand += renameParts.join('');
-            }
-            
             const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
             if (noMexEnabled) {
-                renameCommand += `[No Mex]`;
+                renameParts.push(`[No Mex]`);
+            }
+            
+            if (renameParts.length > 0) {
+                renameCommand += renameParts.join('');
             }
             
             const sections = [];
@@ -1070,7 +1081,6 @@ end`;
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
 
-            // --- Create container for Scavenger-only options ---
             const scavOnlyContainer = document.createElement('div');
             scavOnlyContainer.id = 'scav-only-options';
             
@@ -1087,7 +1097,7 @@ end`;
                 {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
             ];
             scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
-            scavHpSelect.value = ""; // Start with Default
+            scavHpSelect.value = ""; 
             scavHpSelect.addEventListener('change', updateOutput);
             scavHpLabel.appendChild(scavHpSelect);
             scavOnlyContainer.appendChild(scavHpLabel);
@@ -1106,19 +1116,16 @@ end`;
                 {v: "7", t: "7x BHP"}, {v: "9", t: "9x BHP"}, {v: "11", t: "11x BHP"}, {v: "13", t: "13x BHP"}
             ];
             bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
-            bossHpSelect.value = ""; // Start with Default
+            bossHpSelect.value = ""; 
             bossHpSelect.addEventListener('change', updateOutput);
             bossHpLabel.appendChild(bossHpSelect);
             scavOnlyContainer.appendChild(bossHpLabel);
 
             leftColumn.appendChild(scavOnlyContainer);
-            // --- End Scavenger-only options ---
 
-            // --- Create container for Raptor-only options ---
             const raptorOnlyContainer = document.createElement('div');
             raptorOnlyContainer.id = 'raptor-only-options';
             leftColumn.appendChild(raptorOnlyContainer);
-            // --- End Raptor-only options ---
             
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -1216,8 +1223,8 @@ end`;
                 scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
 
                 if (isScavengers) {
-                    scavHpSelect.value = "1.3";
-                    bossHpSelect.value = "1.3";
+                    if (scavHpSelect.value === "") scavHpSelect.value = "1.3";
+                    if (bossHpSelect.value === "") bossHpSelect.value = "1.3";
                     raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
                 } else {
                     scavHpSelect.value = "";
@@ -1374,6 +1381,9 @@ end`;
         });
 
         resetDefaultBtn.addEventListener('click', () => {
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            if (primaryModeSelect) primaryModeSelect.value = 'Raptors';
+            
             formOptionsConfig.forEach(optionGroup => {
                 if (optionGroup.type === 'checkbox') {
                     const allLabels = document.querySelectorAll('#options-form-columns label');
@@ -1387,9 +1397,6 @@ end`;
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
-            
-            const primaryModeSelect = document.getElementById('primary-mode-select');
-            if (primaryModeSelect) primaryModeSelect.value = 'Raptors';
             
             const bossHpSelect = document.getElementById('boss-hp-select');
             const scavHpSelect = document.getElementById('scav-hp-select');
@@ -1443,7 +1450,7 @@ end`;
                     if (typeof luamin !== 'undefined') {
                         clearInterval(libraryCheckInterval);
                         console.log("Lua libraries loaded.");
-                        document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
+                        document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
                            select.disabled = false;
                         });
                         updateOutput();
