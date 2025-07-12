@@ -482,23 +482,19 @@ for f, g in pairs(UnitDefs) do
 end
 
 local h = UnitDef_Post
-function UnitDef_Post(i, j)
-	h(i, j)
-	for i, k in pairs(UnitDefs) do
-		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
-			if k then
-				__METAL_COST_LINE__
-				k.nochasecategory = "OBJECT"
-    
+function UnitDef_Post(j, k)
+	h(j, k)
+	if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
+		if k then
+			__METAL_COST_LINE__
+			k.nochasecategory = "OBJECT"
 			-- Create a formatted message and print it to the in-game console.
 			local message = string.format(
 				"RAPTOR POST-PROCESSED: %s -> metalcost to %d, nochasecategory to OBJECT",
-				i,
+				j,
 				k.metalcost or 0
 				)
 			Spring.Echo(message)
-    
-			end
 		end
 	end
 end`;
