@@ -541,10 +541,10 @@ end`;
             const originalValue = startSelect.value;
             startSelect.innerHTML = ''; 
 
-            const naModeOption = document.createElement('option');
-            naModeOption.value = "";
-            naModeOption.textContent = "N/A";
-            startSelect.appendChild(naModeOption);
+            const blankModeOption = document.createElement('option');
+            blankModeOption.value = "";
+            blankModeOption.textContent = "";
+            startSelect.appendChild(blankModeOption);
 
             if (gameConfigs && gameConfigs.modes) {
                 gameConfigs.modes.forEach((mode, index) => {
@@ -885,20 +885,7 @@ end`;
         }
         
         function generateCommands() {
-            let includeBaseCommands = false;
-            const primaryModeSelect = document.getElementById('primary-mode-select');
-
-            const baseCommands = [];
-            if (gameConfigs.base.length > 0) {
-                baseCommands.push(...gameConfigs.base);
-                includeBaseCommands = true;
-            }
-            if (primaryModeSelect && primaryModeSelect.value === 'Scavengers' && gameConfigs.scavengers.length > 0) {
-                 baseCommands.push(...gameConfigs.scavengers);
-                 includeBaseCommands = true;
-            }
-
-
+            // First, gather all user-selectable commands
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
             const modesSelect = document.getElementById('modes-select');
@@ -907,7 +894,6 @@ end`;
                 const selectedMap = gameConfigs.maps[mapsSelect.value];
                 if (selectedMap && selectedMap.commands) {
                     presetCommands.push(...selectedMap.commands);
-                    includeBaseCommands = true;
                 }
             }
 
@@ -915,7 +901,6 @@ end`;
                 const selectedMode = gameConfigs.modes[modesSelect.value];
                 if (selectedMode && selectedMode.commands) {
                     presetCommands.push(...selectedMode.commands);
-                    includeBaseCommands = true;
                 }
             }
 
@@ -970,11 +955,23 @@ end`;
                     targetSet.add(availableSlot);
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-            
+
+            // Check if any options were actually selected
+            const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
-            if (includeBaseCommands) {
-                finalCommands.push(...baseCommands);
+            
+            // Only add base commands if at least one other option has been selected
+            if(anyOptionSelected) {
+                const primaryModeSelect = document.getElementById('primary-mode-select');
+                if (gameConfigs.base.length > 0) {
+                    finalCommands.push(...gameConfigs.base);
+                }
+                if (primaryModeSelect && primaryModeSelect.value === 'Scavengers' && gameConfigs.scavengers.length > 0) {
+                    finalCommands.push(...gameConfigs.scavengers);
+                }
             }
+            
+            // Add all the other commands
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
@@ -995,6 +992,7 @@ end`;
             });
 
             let renameCommand;
+            const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect && primaryModeSelect.value === 'Scavengers') {
                 renameCommand = `$rename [Mod] NuttyB Scavengers `;
             } else {
@@ -1099,10 +1097,10 @@ end`;
                     const mapsSelect = document.createElement('select');
                     mapsSelect.id = 'maps-select';
 
-                    const naMapOption = document.createElement('option');
-                    naMapOption.value = "";
-                    naMapOption.textContent = "N/A";
-                    mapsSelect.appendChild(naMapOption);
+                    const blankMapOption = document.createElement('option');
+                    blankMapOption.value = "";
+                    blankMapOption.textContent = "";
+                    mapsSelect.appendChild(blankMapOption);
 
                     gameConfigs.maps.forEach((map, index) => {
                         const option = document.createElement('option');
@@ -1244,7 +1242,7 @@ end`;
             const tableBody = document.querySelector('#maps-modes-table tbody');
             tableBody.innerHTML = ''; 
 
-            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0) {
+            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0 && gameConfigs.scavengers.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No maps or modes found.</td></tr>';
                 return;
             }
@@ -1258,6 +1256,16 @@ end`;
                 });
             };
 
+            const populateSimpleCategory = (commands, categoryName, name) => {
+                 if(commands.length > 0) {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = categoryName;
+                    row.insertCell().textContent = name;
+                    row.insertCell().innerHTML = commands.join('<br>');
+                }
+            };
+            
+            populateSimpleCategory(gameConfigs.scavengers, 'scavengers', 'Default');
             populateCategory(gameConfigs.maps, 'maps');
             populateCategory(gameConfigs.modes, 'modes');
         }
@@ -1333,9 +1341,13 @@ end`;
             const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect) primaryModeSelect.selectedIndex = 0;
             const mapsSelect = document.getElementById('maps-select');
-            if (mapsSelect) mapsSelect.selectedIndex = 1;
+            if (mapsSelect && mapsSelect.options.length > 1) mapsSelect.selectedIndex = 1;
+            const modesSelect = document.getElementById('modes-select');
+            if(modesSelect && modesSelect.options.length > 1) {
+                modesSelect.selectedIndex = 1;
+            }
             
-            populateStartSelector();
+            updateOutput();
         });
         
         customTweakForm.addEventListener('submit', addCustomTweak);
