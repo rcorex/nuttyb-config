@@ -1085,7 +1085,7 @@ end`;
             scavOnlyContainer.id = 'scav-only-options';
             
             const scavHpLabel = document.createElement('label');
-            scavHpLabel.textContent = 'Scavenger HP: ';
+            scavHpLabel.textContent = 'Scavengers HP: ';
             const scavHpSelect = document.createElement('select');
             scavHpSelect.id = 'scav-hp-select';
             scavHpSelect.dataset.isScavHpGenerator = true;
@@ -1103,7 +1103,7 @@ end`;
             scavOnlyContainer.appendChild(scavHpLabel);
 
             const bossHpLabel = document.createElement('label');
-            bossHpLabel.textContent = 'Boss HP: ';
+            bossHpLabel.textContent = 'Scav Boss HP: ';
             const bossHpSelect = document.createElement('select');
             bossHpSelect.id = 'boss-hp-select';
             bossHpSelect.dataset.isScavHpGenerator = true;
@@ -1295,7 +1295,7 @@ end`;
                 copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = fullCommand;
                 wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
-
+            
             if (gameConfigs && gameConfigs.base && gameConfigs.base.length > 0) {
                 gameConfigs.base.forEach(command => {
                     const row = dataTableBody.insertRow();
