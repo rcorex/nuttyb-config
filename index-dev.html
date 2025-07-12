@@ -744,7 +744,6 @@ end`;
                 if(el.dataset.isCustom) return;
 
                 if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
-                    // Handled explicitly below
                     return;
                 }
 
@@ -765,7 +764,6 @@ end`;
                 });
             });
             
-            // Explicitly add used slots from the HP generators
             document.querySelectorAll('select[data-slot]').forEach(select => {
                 if (select.value) {
                     const slot = parseInt(select.dataset.slot, 10);
@@ -1089,7 +1087,7 @@ end`;
                 {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
             ];
             scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
-            scavHpSelect.value = "1.3";
+            scavHpSelect.value = ""; // Start with Default
             scavHpSelect.addEventListener('change', updateOutput);
             scavHpLabel.appendChild(scavHpSelect);
             scavOnlyContainer.appendChild(scavHpLabel);
@@ -1108,7 +1106,7 @@ end`;
                 {v: "7", t: "7x BHP"}, {v: "9", t: "9x BHP"}, {v: "11", t: "11x BHP"}, {v: "13", t: "13x BHP"}
             ];
             bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
-            bossHpSelect.value = "1.3";
+            bossHpSelect.value = ""; // Start with Default
             bossHpSelect.addEventListener('change', updateOutput);
             bossHpLabel.appendChild(bossHpSelect);
             scavOnlyContainer.appendChild(bossHpLabel);
@@ -1157,7 +1155,6 @@ end`;
                     inputElement.addEventListener('change', updateOutput);
                 }
 
-                // Place elements in correct containers
                 if (optionGroup.column === 'right') {
                     rightColumn.appendChild(label);
                 } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
@@ -1209,6 +1206,8 @@ end`;
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const raptorOnlyContainer = document.getElementById('raptor-only-options');
             const scavOnlyContainer = document.getElementById('scav-only-options');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            const bossHpSelect = document.getElementById('boss-hp-select');
 
             if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
                 const isScavengers = primaryModeSelect.value === 'Scavengers';
@@ -1217,11 +1216,12 @@ end`;
                 scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
 
                 if (isScavengers) {
-                    // Reset Raptor-specific selectors when switching to Scavengers
+                    scavHpSelect.value = "1.3";
+                    bossHpSelect.value = "1.3";
                     raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
                 } else {
-                    // Reset Scavenger-specific selectors when switching to Raptors
-                    scavOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "1.3");
+                    scavHpSelect.value = "";
+                    bossHpSelect.value = "";
                 }
             }
             
@@ -1259,7 +1259,6 @@ end`;
                 wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
 
-            // Process ALL dynamically generated HP tweaks
             document.querySelectorAll('select[data-slot]').forEach(selector => {
                 const selectedValue = selector.value;
                 if (!selectedValue) return;
@@ -1389,13 +1388,13 @@ end`;
                 }
             });
             
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            if (primaryModeSelect) primaryModeSelect.value = 'Raptors';
+            
             const bossHpSelect = document.getElementById('boss-hp-select');
             const scavHpSelect = document.getElementById('scav-hp-select');
-            if (bossHpSelect) bossHpSelect.value = "1.3";
-            if (scavHpSelect) scavHpSelect.value = "1.3";
-
-            const primaryModeSelect = document.getElementById('primary-mode-select');
-            if (primaryModeSelect) primaryModeSelect.selectedIndex = 0;
+            if (bossHpSelect) bossHpSelect.value = "";
+            if (scavHpSelect) scavHpSelect.value = "";
 
             const mapsSelect = document.getElementById('maps-select');
             if (mapsSelect && mapsSelect.options.length > 0) mapsSelect.selectedIndex = 0;
