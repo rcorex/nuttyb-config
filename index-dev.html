@@ -488,13 +488,6 @@ function UnitDef_Post(j, k)
 		if k then
 			__METAL_COST_LINE__
 			k.nochasecategory = "OBJECT"
-			-- Create a formatted message and print it to the in-game console.
-			local message = string.format(
-				"RAPTOR POST-PROCESSED: %s -> metalcost to %d, nochasecategory to OBJECT",
-				j,
-				k.metalcost or 0
-				)
-			Spring.Echo(message)
 		end
 	end
 end`;
