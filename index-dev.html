@@ -87,10 +87,9 @@
             flex: 1 1 45%;
             min-width: 250px;
         }
-        /* Key change: Reduced vertical spacing for tweak options */
         #left-column label, #right-column label, #custom-options-form-columns label {
             display: block;
-            margin-bottom: 3px; /* Reduced from 8px */
+            margin-bottom: 3px;
             cursor: pointer;
             padding: 3px;
             border-radius: 4px;
@@ -491,6 +490,29 @@ function UnitDef_Post(j, k)
 		end
 	end
 end`;
+        
+        const luaBossHpTemplate = `--Boss HP __MULTIPLIER_TEXT__X
+for unitName, unitDef in pairs(UnitDefs) do
+	if unitDef.health and unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end
+end`;
+
+        const luaScavHpTemplate = `--Scavenger HP __MULTIPLIER_TEXT__X
+for unitName, unitDef in pairs(UnitDefs) do
+	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end
+end
+
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
+	if unitName:match("_scav$") then
+		unitDef.nochasecategory = "OBJECT"
+	end
+end`;
 
         function generateLuaTweak(type, multiplierValue) {
             let originalCode;
@@ -500,11 +522,11 @@ end`;
                 return "Error: Lib not loaded";
             }
 
-            if (type === 'qhp') {
+            if (type === 'qhp') { // Raptor Queen HP
                 originalCode = luaQhpTemplate
                     .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
-            } else { // type === 'hp'
+            } else if (type === 'hp') { // Raptor HP
                 const multiplierNum = parseFloat(multiplierValue);
                 let metalCostLine, workerTimeLine;
                 switch (multiplierNum) {
@@ -520,6 +542,14 @@ end`;
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
                     .replace('__METAL_COST_LINE__', metalCostLine)
                     .replace('__WORKERTIME_LINE__', workerTimeLine);
+            } else if (type === 'boss') { // Boss HP
+                 originalCode = luaBossHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+            } else if (type === 'scav') { // Scavenger HP
+                originalCode = luaScavHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
             }
 
             try {
@@ -707,29 +737,52 @@ end`;
         function updateCustomOptionUI() {
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
             const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
-                if (el.dataset.isHpGenerator) {
-                    const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
-                    if (el.value) usedTweakDefs.add(slot);
+
+                if (el.dataset.isHpGenerator) { // This handles the original Raptor HP generators
+                    if (el.value) {
+                       // Do not add to used slots here, they are handled explicitly by slot number in generateCommands
+                    }
+                    return;
+                }
+                
+                if (el.dataset.isScavHpGenerator) { // Handle new Scav/Boss HP generators
+                    if (el.value) {
+                       // Do not add to used slots here, they are handled explicitly by slot number in generateCommands
+                    }
                     return;
                 }
 
                 let commands = [];
                 if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
                 else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
+                
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
                     if (match) {
-                        if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2]));
-                        else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2]));
+                        const slotNum = parseInt(match[2] || 0, 10);
+                        if (slotNum > 0) {
+                            if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                            else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                        }
                     }
                 });
             });
+            
+            // Explicitly add used slots from the HP generators
+            document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
+                if (select.value) {
+                    const slot = parseInt(select.dataset.slot, 10);
+                    if (select.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slot);
+                    else if (select.dataset.slotType === 'tweakunits') usedTweakUnits.add(slot);
+                }
+            });
+
 
             const customCheckboxes = document.querySelectorAll('input[data-is-custom="true"]');
             customCheckboxes.forEach(checkbox => {
@@ -804,39 +857,27 @@ end`;
             rawOptionsData = [];
 
             const dynamicHPGroup = {
-                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: 2, slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                    { label: "Default", value: "", shortLabel: "" },
-                    { label: "1x HP", value: "1", shortLabel: "1x HP" },
-                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" },
-                    { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
-                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" },
-                    { label: "2x HP", value: "2", shortLabel: "2x HP" },
-                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" },
-                    { label: "3x HP", value: "3", shortLabel: "3x HP" },
-                    { label: "4x HP", value: "4", shortLabel: "4x HP" },
-                    { label: "5x HP", value: "5", shortLabel: "5x HP" },
+                    { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
+                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" }, { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
+                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" }, { label: "2x HP", value: "2", shortLabel: "2x HP" },
+                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" }, { label: "3x HP", value: "3", shortLabel: "3x HP" },
+                    { label: "4x HP", value: "4", shortLabel: "4x HP" }, { label: "5x HP", value: "5", shortLabel: "5x HP" },
                 ]
             };
             const dynamicQHPGroup = {
-                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left',
+                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left', slot: 1, slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                     { label: "Default", value: "", shortLabel: "" },
-                     { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
-                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" },
-                     { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
-                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" },
-                     { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
-                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" },
-                     { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
-                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" },
-                     { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
-                     { label: "7x QHP", value: "7", shortLabel: "7x QHP" },
-                     { label: "9x QHP", value: "9", shortLabel: "9x QHP" },
-                     { label: "11x QHP", value: "11", shortLabel: "11x QHP" },
-                     { label: "13x QHP", value: "13", shortLabel: "13x QHP" },
+                     { label: "Default", value: "", shortLabel: "" }, { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
+                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" }, { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
+                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
+                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
+                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" }, { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
+                     { label: "7x QHP", value: "7", shortLabel: "7x QHP" }, { label: "9x QHP", value: "9", shortLabel: "9x QHP" },
+                     { label: "11x QHP", value: "11", shortLabel: "11x QHP" }, { label: "13x QHP", value: "13", shortLabel: "13x QHP" },
                 ]
             };
 
@@ -847,7 +888,8 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
-                        return;
+                        // These slots are now reserved for dynamic HP generation, so we ignore static commands for them.
+                        return; 
                     }
 
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
@@ -881,41 +923,37 @@ end`;
         }
         
         function generateCommands() {
-            // First, gather all user-selectable commands
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
             const modesSelect = document.getElementById('modes-select');
 
             if (mapsSelect && mapsSelect.value !== "") {
                 const selectedMap = gameConfigs.maps[mapsSelect.value];
-                if (selectedMap && selectedMap.commands) {
-                    presetCommands.push(...selectedMap.commands);
-                }
+                if (selectedMap && selectedMap.commands) presetCommands.push(...selectedMap.commands);
             }
-
             if (modesSelect && modesSelect.value !== "") {
                 const selectedMode = gameConfigs.modes[modesSelect.value];
-                if (selectedMode && selectedMode.commands) {
-                    presetCommands.push(...selectedMode.commands);
-                }
+                if (selectedMode && selectedMode.commands) presetCommands.push(...selectedMode.commands);
             }
 
             const standardCommands = [];
             const customTweaksToProcess = [];
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
             const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             formElements.forEach(el => {
                 if (el.dataset.isCustom) {
                     if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                 } 
-                else if (el.dataset.isHpGenerator) {
+                else if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
                     const multiplier = el.value;
                     if (multiplier) {
                         const type = el.dataset.hpType;
-                        const commandSlot = type === 'qhp' ? 'tweakdefs1' : 'tweakdefs2';
+                        const slot = el.dataset.slot;
+                        const slotType = el.dataset.slotType;
+                        const commandSlot = `${slotType}${slot}`;
                         const base64string = generateLuaTweak(type, multiplier);
                         if (!base64string.startsWith("Error")) {
                             standardCommands.push(`!bset ${commandSlot} ${base64string}`);
@@ -937,8 +975,11 @@ end`;
             standardCommands.forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
-                    if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2], 10));
-                    else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2], 10));
+                    const slotNum = parseInt(match[2] || 0, 10);
+                    if (slotNum > 0) {
+                      if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                      else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                    }
                 }
             });
             const customCommands = [];
@@ -952,11 +993,9 @@ end`;
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
 
-            // Check if any options were actually selected
             const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
             
-            // Only add base commands if at least one other option has been selected
             if(anyOptionSelected) {
                 const primaryModeSelect = document.getElementById('primary-mode-select');
                 if (gameConfigs.base.length > 0) {
@@ -967,12 +1006,11 @@ end`;
                 }
             }
             
-            // Add all the other commands
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
             document.querySelectorAll('#options-form-columns select').forEach(el=>{
-                if (el.id.includes('maps-select') || el.id.includes('modes-select') || el.id.includes('primary-mode-select')) return;
+                if (el.id.includes('maps-select') || el.id.includes('modes-select') || el.id.includes('primary-mode-select') || el.dataset.isScavHpGenerator) return;
                 const o=el.options[el.selectedIndex];
                 if(o.value){
                     const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);
@@ -1047,6 +1085,49 @@ end`;
             primaryModeSelect.addEventListener('change', updateOutput);
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
+
+            // --- Create container for Scavenger-only options ---
+            const scavOnlyContainer = document.createElement('div');
+            scavOnlyContainer.id = 'scav-only-options';
+            scavOnlyContainer.style.display = 'none'; // Initially hidden
+            
+            const bossHpLabel = document.createElement('label');
+            bossHpLabel.textContent = 'Boss HP: ';
+            const bossHpSelect = document.createElement('select');
+            bossHpSelect.id = 'boss-hp-select';
+            bossHpSelect.dataset.isScavHpGenerator = true;
+            bossHpSelect.dataset.hpType = 'boss';
+            bossHpSelect.dataset.slot = '1';
+            bossHpSelect.dataset.slotType = 'tweakdefs';
+            const bossHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x BHP"}, {v: "1.3", t: "1.3x BHP"}, {v: "1.5", t: "1.5x BHP"}, {v: "1.7", t: "1.7x BHP"},
+                {v: "2", t: "2x BHP"}, {v: "2.5", t: "2.5x BHP"}, {v: "3", t: "3x BHP"}, {v: "4", t: "4x BHP"}, {v: "5", t: "5x BHP"},
+                {v: "7", t: "7x BHP"}, {v: "9", t: "9x BHP"}, {v: "11", t: "11x BHP"}, {v: "13", t: "13x BHP"}
+            ];
+            bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
+            bossHpSelect.addEventListener('change', updateOutput);
+            bossHpLabel.appendChild(bossHpSelect);
+            scavOnlyContainer.appendChild(bossHpLabel);
+
+            const scavHpLabel = document.createElement('label');
+            scavHpLabel.textContent = 'Scavenger HP: ';
+            const scavHpSelect = document.createElement('select');
+            scavHpSelect.id = 'scav-hp-select';
+            scavHpSelect.dataset.isScavHpGenerator = true;
+            scavHpSelect.dataset.hpType = 'scav';
+            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slotType = 'tweakdefs';
+            const scavHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
+                {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
+            ];
+            scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
+            scavHpSelect.addEventListener('change', updateOutput);
+            scavHpLabel.appendChild(scavHpSelect);
+            scavOnlyContainer.appendChild(scavHpLabel);
+
+            leftColumn.appendChild(scavOnlyContainer);
+            // --- End Scavenger-only options ---
             
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -1064,7 +1145,9 @@ end`;
                     if (optionGroup.isHpGenerator) {
                         inputElement.dataset.isHpGenerator = true;
                         inputElement.dataset.hpType = optionGroup.hpType;
-                        inputElement.disabled = true;
+                        inputElement.dataset.slot = optionGroup.slot;
+                        inputElement.dataset.slotType = optionGroup.slotType;
+                        inputElement.disabled = true; // Initially disabled until lua lib loads
                     }
 
                     optionGroup.choices.forEach(choice => {
@@ -1131,10 +1214,14 @@ end`;
             const extrasSelect = document.querySelector('select[data-option-type="Extras"]');
             const raptorHpSelect = document.querySelector('select[data-hp-type="hp"]');
             const queenHpSelect = document.querySelector('select[data-hp-type="qhp"]');
+            const scavOnlyContainer = document.getElementById('scav-only-options');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            const bossHpSelect = document.getElementById('boss-hp-select');
 
             if (primaryModeSelect) {
                 const isScavengers = primaryModeSelect.value === 'Scavengers';
 
+                // Handle Raptor-specific selectors
                 [extrasSelect, raptorHpSelect, queenHpSelect].forEach(selector => {
                     if (selector) {
                         if (isScavengers) {
@@ -1145,6 +1232,16 @@ end`;
                         }
                     }
                 });
+                
+                // Handle Scavenger-specific selectors
+                if (isScavengers) {
+                    scavOnlyContainer.style.display = 'block';
+                } else {
+                    scavOnlyContainer.style.display = 'none';
+                    // CRITICAL: Reset values when hidden to avoid adding commands
+                    scavHpSelect.value = "";
+                    bossHpSelect.value = "";
+                }
             }
             
             updateCustomOptionUI();
@@ -1199,7 +1296,7 @@ end`;
                     if (!choice) return;
 
                     const type = config.hpType;
-                    const commandSlot = (type === 'qhp') ? 'tweakdefs1' : 'tweakdefs2';
+                    const commandSlot = `${config.slotType}${config.slot}`;
                     const base64tweak = generateLuaTweak(type, selectedValue);
                     if (base64tweak.startsWith("Error")) return;
 
@@ -1303,9 +1400,9 @@ end`;
                     el.checked = false;
                 } else if (el.tagName === 'SELECT') {
                     if (el.id === 'maps-select' || el.id === 'modes-select') {
-                        el.selectedIndex = -1; // Deselect the option
-                    } else if (el.id !== 'primary-mode-select') { // Don't reset main mode
-                        el.value = ""; // Reset others like HP, Extras to their default/none value
+                        el.selectedIndex = -1; 
+                    } else if (el.id !== 'primary-mode-select') {
+                        el.value = ""; 
                     }
                 }
             });
@@ -1326,6 +1423,12 @@ end`;
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
+            // Also reset the new scav/boss selectors
+            const bossHpSelect = document.getElementById('boss-hp-select');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            if (bossHpSelect) bossHpSelect.value = "";
+            if (scavHpSelect) scavHpSelect.value = "";
+
             const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect) primaryModeSelect.selectedIndex = 0;
 
@@ -1376,10 +1479,13 @@ end`;
                     if (typeof luamin !== 'undefined') {
                         clearInterval(libraryCheckInterval);
                         console.log("Lua libraries loaded.");
-                        document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
-                            select.disabled = false;
+                        // Enable all HP generator dropdowns now that lib is loaded
+                        document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
+                           if (!select.parentElement.parentElement.id.includes('scav-only-options')) {
+                               select.disabled = false;
+                           }
                         });
-                        updateOutput();
+                        updateOutput(); // Initial update to set correct visibility
                     }
                 }, 100);
 
