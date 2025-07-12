@@ -1,7 +1,7 @@
 ## Widgets
 
 *   **[Raptor Stats Panel with Aggro](https://gist.github.com/tetrisface/2f99f5a5b179e3ac42e7e63825880713)**
-    *   Replace stock Raptor Stats widget. Shows more info like aggro and queen resistances.
+    *   Replaces stock Raptor Stats widget. Shows more info like aggro and queen resistances.
  
 *   **[Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)**
     *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
