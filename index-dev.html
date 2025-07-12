@@ -420,7 +420,7 @@
         let rawOptionsData = [];
         let formOptionsConfig = [];
         let customOptions = [];
-        let gameConfigs = { maps: [], modes: [], base: [] };
+        let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -535,10 +535,6 @@ end`;
         }
 
         function populateStartSelector() {
-            const primaryModeSelect = document.getElementById('primary-mode-select');
-            if (!primaryModeSelect) return; 
-            
-            const primaryMode = primaryModeSelect.value;
             const startSelect = document.getElementById('modes-select');
             if (!startSelect) return;
 
@@ -551,19 +547,11 @@ end`;
             startSelect.appendChild(naModeOption);
 
             if (gameConfigs && gameConfigs.modes) {
-                const filteredModes = gameConfigs.modes.filter(mode => {
-                    const isScavMode = mode.name.toLowerCase().includes('scavenger');
-                    return (primaryMode === 'Scavengers') ? isScavMode : !isScavMode;
-                });
-
-                filteredModes.forEach(mode => {
-                    const originalIndex = gameConfigs.modes.findIndex(m => m.name === mode.name && m.commands === mode.commands);
-                    if (originalIndex !== -1) {
-                        const option = document.createElement('option');
-                        option.value = originalIndex;
-                        option.textContent = mode.name;
-                        startSelect.appendChild(option);
-                    }
+                gameConfigs.modes.forEach((mode, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = mode.name;
+                    startSelect.appendChild(option);
                 });
                 
                 if (Array.from(startSelect.options).some(opt => opt.value === originalValue)) {
@@ -576,7 +564,6 @@ end`;
             updateOutput();
         }
         
-        // --- MODIFIED: Added cache busting to fetch calls ---
         async function loadConfigData() {
             const response = await fetch(`tweakdata.txt?t=${Date.now()}`);
             if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
@@ -597,7 +584,7 @@ end`;
             }
         }
 
-        async function parseMapsModes(filePath) {
+        async function parseModesFile(filePath) {
             try {
                 const response = await fetch(`${filePath}?t=${Date.now()}`);
                 if (!response.ok) {
@@ -605,7 +592,7 @@ end`;
                 }
                 const text = await response.text();
                 
-                const configs = { maps: [], modes: [], base: [] };
+                const configs = { maps: [], modes: [], base: [], scavengers: [] };
                 
                 const categoryBlocks = text.split('## CATEGORY:').slice(1);
 
@@ -616,6 +603,8 @@ end`;
 
                     if (categoryName === 'base') {
                         configs.base = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    } else if (categoryName === 'scavengers') {
+                        configs.scavengers = content.split(/\r?\n/).filter(line => line.trim() !== '');
                     } else {
                         const items = content.split('---').filter(item => item.trim() !== '');
                         for (const item of items) {
@@ -636,7 +625,7 @@ end`;
                 return configs;
             } catch (error) {
                 console.error("Failed to parse game configs:", error);
-                return { maps: [], modes: [], base: [] }; 
+                return { maps: [], modes: [], base: [], scavengers: [] }; 
             }
         }
 
@@ -897,6 +886,18 @@ end`;
         
         function generateCommands() {
             let includeBaseCommands = false;
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+
+            const baseCommands = [];
+            if (gameConfigs.base.length > 0) {
+                baseCommands.push(...gameConfigs.base);
+                includeBaseCommands = true;
+            }
+            if (primaryModeSelect && primaryModeSelect.value === 'Scavengers' && gameConfigs.scavengers.length > 0) {
+                 baseCommands.push(...gameConfigs.scavengers);
+                 includeBaseCommands = true;
+            }
+
 
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
@@ -971,8 +972,8 @@ end`;
             });
             
             const finalCommands = [];
-            if (includeBaseCommands && gameConfigs.base.length > 0) {
-                finalCommands.push(...gameConfigs.base);
+            if (includeBaseCommands) {
+                finalCommands.push(...baseCommands);
             }
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
@@ -994,7 +995,6 @@ end`;
             });
 
             let renameCommand;
-            const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect && primaryModeSelect.value === 'Scavengers') {
                 renameCommand = `$rename [Mod] NuttyB Scavengers `;
             } else {
@@ -1050,7 +1050,7 @@ end`;
                 <option value="Raptors">Raptors</option>
                 <option value="Scavengers">Scavengers</option>
             `;
-            primaryModeSelect.addEventListener('change', populateStartSelector);
+            primaryModeSelect.addEventListener('change', updateOutput);
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
             
@@ -1313,7 +1313,7 @@ end`;
                     }
                 }
             });
-            populateStartSelector();
+            updateOutput();
         });
 
         resetDefaultBtn.addEventListener('click', () => {
@@ -1360,13 +1360,13 @@ end`;
                 loadCustomOptions();
                 
                 const [parsedConfigs] = await Promise.all([
-                    parseMapsModes('mapsmodes.txt'),
+                    parseModesFile('modes.txt'),
                     loadConfigData(), 
                     loadLinksContent()
                 ]);
 
                 gameConfigs = parsedConfigs;
-                console.log("Maps & Modes configs loaded and parsed:", gameConfigs);
+                console.log("Modes file loaded and parsed:", gameConfigs);
 
                 renderOptions();
 
@@ -1383,7 +1383,7 @@ end`;
 
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
-                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., mapsmodes.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., modes.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
             }
         }
 
