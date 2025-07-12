@@ -61,12 +61,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 !unit_restrictions_noextractors 0
 !bSet ruins disabled
 !shieldsrework 1
-!teamsize 14
-!raptor_firstwavesboost 1
-!raptor_queen_count 1
-!raptor_spawncountmult 1
-!raptor_graceperiodmult 1
-!raptor_queentimemult 1
 
 ## CATEGORY: maps
 ---
