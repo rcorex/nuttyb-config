@@ -1040,12 +1040,12 @@ end`;
             }
 
             const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
-            if (noMexEnabled) {
-                renameParts.push(`[No Mex]`);
-            }
             
             if (renameParts.length > 0) {
                 renameCommand += renameParts.join('');
+            }
+            if (noMexEnabled) {
+                renameCommand += `[No Mex]`;
             }
             
             const sections = [];
@@ -1295,6 +1295,40 @@ end`;
                 copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = fullCommand;
                 wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
+
+            if (gameConfigs && gameConfigs.base && gameConfigs.base.length > 0) {
+                gameConfigs.base.forEach(command => {
+                    const row = dataTableBody.insertRow();
+                    row.insertCell().textContent = 'Core Mod Command';
+                    row.insertCell().textContent = 'Base';
+                    row.insertCell().textContent = 'Applied to all modes';
+                    
+                    const commandsCell = row.insertCell();
+                    const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                    const textSpan = document.createElement('span'); textSpan.className = 'command-text';
+                    textSpan.textContent = command; textSpan.title = command;
+                    const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy';
+                    copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = command;
+                    wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+                });
+            }
+            
+            if (gameConfigs && gameConfigs.scavengers && gameConfigs.scavengers.length > 0) {
+                gameConfigs.scavengers.forEach(command => {
+                    const row = dataTableBody.insertRow();
+                    row.insertCell().textContent = 'Scavenger Core Command';
+                    row.insertCell().textContent = 'Base';
+                    row.insertCell().textContent = 'Applied only in Scavenger mode';
+
+                    const commandsCell = row.insertCell();
+                    const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                    const textSpan = document.createElement('span'); textSpan.className = 'command-text';
+                    textSpan.textContent = command; textSpan.title = command;
+                    const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy';
+                    copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = command;
+                    wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+                });
+            }
         }
 
         function populateMapsModesTable() {
