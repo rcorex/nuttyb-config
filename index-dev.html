@@ -743,17 +743,8 @@ end`;
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
 
-                if (el.dataset.isHpGenerator) { // This handles the original Raptor HP generators
-                    if (el.value) {
-                       // Do not add to used slots here, they are handled explicitly by slot number in generateCommands
-                    }
-                    return;
-                }
-                
-                if (el.dataset.isScavHpGenerator) { // Handle new Scav/Boss HP generators
-                    if (el.value) {
-                       // Do not add to used slots here, they are handled explicitly by slot number in generateCommands
-                    }
+                if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
+                    // Handled explicitly below
                     return;
                 }
 
@@ -775,7 +766,7 @@ end`;
             });
             
             // Explicitly add used slots from the HP generators
-            document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
+            document.querySelectorAll('select[data-slot]').forEach(select => {
                 if (select.value) {
                     const slot = parseInt(select.dataset.slot, 10);
                     if (select.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slot);
@@ -888,7 +879,6 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
-                        // These slots are now reserved for dynamic HP generation, so we ignore static commands for them.
                         return; 
                     }
 
@@ -1009,8 +999,7 @@ end`;
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
             let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            document.querySelectorAll('#options-form-columns select').forEach(el=>{
-                if (el.id.includes('maps-select') || el.id.includes('modes-select') || el.id.includes('primary-mode-select') || el.dataset.isScavHpGenerator) return;
+            document.querySelectorAll('#raptor-only-options select').forEach(el=>{
                 const o=el.options[el.selectedIndex];
                 if(o.value){
                     const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);
@@ -1078,10 +1067,7 @@ end`;
             primaryModeLabel.textContent = 'Mode: ';
             const primaryModeSelect = document.createElement('select');
             primaryModeSelect.id = 'primary-mode-select';
-            primaryModeSelect.innerHTML = `
-                <option value="Raptors">Raptors</option>
-                <option value="Scavengers">Scavengers</option>
-            `;
+            primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
             primaryModeSelect.addEventListener('change', updateOutput);
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
@@ -1089,8 +1075,25 @@ end`;
             // --- Create container for Scavenger-only options ---
             const scavOnlyContainer = document.createElement('div');
             scavOnlyContainer.id = 'scav-only-options';
-            scavOnlyContainer.style.display = 'none'; // Initially hidden
             
+            const scavHpLabel = document.createElement('label');
+            scavHpLabel.textContent = 'Scavenger HP: ';
+            const scavHpSelect = document.createElement('select');
+            scavHpSelect.id = 'scav-hp-select';
+            scavHpSelect.dataset.isScavHpGenerator = true;
+            scavHpSelect.dataset.hpType = 'scav';
+            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slotType = 'tweakdefs';
+            const scavHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
+                {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
+            ];
+            scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
+            scavHpSelect.value = "1.3";
+            scavHpSelect.addEventListener('change', updateOutput);
+            scavHpLabel.appendChild(scavHpSelect);
+            scavOnlyContainer.appendChild(scavHpLabel);
+
             const bossHpLabel = document.createElement('label');
             bossHpLabel.textContent = 'Boss HP: ';
             const bossHpSelect = document.createElement('select');
@@ -1105,29 +1108,19 @@ end`;
                 {v: "7", t: "7x BHP"}, {v: "9", t: "9x BHP"}, {v: "11", t: "11x BHP"}, {v: "13", t: "13x BHP"}
             ];
             bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
+            bossHpSelect.value = "1.3";
             bossHpSelect.addEventListener('change', updateOutput);
             bossHpLabel.appendChild(bossHpSelect);
             scavOnlyContainer.appendChild(bossHpLabel);
 
-            const scavHpLabel = document.createElement('label');
-            scavHpLabel.textContent = 'Scavenger HP: ';
-            const scavHpSelect = document.createElement('select');
-            scavHpSelect.id = 'scav-hp-select';
-            scavHpSelect.dataset.isScavHpGenerator = true;
-            scavHpSelect.dataset.hpType = 'scav';
-            scavHpSelect.dataset.slot = '2';
-            scavHpSelect.dataset.slotType = 'tweakdefs';
-            const scavHpOptions = [
-                {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
-                {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
-            ];
-            scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
-            scavHpSelect.addEventListener('change', updateOutput);
-            scavHpLabel.appendChild(scavHpSelect);
-            scavOnlyContainer.appendChild(scavHpLabel);
-
             leftColumn.appendChild(scavOnlyContainer);
             // --- End Scavenger-only options ---
+
+            // --- Create container for Raptor-only options ---
+            const raptorOnlyContainer = document.createElement('div');
+            raptorOnlyContainer.id = 'raptor-only-options';
+            leftColumn.appendChild(raptorOnlyContainer);
+            // --- End Raptor-only options ---
             
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -1147,7 +1140,7 @@ end`;
                         inputElement.dataset.hpType = optionGroup.hpType;
                         inputElement.dataset.slot = optionGroup.slot;
                         inputElement.dataset.slotType = optionGroup.slotType;
-                        inputElement.disabled = true; // Initially disabled until lua lib loads
+                        inputElement.disabled = true;
                     }
 
                     optionGroup.choices.forEach(choice => {
@@ -1163,8 +1156,15 @@ end`;
                     label.textContent = optionGroup.label + ': '; label.appendChild(inputElement);
                     inputElement.addEventListener('change', updateOutput);
                 }
-                if (optionGroup.column === 'right') rightColumn.appendChild(label);
-                else leftColumn.appendChild(label);
+
+                // Place elements in correct containers
+                if (optionGroup.column === 'right') {
+                    rightColumn.appendChild(label);
+                } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
+                    raptorOnlyContainer.appendChild(label);
+                } else {
+                    leftColumn.appendChild(label);
+                }
             });
 
             if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
@@ -1175,12 +1175,8 @@ end`;
                     mapsLabel.textContent = 'Map: ';
                     const mapsSelect = document.createElement('select');
                     mapsSelect.id = 'maps-select';
-
                     gameConfigs.maps.forEach((map, index) => {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.textContent = map.name;
-                        mapsSelect.appendChild(option);
+                        mapsSelect.add(new Option(map.name, index));
                     });
                     mapsSelect.selectedIndex = 0;
                     mapsSelect.addEventListener('change', updateOutput);
@@ -1195,10 +1191,10 @@ end`;
                     modesLabel.appendChild(modesSelect);
                 }
 
-                const extrasLabel = document.querySelector('select[data-option-type="Extras"]')?.parentElement;
-                if (extrasLabel) {
-                    if (modesLabel) extrasLabel.after(modesLabel);
-                    if (mapsLabel) extrasLabel.after(mapsLabel);
+                const container = document.getElementById('raptor-only-options');
+                if (container) {
+                    if (modesLabel) container.after(modesLabel);
+                    if (mapsLabel) container.after(mapsLabel);
                 } else {
                     if (mapsLabel) leftColumn.appendChild(mapsLabel);
                     if (modesLabel) leftColumn.appendChild(modesLabel);
@@ -1211,36 +1207,21 @@ end`;
 
         function updateOutput() {
             const primaryModeSelect = document.getElementById('primary-mode-select');
-            const extrasSelect = document.querySelector('select[data-option-type="Extras"]');
-            const raptorHpSelect = document.querySelector('select[data-hp-type="hp"]');
-            const queenHpSelect = document.querySelector('select[data-hp-type="qhp"]');
+            const raptorOnlyContainer = document.getElementById('raptor-only-options');
             const scavOnlyContainer = document.getElementById('scav-only-options');
-            const scavHpSelect = document.getElementById('scav-hp-select');
-            const bossHpSelect = document.getElementById('boss-hp-select');
 
-            if (primaryModeSelect) {
+            if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
                 const isScavengers = primaryModeSelect.value === 'Scavengers';
 
-                // Handle Raptor-specific selectors
-                [extrasSelect, raptorHpSelect, queenHpSelect].forEach(selector => {
-                    if (selector) {
-                        if (isScavengers) {
-                            selector.value = ""; 
-                            selector.disabled = true;
-                        } else {
-                            selector.disabled = false;
-                        }
-                    }
-                });
-                
-                // Handle Scavenger-specific selectors
+                raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
+                scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
+
                 if (isScavengers) {
-                    scavOnlyContainer.style.display = 'block';
+                    // Reset Raptor-specific selectors when switching to Scavengers
+                    raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
                 } else {
-                    scavOnlyContainer.style.display = 'none';
-                    // CRITICAL: Reset values when hidden to avoid adding commands
-                    scavHpSelect.value = "";
-                    bossHpSelect.value = "";
+                    // Reset Scavenger-specific selectors when switching to Raptors
+                    scavOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "1.3");
                 }
             }
             
@@ -1270,59 +1251,43 @@ end`;
                 row.insertCell().textContent = item.status; 
                 row.insertCell().textContent = item.summary;
                 const commandsCell = row.insertCell(); 
-                const wrapper = document.createElement('div'); 
-                wrapper.className = 'command-cell-wrapper';
-                const textSpan = document.createElement('span'); 
-                textSpan.className = 'command-text'; 
-                textSpan.textContent = item.commandBlock; 
-                textSpan.title = item.commandBlock;
-                const copyBtn = document.createElement('button'); 
-                copyBtn.textContent = 'Copy'; 
-                copyBtn.className = 'copy-row-button'; 
-                copyBtn.dataset.command = item.commandBlock;
-                wrapper.appendChild(textSpan); 
-                wrapper.appendChild(copyBtn); 
-                commandsCell.appendChild(wrapper);
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; 
+                textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; 
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
 
-            const hpGeneratorConfigs = formOptionsConfig.filter(group => group.isHpGenerator);
-            hpGeneratorConfigs.forEach(config => {
-                const selector = document.querySelector(`select[data-hp-type="${config.hpType}"]`);
-                if (!selector) return;
-
+            // Process ALL dynamically generated HP tweaks
+            document.querySelectorAll('select[data-slot]').forEach(selector => {
                 const selectedValue = selector.value;
-                if (selectedValue) {
-                    const choice = config.choices.find(c => c.value === selectedValue);
-                    if (!choice) return;
+                if (!selectedValue) return;
 
-                    const type = config.hpType;
-                    const commandSlot = `${config.slotType}${config.slot}`;
-                    const base64tweak = generateLuaTweak(type, selectedValue);
-                    if (base64tweak.startsWith("Error")) return;
+                const selectedOptionText = selector.options[selector.selectedIndex].text;
+                const type = selector.dataset.hpType;
+                const slot = selector.dataset.slot;
+                const slotType = selector.dataset.slotType;
+                const commandSlot = `${slotType}${slot}`;
+                const base64tweak = generateLuaTweak(type, selectedValue);
 
-                    const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
-                    const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+                if (base64tweak.startsWith("Error")) return;
 
-                    const row = dataTableBody.insertRow();
-                    row.insertCell().textContent = choice.label;
-                    row.insertCell().textContent = 'Optional/Generated';
-                    row.insertCell().textContent = summary;
-                    
-                    const commandsCell = row.insertCell();
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'command-cell-wrapper';
-                    const textSpan = document.createElement('span');
-                    textSpan.className = 'command-text';
-                    textSpan.textContent = fullCommand;
-                    textSpan.title = fullCommand;
-                    const copyBtn = document.createElement('button');
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.className = 'copy-row-button';
-                    copyBtn.dataset.command = fullCommand;
-                    wrapper.appendChild(textSpan);
-                    wrapper.appendChild(copyBtn);
-                    commandsCell.appendChild(wrapper);
-                }
+                const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
+                const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+
+                const row = dataTableBody.insertRow();
+                row.insertCell().textContent = selectedOptionText;
+                row.insertCell().textContent = 'Optional/Generated';
+                row.insertCell().textContent = summary;
+                
+                const commandsCell = row.insertCell();
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text';
+                textSpan.textContent = fullCommand; textSpan.title = fullCommand;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy';
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = fullCommand;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
         }
 
@@ -1423,11 +1388,11 @@ end`;
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
-            // Also reset the new scav/boss selectors
+            
             const bossHpSelect = document.getElementById('boss-hp-select');
             const scavHpSelect = document.getElementById('scav-hp-select');
-            if (bossHpSelect) bossHpSelect.value = "";
-            if (scavHpSelect) scavHpSelect.value = "";
+            if (bossHpSelect) bossHpSelect.value = "1.3";
+            if (scavHpSelect) scavHpSelect.value = "1.3";
 
             const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect) primaryModeSelect.selectedIndex = 0;
@@ -1479,13 +1444,10 @@ end`;
                     if (typeof luamin !== 'undefined') {
                         clearInterval(libraryCheckInterval);
                         console.log("Lua libraries loaded.");
-                        // Enable all HP generator dropdowns now that lib is loaded
-                        document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
-                           if (!select.parentElement.parentElement.id.includes('scav-only-options')) {
-                               select.disabled = false;
-                           }
+                        document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
+                           select.disabled = false;
                         });
-                        updateOutput(); // Initial update to set correct visibility
+                        updateOutput();
                     }
                 }, 100);
 
