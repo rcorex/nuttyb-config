@@ -482,14 +482,12 @@ for f, g in pairs(UnitDefs) do
 end
 
 local h = UnitDef_Post
-function UnitDef_Post(i, j)
-	h(i, j)
-	for i, k in pairs(UnitDefs) do
-		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
-			if k then
-				__METAL_COST_LINE__
-				k.nochasecategory = "OBJECT"
-			end
+function UnitDef_Post(j, k)
+	h(j, k)
+	if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
+		if k then
+			__METAL_COST_LINE__
+			k.nochasecategory = "OBJECT"
 		end
 	end
 end`;
