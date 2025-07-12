@@ -541,11 +541,6 @@ end`;
             const originalValue = startSelect.value;
             startSelect.innerHTML = ''; 
 
-            const blankModeOption = document.createElement('option');
-            blankModeOption.value = "";
-            blankModeOption.textContent = "";
-            startSelect.appendChild(blankModeOption);
-
             if (gameConfigs && gameConfigs.modes) {
                 gameConfigs.modes.forEach((mode, index) => {
                     const option = document.createElement('option');
@@ -556,8 +551,8 @@ end`;
                 
                 if (Array.from(startSelect.options).some(opt => opt.value === originalValue)) {
                     startSelect.value = originalValue;
-                } else {
-                    startSelect.selectedIndex = (startSelect.options.length > 1) ? 1 : 0;
+                } else if (startSelect.options.length > 0) {
+                    startSelect.selectedIndex = 0;
                 }
             }
             
@@ -1097,18 +1092,13 @@ end`;
                     const mapsSelect = document.createElement('select');
                     mapsSelect.id = 'maps-select';
 
-                    const blankMapOption = document.createElement('option');
-                    blankMapOption.value = "";
-                    blankMapOption.textContent = "";
-                    mapsSelect.appendChild(blankMapOption);
-
                     gameConfigs.maps.forEach((map, index) => {
                         const option = document.createElement('option');
                         option.value = index;
                         option.textContent = map.name;
                         mapsSelect.appendChild(option);
                     });
-                    mapsSelect.selectedIndex = 1;
+                    mapsSelect.selectedIndex = 0;
                     mapsSelect.addEventListener('change', updateOutput);
                     mapsLabel.appendChild(mapsSelect);
                 }
@@ -1311,13 +1301,10 @@ end`;
                 if (el.type === 'checkbox') {
                     el.checked = false;
                 } else if (el.tagName === 'SELECT') {
-                    if (el.id === 'maps-select' || el.id === 'modes-select' || el.id === 'primary-mode-select') {
-                        el.value = "";
-                    } else if (el.dataset.isHpGenerator) {
-                        el.value = "";
-                    }
-                    else {
-                        el.selectedIndex = 0;
+                    if (el.id === 'maps-select' || el.id === 'modes-select') {
+                        el.selectedIndex = -1; // Deselect the option
+                    } else if (el.id !== 'primary-mode-select') { // Don't reset main mode
+                        el.value = ""; // Reset others like HP, Extras to their default/none value
                     }
                 }
             });
@@ -1340,11 +1327,13 @@ end`;
             });
             const primaryModeSelect = document.getElementById('primary-mode-select');
             if (primaryModeSelect) primaryModeSelect.selectedIndex = 0;
+
             const mapsSelect = document.getElementById('maps-select');
-            if (mapsSelect && mapsSelect.options.length > 1) mapsSelect.selectedIndex = 1;
+            if (mapsSelect && mapsSelect.options.length > 0) mapsSelect.selectedIndex = 0;
+
             const modesSelect = document.getElementById('modes-select');
-            if(modesSelect && modesSelect.options.length > 1) {
-                modesSelect.selectedIndex = 1;
+            if(modesSelect && modesSelect.options.length > 0) {
+                modesSelect.selectedIndex = 0;
             }
             
             updateOutput();
