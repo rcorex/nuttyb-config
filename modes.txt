@@ -58,7 +58,6 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 !scav_bosstimemult 1.4
 !scav_difficulty epic
 !scav_spawncountmult 2
-!unit_restrictions_noextractors 0
 !bSet ruins disabled
 !shieldsrework 1
 
