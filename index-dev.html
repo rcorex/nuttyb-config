@@ -446,8 +446,6 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
-        
-        // --- MODIFIED: Constant value updated ---
         const MAX_SECTION_LENGTH = 55000;
 
         // --- Lua Templates and Generator Logic ---
@@ -539,8 +537,9 @@ end`;
             }
         }
         
+        // --- MODIFIED: Added cache busting to fetch calls ---
         async function loadConfigData() {
-            const response = await fetch('tweakdata.txt');
+            const response = await fetch(`tweakdata.txt?t=${Date.now()}`);
             if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
             const text = await response.text();
             parseConfigData(text);
@@ -549,7 +548,7 @@ end`;
         async function loadLinksContent() {
             const linksContentEl = document.getElementById('links-tab');
             try {
-                const response = await fetch('links.md');
+                const response = await fetch(`links.md?t=${Date.now()}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const markdownText = await response.text();
                 linksContentEl.innerHTML = marked.parse(markdownText);
@@ -561,7 +560,7 @@ end`;
 
         async function parseMapsModes(filePath) {
             try {
-                const response = await fetch(filePath);
+                const response = await fetch(`${filePath}?t=${Date.now()}`);
                 if (!response.ok) {
                     throw new Error(`Could not load ${filePath}: ${response.statusText}`);
                 }
