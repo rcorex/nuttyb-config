@@ -98,13 +98,13 @@ To Kill The Middle (12P)
 ---
 Ancient Bastion Remake (8P)
 !map Ancient Bastion Remake
-!addbox 0 0 64 200 1
+!addbox 0 0 100 200 1
 !addbox 175 0 200 200 2
 !teamsize 8
 ---
 Ancient Vault (12P)
 !map Ancient Vault
-!addbox 0 0 200 117 1
+!addbox 0 0 200 120 1
 !addbox 0 180 200 200 2
 !teamsize 12
 ---
