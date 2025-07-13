@@ -286,7 +286,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>NuttyB Configurator for Raptors & Scavengers</h1>
+        <h1>NuttyB Configurator</h1>
         
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
@@ -511,6 +511,7 @@ local originalUnitDef_Post = UnitDef_Post
 function UnitDef_Post(unitName, unitDef)
 	originalUnitDef_Post(unitName, unitDef)
 	if unitName:match("_scav$") then
+ 		unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
 		unitDef.nochasecategory = "OBJECT"
 	end
 end`;
