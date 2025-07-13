@@ -40,6 +40,7 @@
 !forceallunits 1
 !unit_restrictions_noair 0
 !unit_restrictions_noendgamelrpc 0
+!unit_restrictions_noextractors 1
 !unit_restrictions_nolrpc 0
 !unit_restrictions_nonukes 0
 !draft_mode disabled
@@ -56,9 +57,10 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 !scav_boss_count 8
 !scav_bosstimemult 1.4
 !scav_difficulty epic
-!scav_spawncountmult 1
+!scav_spawncountmult 2
 !bSet ruins disabled
 !shieldsrework 1
+!unit_restrictions_noextractors 0
 
 ## CATEGORY: maps
 ---
@@ -66,7 +68,6 @@ Full Metal Plate (12P)
 !map Full Metal Plate
 !addbox 82 82 117 117 2
 !clearbox 1
-!unit_restrictions_noextractors 1
 ---
 Raptor Crater (16P)
 !map Raptor Crater
