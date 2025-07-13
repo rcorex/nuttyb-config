@@ -196,7 +196,7 @@
 
         .command-cell-wrapper {
             display: flex; justify-content: space-between;
-            align-items: center; width: 100%; overflow: hidden;
+            align-items: flex-start; width: 100%; overflow: hidden;
         }
         .command-text {
             white-space: nowrap; overflow: hidden;
@@ -1076,7 +1076,7 @@ end`;
             const primaryModeSelect = document.createElement('select');
             primaryModeSelect.id = 'primary-mode-select';
             primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
-            primaryModeSelect.addEventListener('change', updateOutput);
+            primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
 
@@ -1207,7 +1207,6 @@ end`;
             populateStartSelector();
         }
         
-        let previousMode = 'Raptors';
         function updateOutput(event) {
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const raptorOnlyContainer = document.getElementById('raptor-only-options');
@@ -1315,26 +1314,27 @@ end`;
                 return;
             }
             
-            const createCommandCell = (cell, commands) => {
-                commands.forEach(command => {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'command-cell-wrapper';
-                    wrapper.style.padding = '2px 0';
+            const createCommandCellWithSingleCopy = (cell, commands) => {
+                if (!commands || commands.length === 0) {
+                    cell.textContent = 'N/A';
+                    return;
+                }
 
-                    const textSpan = document.createElement('span');
-                    textSpan.className = 'command-text';
-                    textSpan.textContent = command;
-                    textSpan.title = command;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'command-cell-wrapper';
 
-                    const copyBtn = document.createElement('button');
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.className = 'copy-row-button';
-                    copyBtn.dataset.command = command;
+                const textSpan = document.createElement('span');
+                textSpan.style.whiteSpace = 'normal';
+                textSpan.innerHTML = commands.join('<br>');
 
-                    wrapper.appendChild(textSpan);
-                    wrapper.appendChild(copyBtn);
-                    cell.appendChild(wrapper);
-                });
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy All';
+                copyBtn.className = 'copy-row-button';
+                copyBtn.dataset.command = commands.join('\n');
+
+                wrapper.appendChild(textSpan);
+                wrapper.appendChild(copyBtn);
+                cell.appendChild(wrapper);
             };
 
             const populateCategory = (category, categoryName) => {
@@ -1342,7 +1342,7 @@ end`;
                     const row = tableBody.insertRow();
                     row.insertCell().textContent = categoryName;
                     row.insertCell().textContent = item.name;
-                    createCommandCell(row.insertCell(), item.commands);
+                    createCommandCellWithSingleCopy(row.insertCell(), item.commands);
                 });
             };
 
@@ -1351,7 +1351,7 @@ end`;
                     const row = tableBody.insertRow();
                     row.insertCell().textContent = categoryName;
                     row.insertCell().textContent = name;
-                    createCommandCell(row.insertCell(), commands);
+                    createCommandCellWithSingleCopy(row.insertCell(), commands);
                 }
             };
             
@@ -1387,24 +1387,22 @@ end`;
                 }).catch(err => { console.error('Failed to copy: ', err); });
         }));
 
-        dataTableBody.addEventListener('click', event => {
-            if (event.target.matches('.copy-row-button')) {
-                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
-                    const originalText = event.target.textContent;
-                    event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
-                }).catch(err => { console.error('Failed to copy command: ', err); });
-            }
-        });
-
-        mapsModesTableBody.addEventListener('click', event => {
-            if (event.target.matches('.copy-row-button')) {
-                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
-                    const originalText = event.target.textContent;
-                    event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
-                }).catch(err => { console.error('Failed to copy command: ', err); });
-            }
+        [dataTableBody, customTweaksTableBody, mapsModesTableBody].forEach(tbody => {
+            if (!tbody) return;
+            tbody.addEventListener('click', event => {
+                const button = event.target;
+                if (button.matches('.copy-row-button')) {
+                    const textToCopy = button.dataset.command || button.dataset.tweakCode;
+                    if (!textToCopy) return;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalText = button.textContent;
+                        button.textContent = 'Copied!';
+                        setTimeout(() => { button.textContent = originalText; }, 2000);
+                    }).catch(err => { console.error('Failed to copy command: ', err); });
+                } else if (button.matches('.delete-tweak-btn')) {
+                     deleteCustomTweak(parseInt(button.dataset.id, 10));
+                }
+            });
         });
 
         resetNoneBtn.addEventListener('click', () => {
@@ -1455,21 +1453,6 @@ end`;
             }
             
             updateOutput();
-        });
-        
-        customTweakForm.addEventListener('submit', addCustomTweak);
-        customTweaksTableBody.addEventListener('click', event => {
-            const button = event.target;
-            if (button.matches('.delete-tweak-btn')) {
-                deleteCustomTweak(parseInt(button.dataset.id, 10));
-            } else if (button.matches('.copy-row-button')) {
-                const codeToCopy = button.dataset.tweakCode;
-                navigator.clipboard.writeText(codeToCopy).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = 'Copied!';
-                    setTimeout(() => { button.textContent = originalText; }, 2000);
-                }).catch(err => { console.error('Failed to copy tweak code: ', err); });
-            }
         });
         
         tabButtons.forEach(button => button.addEventListener('click', switchTab));
