@@ -286,7 +286,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>NuttyB Configurator for Raptors and Scavengers</h1>
+        <h1>NuttyB Configurator for Raptors & Scavengers</h1>
         
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
@@ -865,8 +865,6 @@ end`;
                      { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
                      { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
                      { label: "4x QHP", value: "4", shortLabel: "4x QHP" }, { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
-                     { label: "7x QHP", value: "7", shortLabel: "7x QHP" }, { label: "9x QHP", value: "9", shortLabel: "9x QHP" },
-                     { label: "11x QHP", value: "11", shortLabel: "11x QHP" }, { label: "13x QHP", value: "13", shortLabel: "13x QHP" },
                 ]
             };
 
@@ -1113,7 +1111,6 @@ end`;
             const bossHpOptions = [
                 {v: "", t: "Default"}, {v: "1", t: "1x BHP"}, {v: "1.3", t: "1.3x BHP"}, {v: "1.5", t: "1.5x BHP"}, {v: "1.7", t: "1.7x BHP"},
                 {v: "2", t: "2x BHP"}, {v: "2.5", t: "2.5x BHP"}, {v: "3", t: "3x BHP"}, {v: "4", t: "4x BHP"}, {v: "5", t: "5x BHP"},
-                {v: "7", t: "7x BHP"}, {v: "9", t: "9x BHP"}, {v: "11", t: "11x BHP"}, {v: "13", t: "13x BHP"}
             ];
             bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
             bossHpSelect.value = ""; 
@@ -1208,7 +1205,8 @@ end`;
             renderAllCustomComponents();
             populateStartSelector();
         }
-
+        
+        let previousMode = 'Raptors';
         function updateOutput() {
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const raptorOnlyContainer = document.getElementById('raptor-only-options');
@@ -1217,19 +1215,30 @@ end`;
             const bossHpSelect = document.getElementById('boss-hp-select');
 
             if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
-                const isScavengers = primaryModeSelect.value === 'Scavengers';
+                const newMode = primaryModeSelect.value;
+                const modeChanged = previousMode !== newMode;
 
+                if (modeChanged) {
+                    if (newMode === 'Scavengers') {
+                        scavHpSelect.value = "1.3";
+                        bossHpSelect.value = "1.3";
+                        raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
+                    } else { // Switching back to Raptors
+                        scavHpSelect.value = "";
+                        bossHpSelect.value = "";
+                        raptorOnlyContainer.querySelectorAll('select[data-option-type]').forEach(sel => {
+                            const optionGroup = formOptionsConfig.find(og => og.label === sel.dataset.optionType);
+                            if (optionGroup) {
+                                sel.value = optionGroup.defaultValue || "";
+                            }
+                        });
+                    }
+                }
+
+                previousMode = newMode;
+                const isScavengers = newMode === 'Scavengers';
                 raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
                 scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
-
-                if (isScavengers) {
-                    if (scavHpSelect.value === "") scavHpSelect.value = "1.3";
-                    if (bossHpSelect.value === "") bossHpSelect.value = "1.3";
-                    raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
-                } else {
-                    scavHpSelect.value = "";
-                    bossHpSelect.value = "";
-                }
             }
             
             updateCustomOptionUI();
