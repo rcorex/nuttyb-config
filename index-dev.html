@@ -1226,6 +1226,12 @@ end`;
                     } else { // Switching back to Raptors
                         scavHpSelect.value = "";
                         bossHpSelect.value = "";
+                        raptorOnlyContainer.querySelectorAll('select[data-option-type]').forEach(sel => {
+                            const optionGroup = formOptionsConfig.find(og => og.label === sel.dataset.optionType);
+                            if (optionGroup) {
+                                sel.value = optionGroup.defaultValue || "";
+                            }
+                        });
                     }
                 }
 
