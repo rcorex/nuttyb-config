@@ -492,25 +492,28 @@ function UnitDef_Post(j, k)
 	end
 end`;
         
-        const luaBossHpTemplate = `--Boss HP __MULTIPLIER_TEXT__X
-for unitName, unitDef in pairs(UnitDefs) do
+        const luaBossHpTemplate = `--Scav Boss HP __MULTIPLIER_TEXT__X
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
 	if unitDef.health and unitName:match("^scavengerbossv4") then
 		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
 	end
 end`;
 
-        const luaScavHpTemplate = `--Scavenger HP __MULTIPLIER_TEXT__X
-for unitName, unitDef in pairs(UnitDefs) do
-	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
-		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
-	end
-end
-
+        const luaScavHpTemplate = `--Scavengers HP __MULTIPLIER_TEXT__X
 local originalUnitDef_Post = UnitDef_Post
 
 function UnitDef_Post(unitName, unitDef)
 	originalUnitDef_Post(unitName, unitDef)
+	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end 
 	if unitName:match("_scav$") then
+		if unitDef.metalcost and type(unitDef.metalcost) == "number" then
+ 			unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
+    		end
 		unitDef.nochasecategory = "OBJECT"
 	end
 end`;
