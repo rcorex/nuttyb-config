@@ -1205,7 +1205,8 @@ end`;
             renderAllCustomComponents();
             populateStartSelector();
         }
-
+        
+        let previousMode = 'Raptors';
         function updateOutput() {
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const raptorOnlyContainer = document.getElementById('raptor-only-options');
@@ -1214,14 +1215,13 @@ end`;
             const bossHpSelect = document.getElementById('boss-hp-select');
 
             if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
-                const previousMode = document.body.dataset.mode || 'Raptors';
                 const newMode = primaryModeSelect.value;
                 const modeChanged = previousMode !== newMode;
 
                 if (modeChanged) {
                     if (newMode === 'Scavengers') {
-                        scavHpSelect.value = "1.3";
-                        bossHpSelect.value = "1.3";
+                        scavHpSelect.value = "1";
+                        bossHpSelect.value = "1";
                         raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
                     } else { // Switching back to Raptors
                         scavHpSelect.value = "";
@@ -1229,7 +1229,7 @@ end`;
                     }
                 }
 
-                document.body.dataset.mode = newMode;
+                previousMode = newMode;
                 const isScavengers = newMode === 'Scavengers';
                 raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
                 scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
