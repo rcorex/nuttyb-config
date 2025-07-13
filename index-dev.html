@@ -503,6 +503,7 @@ end`;
 for unitName, unitDef in pairs(UnitDefs) do
 	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
 		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+  		Spring.Echo("Updated health for", unitDef.name, "to", unitDef.health)
 	end
 end
 
@@ -511,7 +512,10 @@ local originalUnitDef_Post = UnitDef_Post
 function UnitDef_Post(unitName, unitDef)
 	originalUnitDef_Post(unitName, unitDef)
 	if unitName:match("_scav$") then
- 		unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
+		if unitDef.metalcost and type(unitDef.metalcost) == "number" then
+ 			unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
+    			Spring.Echo("Updated metalcost for", unitDef.name, "to", unitDef.metalcost)
+    		end
 		unitDef.nochasecategory = "OBJECT"
 	end
 end`;
