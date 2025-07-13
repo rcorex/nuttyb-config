@@ -65,7 +65,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 ---
 Full Metal Plate
 !map Full Metal Plate
-!addbox 80 82 115 117 2
+!addbox 82 82 117 117 2
 !clearbox 1
 ---
 Raptor Crater
