@@ -73,6 +73,7 @@ Raptor Crater
 !addbox 84 81 119 116 2
 !clearbox 1
 !teamsize 16
+!unit_restrictions_noextractors 0
 ---
 Raptor Crater Inverted
 !map Raptor Crater
@@ -81,6 +82,7 @@ Raptor Crater Inverted
 !addbox 84 81 119 116 2
 !clearbox 1
 !teamsize 16
+!unit_restrictions_noextractors 0
 ---
 Special Hotstepper
 !map Special Hotstepper
@@ -88,11 +90,13 @@ Special Hotstepper
 !clearbox 1
 !map_lavatiderhythm disabled
 !teamsize 16
+!unit_restrictions_noextractors 0
 ---
 Special Creek
 !map Special Creek
 !addbox 158 0 200 200 2
 !teamsize 12
+!unit_restrictions_noextractors 0
 ---
 
 ## CATEGORY: modes
