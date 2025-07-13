@@ -63,19 +63,19 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
 ## CATEGORY: maps
 ---
-Full Metal Plate
+Full Metal Plate (12P)
 !map Full Metal Plate
 !addbox 82 82 117 117 2
 !clearbox 1
 ---
-Raptor Crater
+Raptor Crater (16P)
 !map Raptor Crater
 !addbox 84 81 119 116 2
 !clearbox 1
 !teamsize 16
 !unit_restrictions_noextractors 0
 ---
-Raptor Crater Inverted
+Raptor Crater Inverted (16P)
 !map Raptor Crater
 !disablemapdamage 0
 !debugcommands invertmap
@@ -84,7 +84,7 @@ Raptor Crater Inverted
 !teamsize 16
 !unit_restrictions_noextractors 0
 ---
-Special Hotstepper
+Special Hotstepper (16P)
 !map Special Hotstepper
 !addbox 83 81 118 116 2
 !clearbox 1
@@ -92,31 +92,59 @@ Special Hotstepper
 !teamsize 16
 !unit_restrictions_noextractors 0
 ---
-To Kill The Middle
+To Kill The Middle (12P)
 !map To Kill The Middle
 !addbox 82 82 117 117 2
 !clearbox 1
 !teamsize 12
 !unit_restrictions_noextractors 0
 ---
-Ancient Vault
+Ancient Bastion Remake (8P)
+!map Ancient Bastion Remake
+!addbox 0 0 64 200 1
+!addbox 175 0 200 200 2
+!teamsize 8
+!unit_restrictions_noextractors 0
+---
+Ancient Vault (12P)
 !map Ancient Vault
 !addbox 0 0 200 117 1
 !addbox 0 180 200 200 2
 !teamsize 12
 !unit_restrictions_noextractors 0
 ---
-Darkside
+Bismuth Valley (8P)
+!map Bismuth Valley
+!addbox 0 0 64 200 1
+!addbox 175 0 200 200 2
+!teamsize 8
+!unit_restrictions_noextractors 0
+---
+Darkside (12P)
 !map Darkside
 !addbox 0 0 64 200 1
-!addbox 177 0 200 200 2
+!addbox 175 0 200 200 2
 !teamsize 12
 !unit_restrictions_noextractors 0
 ---
-Special Creek
+Flats and Forests (12P)
+!map Flats and Forests
+!addbox 0 0 64 200 1
+!addbox 175 0 200 200 2
+!teamsize 12
+!unit_restrictions_noextractors 0
+---
+Special Creek (12P)
 !map Special Creek
 !addbox 158 0 200 200 2
 !teamsize 12
+!unit_restrictions_noextractors 0
+---
+Starwatcher (8P)
+!map Starwatcher
+!addbox 0 0 64 200 1
+!addbox 175 0 200 200 2
+!teamsize 8
 !unit_restrictions_noextractors 0
 ---
 
