@@ -441,6 +441,7 @@
         const dataTableBody = document.querySelector('#data-table tbody');
         const customTweakForm = document.getElementById('custom-tweak-form');
         const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
+        const mapsModesTableBody = document.querySelector('#maps-modes-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
@@ -1207,7 +1208,7 @@ end`;
         }
         
         let previousMode = 'Raptors';
-        function updateOutput() {
+        function updateOutput(event) {
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const raptorOnlyContainer = document.getElementById('raptor-only-options');
             const scavOnlyContainer = document.getElementById('scav-only-options');
@@ -1216,7 +1217,7 @@ end`;
 
             if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
                 const newMode = primaryModeSelect.value;
-                const modeChanged = previousMode !== newMode;
+                const modeChanged = event && event.target === primaryModeSelect;
 
                 if (modeChanged) {
                     if (newMode === 'Scavengers') {
@@ -1234,8 +1235,7 @@ end`;
                         });
                     }
                 }
-
-                previousMode = newMode;
+                
                 const isScavengers = newMode === 'Scavengers';
                 raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
                 scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
@@ -1314,13 +1314,35 @@ end`;
                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No maps or modes found.</td></tr>';
                 return;
             }
+            
+            const createCommandCell = (cell, commands) => {
+                commands.forEach(command => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'command-cell-wrapper';
+                    wrapper.style.padding = '2px 0';
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'command-text';
+                    textSpan.textContent = command;
+                    textSpan.title = command;
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.className = 'copy-row-button';
+                    copyBtn.dataset.command = command;
+
+                    wrapper.appendChild(textSpan);
+                    wrapper.appendChild(copyBtn);
+                    cell.appendChild(wrapper);
+                });
+            };
 
             const populateCategory = (category, categoryName) => {
                 category.forEach(item => {
                     const row = tableBody.insertRow();
                     row.insertCell().textContent = categoryName;
                     row.insertCell().textContent = item.name;
-                    row.insertCell().innerHTML = item.commands.join('<br>');
+                    createCommandCell(row.insertCell(), item.commands);
                 });
             };
 
@@ -1329,7 +1351,7 @@ end`;
                     const row = tableBody.insertRow();
                     row.insertCell().textContent = categoryName;
                     row.insertCell().textContent = name;
-                    row.insertCell().innerHTML = commands.join('<br>');
+                    createCommandCell(row.insertCell(), commands);
                 }
             };
             
@@ -1368,6 +1390,17 @@ end`;
         dataTableBody.addEventListener('click', event => {
             if (event.target.matches('.copy-row-button')) {
                 navigator.clipboard.writeText(event.target.dataset.command).then(() => {
+                    const originalText = event.target.textContent;
+                    event.target.textContent = 'Copied!';
+                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
+                }).catch(err => { console.error('Failed to copy command: ', err); });
+            }
+        });
+
+        mapsModesTableBody.addEventListener('click', event => {
+            if (event.target.matches('.copy-row-button')) {
+                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
+                    const originalText = event.target.textContent;
                     event.target.textContent = 'Copied!';
                     setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
                 }).catch(err => { console.error('Failed to copy command: ', err); });
