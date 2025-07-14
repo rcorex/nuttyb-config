@@ -290,8 +290,8 @@
         
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
-            <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="data">Data</button>
+            <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="links">Links</button>
         </div>
 
@@ -1040,8 +1040,12 @@ end`;
                 const combinedRaptorHp = [queenHealthPart, raptorHealthPart].filter(Boolean).join(' ');
                 if (combinedRaptorHp) renameParts.push(`[${combinedRaptorHp}]`);
             }
-
-            const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
+            
+            const noMexCommand = '!unit_restrictions_noextractors 1';
+            const allowMexCommand = '!unit_restrictions_noextractors 0';
+            const lastNoMexIndex = finalCommands.lastIndexOf(noMexCommand);
+            const lastAllowMexIndex = finalCommands.lastIndexOf(allowMexCommand);
+            const noMexEnabled = lastNoMexIndex > -1 && lastNoMexIndex > lastAllowMexIndex;
             
             if (renameParts.length > 0) {
                 renameCommand += renameParts.join('');
