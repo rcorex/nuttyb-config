@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NuttyB Raptors Configurator</title>
+    <title>NuttyB Configurator</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
@@ -89,7 +89,7 @@
         }
         #left-column label, #right-column label, #custom-options-form-columns label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
             cursor: pointer;
             padding: 3px;
             border-radius: 4px;
@@ -196,7 +196,7 @@
 
         .command-cell-wrapper {
             display: flex; justify-content: space-between;
-            align-items: center; width: 100%; overflow: hidden;
+            align-items: flex-start; width: 100%; overflow: hidden;
         }
         .command-text {
             white-space: nowrap; overflow: hidden;
@@ -286,18 +286,18 @@
 </head>
 <body>
     <div class="container">
-        <h1>NuttyB Raptors Configurator</h1>
+        <h1>NuttyB Configurator</h1>
         
         <div class="tabs">
             <button class="tab-button active" data-tab="config">Configuration</button>
-            <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="data">Data</button>
+            <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="links">Links</button>
         </div>
 
         <div id="config-tab" class="tab-content active">
             <div class="settings-container">
-                <h2>NuttyB Tweaks</h2>
+                <h2>Game Tweaks</h2>
                 <div id="options-form-columns">
                     <div class="options-column" id="left-column">
                         <p>Loading configuration data...</p>
@@ -420,7 +420,7 @@
         let rawOptionsData = [];
         let formOptionsConfig = [];
         let customOptions = [];
-        let gameConfigs = { maps: [], modes: [], base: [] };
+        let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
         const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
@@ -441,6 +441,7 @@
         const dataTableBody = document.querySelector('#data-table tbody');
         const customTweakForm = document.getElementById('custom-tweak-form');
         const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
+        const mapsModesTableBody = document.querySelector('#maps-modes-table tbody');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
@@ -490,6 +491,32 @@ function UnitDef_Post(j, k)
 		end
 	end
 end`;
+        
+        const luaBossHpTemplate = `--Scav Boss HP __MULTIPLIER_TEXT__X
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
+	if unitDef.health and unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end
+end`;
+
+        const luaScavHpTemplate = `--Scavengers HP __MULTIPLIER_TEXT__X
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
+	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end 
+	if unitName:match("_scav$") then
+		if unitDef.metalcost and type(unitDef.metalcost) == "number" then
+ 			unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
+    		end
+		unitDef.nochasecategory = "OBJECT"
+	end
+end`;
 
         function generateLuaTweak(type, multiplierValue) {
             let originalCode;
@@ -499,11 +526,11 @@ end`;
                 return "Error: Lib not loaded";
             }
 
-            if (type === 'qhp') {
+            if (type === 'qhp') { // Raptor Queen HP
                 originalCode = luaQhpTemplate
                     .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
-            } else { // type === 'hp'
+            } else if (type === 'hp') { // Raptor HP
                 const multiplierNum = parseFloat(multiplierValue);
                 let metalCostLine, workerTimeLine;
                 switch (multiplierNum) {
@@ -519,6 +546,14 @@ end`;
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
                     .replace('__METAL_COST_LINE__', metalCostLine)
                     .replace('__WORKERTIME_LINE__', workerTimeLine);
+            } else if (type === 'boss') { // Boss HP
+                 originalCode = luaBossHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+            } else if (type === 'scav') { // Scavenger HP
+                originalCode = luaScavHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
             }
 
             try {
@@ -533,8 +568,32 @@ end`;
                 return `Error: ${e.message}`;
             }
         }
+
+        function populateStartSelector() {
+            const startSelect = document.getElementById('modes-select');
+            if (!startSelect) return;
+
+            const originalValue = startSelect.value;
+            startSelect.innerHTML = ''; 
+
+            if (gameConfigs && gameConfigs.modes) {
+                gameConfigs.modes.forEach((mode, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = mode.name;
+                    startSelect.appendChild(option);
+                });
+                
+                if (Array.from(startSelect.options).some(opt => opt.value === originalValue)) {
+                    startSelect.value = originalValue;
+                } else if (startSelect.options.length > 0) {
+                    startSelect.selectedIndex = 0;
+                }
+            }
+            
+            updateOutput();
+        }
         
-        // --- MODIFIED: Added cache busting to fetch calls ---
         async function loadConfigData() {
             const response = await fetch(`tweakdata.txt?t=${Date.now()}`);
             if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
@@ -555,7 +614,7 @@ end`;
             }
         }
 
-        async function parseMapsModes(filePath) {
+        async function parseModesFile(filePath) {
             try {
                 const response = await fetch(`${filePath}?t=${Date.now()}`);
                 if (!response.ok) {
@@ -563,7 +622,7 @@ end`;
                 }
                 const text = await response.text();
                 
-                const configs = { maps: [], modes: [], base: [] };
+                const configs = { maps: [], modes: [], base: [], scavengers: [] };
                 
                 const categoryBlocks = text.split('## CATEGORY:').slice(1);
 
@@ -574,6 +633,8 @@ end`;
 
                     if (categoryName === 'base') {
                         configs.base = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    } else if (categoryName === 'scavengers') {
+                        configs.scavengers = content.split(/\r?\n/).filter(line => line.trim() !== '');
                     } else {
                         const items = content.split('---').filter(item => item.trim() !== '');
                         for (const item of items) {
@@ -594,7 +655,7 @@ end`;
                 return configs;
             } catch (error) {
                 console.error("Failed to parse game configs:", error);
-                return { maps: [], modes: [], base: [] }; 
+                return { maps: [], modes: [], base: [], scavengers: [] }; 
             }
         }
 
@@ -680,29 +741,41 @@ end`;
         function updateCustomOptionUI() {
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
             const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             allFormElements.forEach(el => {
                 if(el.dataset.isCustom) return;
-                if (el.dataset.isHpGenerator) {
-                    const slot = (el.dataset.hpType === 'qhp') ? 1 : 2;
-                    if (el.value) usedTweakDefs.add(slot);
+
+                if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
                     return;
                 }
 
                 let commands = [];
                 if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
                 else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
+                
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
                     if (match) {
-                        if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2]));
-                        else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2]));
+                        const slotNum = parseInt(match[2] || 0, 10);
+                        if (slotNum > 0) {
+                            if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                            else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                        }
                     }
                 });
             });
+            
+            document.querySelectorAll('select[data-slot]').forEach(select => {
+                if (select.value) {
+                    const slot = parseInt(select.dataset.slot, 10);
+                    if (select.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slot);
+                    else if (select.dataset.slotType === 'tweakunits') usedTweakUnits.add(slot);
+                }
+            });
+
 
             const customCheckboxes = document.querySelectorAll('input[data-is-custom="true"]');
             customCheckboxes.forEach(checkbox => {
@@ -769,47 +842,33 @@ end`;
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
             const groupedOptions = { 
-                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
             rawOptionsData = [];
 
             const dynamicHPGroup = {
-                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left',
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: 2, slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                    { label: "Default", value: "", shortLabel: "" },
-                    { label: "1x HP", value: "1", shortLabel: "1x HP" },
-                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" },
-                    { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
-                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" },
-                    { label: "2x HP", value: "2", shortLabel: "2x HP" },
-                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" },
-                    { label: "3x HP", value: "3", shortLabel: "3x HP" },
-                    { label: "4x HP", value: "4", shortLabel: "4x HP" },
-                    { label: "5x HP", value: "5", shortLabel: "5x HP" },
+                    { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
+                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" }, { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
+                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" }, { label: "2x HP", value: "2", shortLabel: "2x HP" },
+                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" }, { label: "3x HP", value: "3", shortLabel: "3x HP" },
+                    { label: "4x HP", value: "4", shortLabel: "4x HP" }, { label: "5x HP", value: "5", shortLabel: "5x HP" },
                 ]
             };
             const dynamicQHPGroup = {
-                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left',
+                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left', slot: 1, slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                     { label: "Default", value: "", shortLabel: "" },
-                     { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
-                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" },
-                     { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
-                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" },
-                     { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
-                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" },
-                     { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
-                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" },
-                     { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
-                     { label: "7x QHP", value: "7", shortLabel: "7x QHP" },
-                     { label: "9x QHP", value: "9", shortLabel: "9x QHP" },
-                     { label: "11x QHP", value: "11", shortLabel: "11x QHP" },
-                     { label: "13x QHP", value: "13", shortLabel: "13x QHP" },
+                     { label: "Default", value: "", shortLabel: "" }, { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
+                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" }, { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
+                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
+                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
+                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" }, { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
                 ]
             };
 
@@ -820,7 +879,7 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
-                        return;
+                        return; 
                     }
 
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
@@ -854,44 +913,34 @@ end`;
         }
         
         function generateCommands() {
-            let includeBaseCommands = false;
-
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
             const modesSelect = document.getElementById('modes-select');
 
             if (mapsSelect && mapsSelect.value !== "") {
                 const selectedMap = gameConfigs.maps[mapsSelect.value];
-                if (selectedMap && selectedMap.commands) {
-                    presetCommands.push(...selectedMap.commands);
-                    includeBaseCommands = true;
-                }
+                if (selectedMap && selectedMap.commands) presetCommands.push(...selectedMap.commands);
             }
-
             if (modesSelect && modesSelect.value !== "") {
                 const selectedMode = gameConfigs.modes[modesSelect.value];
-                if (selectedMode && selectedMode.commands) {
-                    presetCommands.push(...selectedMode.commands);
-                    includeBaseCommands = true;
-                }
+                if (selectedMode && selectedMode.commands) presetCommands.push(...selectedMode.commands);
             }
 
             const standardCommands = [];
             const customTweaksToProcess = [];
-            const usedTweakDefs = new Set();
-            const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d+)/;
             const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
             
             formElements.forEach(el => {
                 if (el.dataset.isCustom) {
                     if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
                 } 
-                else if (el.dataset.isHpGenerator) {
+                else if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
                     const multiplier = el.value;
                     if (multiplier) {
                         const type = el.dataset.hpType;
-                        const commandSlot = type === 'qhp' ? 'tweakdefs1' : 'tweakdefs2';
+                        const slot = el.dataset.slot;
+                        const slotType = el.dataset.slotType;
+                        const commandSlot = `${slotType}${slot}`;
                         const base64string = generateLuaTweak(type, multiplier);
                         if (!base64string.startsWith("Error")) {
                             standardCommands.push(`!bset ${commandSlot} ${base64string}`);
@@ -900,7 +949,7 @@ end`;
                 }
                 else {
                     let commands = [];
-                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select')) {
+                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select') && !el.id.includes('primary-mode-select')) {
                         if (el.value) commands.push(el.value);
                     } 
                     else if (el.type === 'checkbox' && el.checked) { 
@@ -910,13 +959,21 @@ end`;
                 }
             });
 
-            standardCommands.forEach(cmd => {
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
+
+            [...standardCommands].forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
-                    if (match[1] === 'tweakdefs') usedTweakDefs.add(parseInt(match[2], 10));
-                    else if (match[1] === 'tweakunits') usedTweakUnits.add(parseInt(match[2], 10));
+                    const slotNum = parseInt(match[2] || 0, 10);
+                    if (slotNum > 0) {
+                      if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                      else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                    }
                 }
             });
+
             const customCommands = [];
             customTweaksToProcess.forEach(tweak => {
                 const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
@@ -927,50 +984,72 @@ end`;
                     targetSet.add(availableSlot);
                 } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
             });
-            
+
+            const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
-            if (includeBaseCommands && gameConfigs.base.length > 0) {
-                finalCommands.push(...gameConfigs.base);
+            
+            if(anyOptionSelected) {
+                const primaryModeSelect = document.getElementById('primary-mode-select');
+                if (gameConfigs.base.length > 0) {
+                    finalCommands.push(...gameConfigs.base);
+                }
+                if (primaryModeSelect && primaryModeSelect.value === 'Scavengers' && gameConfigs.scavengers.length > 0) {
+                    finalCommands.push(...gameConfigs.scavengers);
+                }
             }
+            
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
             
-            let extraRaptorsPart="",raptorHealthPart="",queenHealthPart="";
-            document.querySelectorAll('#options-form-columns select').forEach(el=>{
-                if (el.id.includes('maps-select') || el.id.includes('modes-select')) return;
-                const o=el.options[el.selectedIndex];
-                if(o.value){
-                    const g=formOptionsConfig.find(gr=>gr.label===el.dataset.optionType);
-                    if(g){
-                        const c = g.choices.find(ch => (g.isHpGenerator ? ch.value === o.value : ch.value === o.value));
-                        if(c&&c.shortLabel!==undefined){
-                           if(g.label==="Extras")extraRaptorsPart=c.shortLabel;
-                           else if(g.label==="Raptor Health")raptorHealthPart=c.shortLabel;
-                           else if(g.label==="Queen Health")queenHealthPart=c.shortLabel;
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
+
+            let renameCommand = isScavengers ? `$rename [Mod] NuttyB Scavengers ` : `$rename [Mod] NuttyB Raptors `;
+            const renameParts = [];
+
+            if (isScavengers) {
+                const scavHpSelect = document.getElementById('scav-hp-select');
+                const bossHpSelect = document.getElementById('boss-hp-select');
+                const scavHpText = scavHpSelect && scavHpSelect.value ? scavHpSelect.options[scavHpSelect.selectedIndex].text : '';
+                const bossHpText = bossHpSelect && bossHpSelect.value ? bossHpSelect.options[bossHpSelect.selectedIndex].text : '';
+
+                const combinedScavHp = [scavHpText, bossHpText].filter(Boolean).join(' ');
+                if (combinedScavHp) {
+                    const formattedHpPart = combinedScavHp.replace(/\./g, '_');
+                    renameParts.push(`[${formattedHpPart}]`);
+                }
+
+            } else { 
+                let extraRaptorsPart = "", raptorHealthPart = "", queenHealthPart = "";
+                document.querySelectorAll('#raptor-only-options select').forEach(el => {
+                    const o = el.options[el.selectedIndex];
+                    if (o.value) {
+                        const g = formOptionsConfig.find(gr => gr.label === el.dataset.optionType);
+                        if (g) {
+                            const c = g.choices.find(ch => ch.value === o.value);
+                            if (c && c.shortLabel !== undefined) {
+                                if (g.label === "Extras") extraRaptorsPart = c.shortLabel;
+                                else if (g.label === "Raptor Health") raptorHealthPart = c.shortLabel;
+                                else if (g.label === "Queen Health") queenHealthPart = c.shortLabel;
+                            }
                         }
                     }
-                }
-            });
-
-            let renameCommand;
-            if (modesSelect && modesSelect.value !== "" && gameConfigs.modes[modesSelect.value].name === 'Scavengers') {
-                renameCommand = `$rename [Mod] NuttyB Scavengers `;
-            } else {
-                renameCommand = `$rename [Mod] NuttyB Raptors `;
+                });
+                
+                if (extraRaptorsPart) renameParts.push(extraRaptorsPart);
+                
+                const combinedRaptorHp = [queenHealthPart, raptorHealthPart].filter(Boolean).join(' ');
+                if (combinedRaptorHp) renameParts.push(`[${combinedRaptorHp}]`);
             }
             
-            let renameParts=[];
-            if(extraRaptorsPart)renameParts.push(extraRaptorsPart);
-            let combinedHealthPart="";
-            if(raptorHealthPart&&queenHealthPart)combinedHealthPart=`${raptorHealthPart} ${queenHealthPart}`;
-            else if(raptorHealthPart)combinedHealthPart=raptorHealthPart;
-            else if(queenHealthPart)combinedHealthPart=queenHealthPart;
-            if(combinedHealthPart)renameParts.push(`[${combinedHealthPart}]`);
+            const noMexCommand = '!unit_restrictions_noextractors 1';
+            const allowMexCommand = '!unit_restrictions_noextractors 0';
+            const lastNoMexIndex = finalCommands.lastIndexOf(noMexCommand);
+            const lastAllowMexIndex = finalCommands.lastIndexOf(allowMexCommand);
+            const noMexEnabled = lastNoMexIndex > -1 && lastNoMexIndex > lastAllowMexIndex;
             
-            if(renameParts.length > 0) {
+            if (renameParts.length > 0) {
                 renameCommand += renameParts.join('');
             }
-            
-            const noMexEnabled = finalCommands.includes('!unit_restrictions_noextractors 1') && !finalCommands.includes('!unit_restrictions_noextractors 0');
             if (noMexEnabled) {
                 renameCommand += `[No Mex]`;
             }
@@ -998,6 +1077,60 @@ end`;
         function renderOptions() {
             leftColumn.innerHTML = ''; 
             rightColumn.innerHTML = '';
+
+            const primaryModeLabel = document.createElement('label');
+            primaryModeLabel.textContent = 'Mode: ';
+            const primaryModeSelect = document.createElement('select');
+            primaryModeSelect.id = 'primary-mode-select';
+            primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
+            primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
+            primaryModeLabel.appendChild(primaryModeSelect);
+            leftColumn.appendChild(primaryModeLabel);
+
+            const scavOnlyContainer = document.createElement('div');
+            scavOnlyContainer.id = 'scav-only-options';
+            
+            const scavHpLabel = document.createElement('label');
+            scavHpLabel.textContent = 'Scavengers HP: ';
+            const scavHpSelect = document.createElement('select');
+            scavHpSelect.id = 'scav-hp-select';
+            scavHpSelect.dataset.isScavHpGenerator = true;
+            scavHpSelect.dataset.hpType = 'scav';
+            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slotType = 'tweakdefs';
+            const scavHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
+                {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
+            ];
+            scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
+            scavHpSelect.value = ""; 
+            scavHpSelect.addEventListener('change', updateOutput);
+            scavHpLabel.appendChild(scavHpSelect);
+            scavOnlyContainer.appendChild(scavHpLabel);
+
+            const bossHpLabel = document.createElement('label');
+            bossHpLabel.textContent = 'Scav Boss HP: ';
+            const bossHpSelect = document.createElement('select');
+            bossHpSelect.id = 'boss-hp-select';
+            bossHpSelect.dataset.isScavHpGenerator = true;
+            bossHpSelect.dataset.hpType = 'boss';
+            bossHpSelect.dataset.slot = '1';
+            bossHpSelect.dataset.slotType = 'tweakdefs';
+            const bossHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x BHP"}, {v: "1.3", t: "1.3x BHP"}, {v: "1.5", t: "1.5x BHP"}, {v: "1.7", t: "1.7x BHP"},
+                {v: "2", t: "2x BHP"}, {v: "2.5", t: "2.5x BHP"}, {v: "3", t: "3x BHP"}, {v: "4", t: "4x BHP"}, {v: "5", t: "5x BHP"},
+            ];
+            bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
+            bossHpSelect.value = ""; 
+            bossHpSelect.addEventListener('change', updateOutput);
+            bossHpLabel.appendChild(bossHpSelect);
+            scavOnlyContainer.appendChild(bossHpLabel);
+
+            leftColumn.appendChild(scavOnlyContainer);
+
+            const raptorOnlyContainer = document.createElement('div');
+            raptorOnlyContainer.id = 'raptor-only-options';
+            leftColumn.appendChild(raptorOnlyContainer);
             
             formOptionsConfig.forEach(optionGroup => {
                 const label = document.createElement('label');
@@ -1015,6 +1148,8 @@ end`;
                     if (optionGroup.isHpGenerator) {
                         inputElement.dataset.isHpGenerator = true;
                         inputElement.dataset.hpType = optionGroup.hpType;
+                        inputElement.dataset.slot = optionGroup.slot;
+                        inputElement.dataset.slotType = optionGroup.slotType;
                         inputElement.disabled = true;
                     }
 
@@ -1031,8 +1166,14 @@ end`;
                     label.textContent = optionGroup.label + ': '; label.appendChild(inputElement);
                     inputElement.addEventListener('change', updateOutput);
                 }
-                if (optionGroup.column === 'right') rightColumn.appendChild(label);
-                else leftColumn.appendChild(label);
+
+                if (optionGroup.column === 'right') {
+                    rightColumn.appendChild(label);
+                } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
+                    raptorOnlyContainer.appendChild(label);
+                } else {
+                    leftColumn.appendChild(label);
+                }
             });
 
             if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
@@ -1043,48 +1184,26 @@ end`;
                     mapsLabel.textContent = 'Map: ';
                     const mapsSelect = document.createElement('select');
                     mapsSelect.id = 'maps-select';
-
-                    const naMapOption = document.createElement('option');
-                    naMapOption.value = "";
-                    naMapOption.textContent = "N/A";
-                    mapsSelect.appendChild(naMapOption);
-
                     gameConfigs.maps.forEach((map, index) => {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.textContent = map.name;
-                        mapsSelect.appendChild(option);
+                        mapsSelect.add(new Option(map.name, index));
                     });
-                    mapsSelect.selectedIndex = 1;
+                    mapsSelect.selectedIndex = 0;
                     mapsSelect.addEventListener('change', updateOutput);
                     mapsLabel.appendChild(mapsSelect);
                 }
                 if (gameConfigs.modes.length > 0) {
                     modesLabel = document.createElement('label');
-                    modesLabel.textContent = 'Mode: ';
+                    modesLabel.textContent = 'Start: ';
                     const modesSelect = document.createElement('select');
                     modesSelect.id = 'modes-select';
-
-                    const naModeOption = document.createElement('option');
-                    naModeOption.value = "";
-                    naModeOption.textContent = "N/A";
-                    modesSelect.appendChild(naModeOption);
-
-                    gameConfigs.modes.forEach((mode, index) => {
-                        const option = document.createElement('option');
-                        option.value = index;
-                        option.textContent = mode.name;
-                        modesSelect.appendChild(option);
-                    });
-                    modesSelect.selectedIndex = 1;
                     modesSelect.addEventListener('change', updateOutput);
                     modesLabel.appendChild(modesSelect);
                 }
 
-                const extrasLabel = document.querySelector('select[data-option-type="Extras"]')?.parentElement;
-                if (extrasLabel) {
-                    if (modesLabel) extrasLabel.after(modesLabel);
-                    if (mapsLabel) extrasLabel.after(mapsLabel);
+                const container = document.getElementById('raptor-only-options');
+                if (container) {
+                    if (modesLabel) container.after(modesLabel);
+                    if (mapsLabel) container.after(mapsLabel);
                 } else {
                     if (mapsLabel) leftColumn.appendChild(mapsLabel);
                     if (modesLabel) leftColumn.appendChild(modesLabel);
@@ -1092,30 +1211,40 @@ end`;
             }
 
             renderAllCustomComponents();
-            updateOutput();
+            populateStartSelector();
         }
+        
+        function updateOutput(event) {
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            const raptorOnlyContainer = document.getElementById('raptor-only-options');
+            const scavOnlyContainer = document.getElementById('scav-only-options');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            const bossHpSelect = document.getElementById('boss-hp-select');
 
-        function updateOutput() {
-            const modesSelect = document.getElementById('modes-select');
-            const extrasSelect = document.querySelector('select[data-option-type="Extras"]');
-            const raptorHpSelect = document.querySelector('select[data-hp-type="hp"]');
-            const queenHpSelect = document.querySelector('select[data-hp-type="qhp"]');
+            if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
+                const newMode = primaryModeSelect.value;
+                const modeChanged = event && event.target === primaryModeSelect;
 
-            if (modesSelect) {
-                const selectedModeIndex = modesSelect.value;
-                const isScavengers = selectedModeIndex !== "" && gameConfigs.modes[selectedModeIndex].name === 'Scavengers';
-
-                // Handle dependent selectors
-                [extrasSelect, raptorHpSelect, queenHpSelect].forEach(selector => {
-                    if (selector) {
-                        if (isScavengers) {
-                            selector.value = ""; 
-                            selector.disabled = true;
-                        } else {
-                            selector.disabled = false;
-                        }
+                if (modeChanged) {
+                    if (newMode === 'Scavengers') {
+                        scavHpSelect.value = "1.3";
+                        bossHpSelect.value = "1.3";
+                        raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
+                    } else { // Switching back to Raptors
+                        scavHpSelect.value = "";
+                        bossHpSelect.value = "";
+                        raptorOnlyContainer.querySelectorAll('select[data-option-type]').forEach(sel => {
+                            const optionGroup = formOptionsConfig.find(og => og.label === sel.dataset.optionType);
+                            if (optionGroup) {
+                                sel.value = optionGroup.defaultValue || "";
+                            }
+                        });
                     }
-                });
+                }
+                
+                const isScavengers = newMode === 'Scavengers';
+                raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
+                scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
             }
             
             updateCustomOptionUI();
@@ -1144,59 +1273,42 @@ end`;
                 row.insertCell().textContent = item.status; 
                 row.insertCell().textContent = item.summary;
                 const commandsCell = row.insertCell(); 
-                const wrapper = document.createElement('div'); 
-                wrapper.className = 'command-cell-wrapper';
-                const textSpan = document.createElement('span'); 
-                textSpan.className = 'command-text'; 
-                textSpan.textContent = item.commandBlock; 
-                textSpan.title = item.commandBlock;
-                const copyBtn = document.createElement('button'); 
-                copyBtn.textContent = 'Copy'; 
-                copyBtn.className = 'copy-row-button'; 
-                copyBtn.dataset.command = item.commandBlock;
-                wrapper.appendChild(textSpan); 
-                wrapper.appendChild(copyBtn); 
-                commandsCell.appendChild(wrapper);
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; 
+                textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; 
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
 
-            const hpGeneratorConfigs = formOptionsConfig.filter(group => group.isHpGenerator);
-            hpGeneratorConfigs.forEach(config => {
-                const selector = document.querySelector(`select[data-hp-type="${config.hpType}"]`);
-                if (!selector) return;
-
+            document.querySelectorAll('select[data-slot]').forEach(selector => {
                 const selectedValue = selector.value;
-                if (selectedValue) {
-                    const choice = config.choices.find(c => c.value === selectedValue);
-                    if (!choice) return;
+                if (!selectedValue) return;
 
-                    const type = config.hpType;
-                    const commandSlot = (type === 'qhp') ? 'tweakdefs1' : 'tweakdefs2';
-                    const base64tweak = generateLuaTweak(type, selectedValue);
-                    if (base64tweak.startsWith("Error")) return;
+                const selectedOptionText = selector.options[selector.selectedIndex].text;
+                const type = selector.dataset.hpType;
+                const slot = selector.dataset.slot;
+                const slotType = selector.dataset.slotType;
+                const commandSlot = `${slotType}${slot}`;
+                const base64tweak = generateLuaTweak(type, selectedValue);
 
-                    const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
-                    const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+                if (base64tweak.startsWith("Error")) return;
 
-                    const row = dataTableBody.insertRow();
-                    row.insertCell().textContent = choice.label;
-                    row.insertCell().textContent = 'Optional/Generated';
-                    row.insertCell().textContent = summary;
-                    
-                    const commandsCell = row.insertCell();
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'command-cell-wrapper';
-                    const textSpan = document.createElement('span');
-                    textSpan.className = 'command-text';
-                    textSpan.textContent = fullCommand;
-                    textSpan.title = fullCommand;
-                    const copyBtn = document.createElement('button');
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.className = 'copy-row-button';
-                    copyBtn.dataset.command = fullCommand;
-                    wrapper.appendChild(textSpan);
-                    wrapper.appendChild(copyBtn);
-                    commandsCell.appendChild(wrapper);
-                }
+                const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
+                const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+
+                const row = dataTableBody.insertRow();
+                row.insertCell().textContent = selectedOptionText;
+                row.insertCell().textContent = 'Optional/Generated';
+                row.insertCell().textContent = summary;
+                
+                const commandsCell = row.insertCell();
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text';
+                textSpan.textContent = fullCommand; textSpan.title = fullCommand;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy';
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = fullCommand;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
             });
         }
 
@@ -1204,20 +1316,54 @@ end`;
             const tableBody = document.querySelector('#maps-modes-table tbody');
             tableBody.innerHTML = ''; 
 
-            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0) {
+            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0 && gameConfigs.scavengers.length === 0 && gameConfigs.base.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No maps or modes found.</td></tr>';
                 return;
             }
+            
+            const createCommandCellWithSingleCopy = (cell, commands) => {
+                if (!commands || commands.length === 0) {
+                    cell.textContent = 'N/A';
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'command-cell-wrapper';
+
+                const textSpan = document.createElement('span');
+                textSpan.style.whiteSpace = 'normal';
+                textSpan.innerHTML = commands.join('<br>');
+
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy All';
+                copyBtn.className = 'copy-row-button';
+                copyBtn.dataset.command = commands.join('\n');
+
+                wrapper.appendChild(textSpan);
+                wrapper.appendChild(copyBtn);
+                cell.appendChild(wrapper);
+            };
 
             const populateCategory = (category, categoryName) => {
                 category.forEach(item => {
                     const row = tableBody.insertRow();
                     row.insertCell().textContent = categoryName;
                     row.insertCell().textContent = item.name;
-                    row.insertCell().innerHTML = item.commands.join('<br>');
+                    createCommandCellWithSingleCopy(row.insertCell(), item.commands);
                 });
             };
 
+            const populateSimpleCategory = (commands, categoryName, name) => {
+                 if(commands.length > 0) {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = categoryName;
+                    row.insertCell().textContent = name;
+                    createCommandCellWithSingleCopy(row.insertCell(), commands);
+                }
+            };
+            
+            populateSimpleCategory(gameConfigs.base, 'base', 'Raptors (Default)');
+            populateSimpleCategory(gameConfigs.scavengers, 'scavengers', 'Default');
             populateCategory(gameConfigs.maps, 'maps');
             populateCategory(gameConfigs.modes, 'modes');
         }
@@ -1248,13 +1394,22 @@ end`;
                 }).catch(err => { console.error('Failed to copy: ', err); });
         }));
 
-        dataTableBody.addEventListener('click', event => {
-            if (event.target.matches('.copy-row-button')) {
-                navigator.clipboard.writeText(event.target.dataset.command).then(() => {
-                    event.target.textContent = 'Copied!';
-                    setTimeout(() => { event.target.textContent = 'Copy'; }, 2000);
-                }).catch(err => { console.error('Failed to copy command: ', err); });
-            }
+        [dataTableBody, customTweaksTableBody, mapsModesTableBody].forEach(tbody => {
+            if (!tbody) return;
+            tbody.addEventListener('click', event => {
+                const button = event.target;
+                if (button.matches('.copy-row-button')) {
+                    const textToCopy = button.dataset.command || button.dataset.tweakCode;
+                    if (!textToCopy) return;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalText = button.textContent;
+                        button.textContent = 'Copied!';
+                        setTimeout(() => { button.textContent = originalText; }, 2000);
+                    }).catch(err => { console.error('Failed to copy command: ', err); });
+                } else if (button.matches('.delete-tweak-btn')) {
+                     deleteCustomTweak(parseInt(button.dataset.id, 10));
+                }
+            });
         });
 
         resetNoneBtn.addEventListener('click', () => {
@@ -1264,12 +1419,9 @@ end`;
                     el.checked = false;
                 } else if (el.tagName === 'SELECT') {
                     if (el.id === 'maps-select' || el.id === 'modes-select') {
-                        el.value = "";
-                    } else if (el.dataset.isHpGenerator) {
-                        el.value = "";
-                    }
-                    else {
-                        el.selectedIndex = 0;
+                        el.selectedIndex = -1; 
+                    } else if (el.id !== 'primary-mode-select') {
+                        el.value = ""; 
                     }
                 }
             });
@@ -1277,6 +1429,9 @@ end`;
         });
 
         resetDefaultBtn.addEventListener('click', () => {
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            if (primaryModeSelect) primaryModeSelect.value = 'Raptors';
+            
             formOptionsConfig.forEach(optionGroup => {
                 if (optionGroup.type === 'checkbox') {
                     const allLabels = document.querySelectorAll('#options-form-columns label');
@@ -1290,26 +1445,21 @@ end`;
                     if (select) select.value = optionGroup.defaultValue || "";
                 }
             });
+            
+            const bossHpSelect = document.getElementById('boss-hp-select');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            if (bossHpSelect) bossHpSelect.value = "";
+            if (scavHpSelect) scavHpSelect.value = "";
+
             const mapsSelect = document.getElementById('maps-select');
-            if (mapsSelect) mapsSelect.selectedIndex = 1;
+            if (mapsSelect && mapsSelect.options.length > 0) mapsSelect.selectedIndex = 0;
+
             const modesSelect = document.getElementById('modes-select');
-            if (modesSelect) modesSelect.selectedIndex = 1;
-            updateOutput();
-        });
-        
-        customTweakForm.addEventListener('submit', addCustomTweak);
-        customTweaksTableBody.addEventListener('click', event => {
-            const button = event.target;
-            if (button.matches('.delete-tweak-btn')) {
-                deleteCustomTweak(parseInt(button.dataset.id, 10));
-            } else if (button.matches('.copy-row-button')) {
-                const codeToCopy = button.dataset.tweakCode;
-                navigator.clipboard.writeText(codeToCopy).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = 'Copied!';
-                    setTimeout(() => { button.textContent = originalText; }, 2000);
-                }).catch(err => { console.error('Failed to copy tweak code: ', err); });
+            if(modesSelect && modesSelect.options.length > 0) {
+                modesSelect.selectedIndex = 0;
             }
+            
+            updateOutput();
         });
         
         tabButtons.forEach(button => button.addEventListener('click', switchTab));
@@ -1319,13 +1469,13 @@ end`;
                 loadCustomOptions();
                 
                 const [parsedConfigs] = await Promise.all([
-                    parseMapsModes('mapsmodes.txt'),
+                    parseModesFile('modes.txt'),
                     loadConfigData(), 
                     loadLinksContent()
                 ]);
 
                 gameConfigs = parsedConfigs;
-                console.log("Maps & Modes configs loaded and parsed:", gameConfigs);
+                console.log("Modes file loaded and parsed:", gameConfigs);
 
                 renderOptions();
 
@@ -1333,8 +1483,8 @@ end`;
                     if (typeof luamin !== 'undefined') {
                         clearInterval(libraryCheckInterval);
                         console.log("Lua libraries loaded.");
-                        document.querySelectorAll('select[data-is-hp-generator="true"]').forEach(select => {
-                            select.disabled = false;
+                        document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
+                           select.disabled = false;
                         });
                         updateOutput();
                     }
@@ -1342,7 +1492,7 @@ end`;
 
             } catch (error) {
                 console.error("Failed to initialize the configurator:", error);
-                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., mapsmodes.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., modes.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
             }
         }
 
