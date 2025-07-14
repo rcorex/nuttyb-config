@@ -55,7 +55,7 @@ $welcome-message Settings made with NuttyB Configurator https://rcorex.github.io
 
 ## CATEGORY: scavengers
 !scav_boss_count 8
-!scav_bosstimemult 1.4
+!scav_bosstimemult 1.3
 !scav_difficulty epic
 !scav_spawncountmult 2
 !bSet ruins disabled
