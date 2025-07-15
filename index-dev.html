@@ -356,7 +356,7 @@
                 </div>
             </div>
         </div>
-
+        
         <div id="data-tab" class="tab-content">
             <h2>Configuration Data</h2>
             <p>This table shows a summary for each configurable option</p>
@@ -1078,15 +1078,6 @@ end`;
             leftColumn.innerHTML = ''; 
             rightColumn.innerHTML = '';
 
-            const primaryModeLabel = document.createElement('label');
-            primaryModeLabel.textContent = 'Mode: ';
-            const primaryModeSelect = document.createElement('select');
-            primaryModeSelect.id = 'primary-mode-select';
-            primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
-            primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
-            primaryModeLabel.appendChild(primaryModeSelect);
-            leftColumn.appendChild(primaryModeLabel);
-
             const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
 
             specialLeftOptions.forEach(optLabel => {
@@ -1104,6 +1095,15 @@ end`;
                     leftColumn.appendChild(label);
                 }
             });
+
+            const primaryModeLabel = document.createElement('label');
+            primaryModeLabel.textContent = 'Mode: ';
+            const primaryModeSelect = document.createElement('select');
+            primaryModeSelect.id = 'primary-mode-select';
+            primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
+            primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
+            primaryModeLabel.appendChild(primaryModeSelect);
+            leftColumn.appendChild(primaryModeLabel);
 
             const scavOnlyContainer = document.createElement('div');
             scavOnlyContainer.id = 'scav-only-options';
