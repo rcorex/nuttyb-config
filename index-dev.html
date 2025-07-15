@@ -1132,7 +1132,11 @@ end`;
             raptorOnlyContainer.id = 'raptor-only-options';
             leftColumn.appendChild(raptorOnlyContainer);
             
+            const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
+
             formOptionsConfig.forEach(optionGroup => {
+                if (specialLeftOptions.includes(optionGroup.label)) return; 
+
                 const label = document.createElement('label');
                 let inputElement;
                 if (optionGroup.type === 'checkbox') {
@@ -1172,6 +1176,22 @@ end`;
                 } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
                     raptorOnlyContainer.appendChild(label);
                 } else {
+                    leftColumn.appendChild(label);
+                }
+            });
+
+            specialLeftOptions.forEach(optLabel => {
+                const optionGroup = formOptionsConfig.find(og => og.label === optLabel);
+                if (optionGroup) {
+                    const label = document.createElement('label');
+                    const inputElement = document.createElement('input'); 
+                    inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default; 
+                    inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); 
+                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
                     leftColumn.appendChild(label);
                 }
             });
