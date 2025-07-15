@@ -842,8 +842,8 @@ end`;
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
             const groupedOptions = { 
-                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
@@ -893,8 +893,8 @@ end`;
                         if (commandBlock.startsWith('!bset tweakdefs4')) groupedOptions.extraRaptors.defaultValue = commandBlock;
                         addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
-                    if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
+                    if (mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
+                    if (evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
                     if (!addedToFormGroup && !hiddenLabels.includes(label)) { groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); }
@@ -1087,6 +1087,24 @@ end`;
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
 
+            const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
+
+            specialLeftOptions.forEach(optLabel => {
+                const optionGroup = formOptionsConfig.find(og => og.label === optLabel);
+                if (optionGroup) {
+                    const label = document.createElement('label');
+                    const inputElement = document.createElement('input'); 
+                    inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default; 
+                    inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); 
+                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
+                    leftColumn.appendChild(label);
+                }
+            });
+
             const scavOnlyContainer = document.createElement('div');
             scavOnlyContainer.id = 'scav-only-options';
             
@@ -1132,10 +1150,8 @@ end`;
             raptorOnlyContainer.id = 'raptor-only-options';
             leftColumn.appendChild(raptorOnlyContainer);
             
-            const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
-
             formOptionsConfig.forEach(optionGroup => {
-                if (specialLeftOptions.includes(optionGroup.label)) return; 
+                if (specialLeftOptions.includes(optionGroup.label)) return;
 
                 const label = document.createElement('label');
                 let inputElement;
@@ -1176,22 +1192,6 @@ end`;
                 } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
                     raptorOnlyContainer.appendChild(label);
                 } else {
-                    leftColumn.appendChild(label);
-                }
-            });
-
-            specialLeftOptions.forEach(optLabel => {
-                const optionGroup = formOptionsConfig.find(og => og.label === optLabel);
-                if (optionGroup) {
-                    const label = document.createElement('label');
-                    const inputElement = document.createElement('input'); 
-                    inputElement.type = 'checkbox';
-                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
-                    inputElement.checked = optionGroup.default; 
-                    inputElement.disabled = optionGroup.disabled || false;
-                    label.appendChild(inputElement); 
-                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
-                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
                     leftColumn.appendChild(label);
                 }
             });
@@ -1482,6 +1482,7 @@ end`;
             updateOutput();
         });
         
+        customTweakForm.addEventListener('submit', addCustomTweak);
         tabButtons.forEach(button => button.addEventListener('click', switchTab));
 
         async function initializeApp() {
