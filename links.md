@@ -6,6 +6,8 @@
 *   **[Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)**
     *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
 
+To install the widgets, download the files here and put them in this game folder: \Beyond-All-Reason\data\LuaUI\Widgets. Create the Widgets folder if it doesn't exist. When the game is running press the widgets key (usually F11), find the widget and enable it.
+
 ## Community and Guides
 
 *   **[Discord Channel for NuttyB](https://discord.com/channels/549281623154229250/1168959237641216131)**
