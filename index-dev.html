@@ -878,12 +878,10 @@ end`;
                     const label = parts[0].trim(), commandBlock = parts[1].trim();
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
-                    // --- RESTORED CODE BLOCK ---
+                    // --- Ignore these tweaks if in the file ---
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
                         return; 
                     }
-                    // ---------------------------
-
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
