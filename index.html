@@ -878,10 +878,10 @@ end`;
                     const label = parts[0].trim(), commandBlock = parts[1].trim();
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
+                    // --- Ignore these tweaks if in the file ---
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
                         return; 
                     }
-
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
@@ -911,7 +911,7 @@ end`;
             if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
         }
-        
+
         function generateCommands() {
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
