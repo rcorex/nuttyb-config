@@ -998,7 +998,6 @@ end`;
                 }
             }
             
-            // Reverted to original order (no sorting)
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
 
             const primaryModeSelect = document.getElementById('primary-mode-select');
@@ -1055,38 +1054,51 @@ end`;
                 renameCommand += `[No Mex]`;
             }
             
-            // --- NEW "FIRST FIT" PACKING LOGIC ---
-            const sectionsData = []; // Will store { commands: [], length: 0 } for each part
-            const allCommandsToSection = finalCommands.length > 0 ? [...finalCommands, renameCommand] : [];
+            // --- UPDATED PACKING LOGIC WITH SPECIAL RENAME HANDLING ---
+            const sectionsData = [];
+            const allCommandsToSection = finalCommands; // Excludes rename command for now
 
+            // Step 1: Pack all regular commands using the "First Fit" strategy
             for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
-
                 let placed = false;
-                // Try to place the command in an existing part
                 for (const section of sectionsData) {
-                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1; // +1 for the newline
+                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1;
                     if (section.length + neededLength <= MAX_SECTION_LENGTH) {
                         section.commands.push(cmd);
                         section.length += neededLength;
                         placed = true;
-                        break; // Move to the next command
+                        break;
                     }
                 }
-
-                // If it wasn't placed, create a new part for it
                 if (!placed) {
-                    sectionsData.push({
-                        commands: [cmd],
-                        length: cmd.length
-                    });
+                    sectionsData.push({ commands: [cmd], length: cmd.length });
                 }
             }
 
-            // Convert the data structure to the final array of strings
+            // Step 2: Add the rename command last, only if any options were selected
+            if (anyOptionSelected) {
+                if (sectionsData.length === 0) {
+                    // This case handles if only a rename-generating option was chosen
+                    sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                } else {
+                    const lastSection = sectionsData[sectionsData.length - 1];
+                    const neededLength = lastSection.length === 0 ? renameCommand.length : renameCommand.length + 1;
+                    
+                    if (lastSection.length + neededLength <= MAX_SECTION_LENGTH) {
+                        // It fits in the last part, append it
+                        lastSection.commands.push(renameCommand);
+                        lastSection.length += neededLength;
+                    } else {
+                        // It doesn't fit, create a new part just for it
+                        sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                    }
+                }
+            }
+            
             const finalSections = sectionsData.map(section => section.commands.join('\n'));
             
-            return { lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: finalSections };
+            return { lobbyName: (anyOptionSelected ? renameCommand : 'No Options Selected'), sections: finalSections };
         }
 
         function renderOptions() {
