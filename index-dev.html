@@ -988,7 +988,12 @@ end`;
             const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
             
-            if(anyOptionSelected) {
+            // --- UPDATED LOGIC HERE ---
+            // Only add base/scavenger commands if a standard game mode option was chosen.
+            // A custom tweak alone should not trigger this.
+            const isGameModeTriggered = presetCommands.length > 0 || standardCommands.length > 0;
+
+            if(isGameModeTriggered) {
                 const primaryModeSelect = document.getElementById('primary-mode-select');
                 if (gameConfigs.base.length > 0) {
                     finalCommands.push(...gameConfigs.base);
@@ -997,6 +1002,7 @@ end`;
                     finalCommands.push(...gameConfigs.scavengers);
                 }
             }
+            // --------------------------
             
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
 
@@ -1054,11 +1060,9 @@ end`;
                 renameCommand += `[No Mex]`;
             }
             
-            // --- UPDATED PACKING LOGIC WITH SPECIAL RENAME HANDLING ---
             const sectionsData = [];
-            const allCommandsToSection = finalCommands; // Excludes rename command for now
+            const allCommandsToSection = finalCommands; 
 
-            // Step 1: Pack all regular commands using the "First Fit" strategy
             for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
                 let placed = false;
@@ -1076,21 +1080,17 @@ end`;
                 }
             }
 
-            // Step 2: Add the rename command last, only if any options were selected
             if (anyOptionSelected) {
                 if (sectionsData.length === 0) {
-                    // This case handles if only a rename-generating option was chosen
                     sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
                 } else {
                     const lastSection = sectionsData[sectionsData.length - 1];
                     const neededLength = lastSection.length === 0 ? renameCommand.length : renameCommand.length + 1;
                     
                     if (lastSection.length + neededLength <= MAX_SECTION_LENGTH) {
-                        // It fits in the last part, append it
                         lastSection.commands.push(renameCommand);
                         lastSection.length += neededLength;
                     } else {
-                        // It doesn't fit, create a new part just for it
                         sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
                     }
                 }
