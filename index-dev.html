@@ -998,17 +998,8 @@ end`;
                 }
             }
             
-            // --- OPTIMIZATION LOGIC START ---
-            // Combine all optional tweaks into a single array.
-            const allOptionalTweaks = [...standardCommands, ...customCommands];
-
-            // Sort the tweaks by length in descending order (longest first).
-            // This helps pack the commands more efficiently into the output parts.
-            allOptionalTweaks.sort((a, b) => b.length - a.length);
-
-            // Add the foundational preset commands first, then the sorted optional tweaks.
-            finalCommands.push(...presetCommands, ...allOptionalTweaks);
-            // --- OPTIMIZATION LOGIC END ---
+            // Reverted to original order (no sorting)
+            finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
 
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
@@ -1064,24 +1055,38 @@ end`;
                 renameCommand += `[No Mex]`;
             }
             
-            const sections = [];
-            let currentSection = [];
-            let currentLength = 0;
+            // --- NEW "FIRST FIT" PACKING LOGIC ---
+            const sectionsData = []; // Will store { commands: [], length: 0 } for each part
             const allCommandsToSection = finalCommands.length > 0 ? [...finalCommands, renameCommand] : [];
 
             for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
-                if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
-                    sections.push(currentSection.join('\n'));
-                    currentSection = [cmd];
-                    currentLength = cmd.length;
-                } else {
-                    currentSection.push(cmd);
-                    currentLength += cmd.length + 1;
+
+                let placed = false;
+                // Try to place the command in an existing part
+                for (const section of sectionsData) {
+                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1; // +1 for the newline
+                    if (section.length + neededLength <= MAX_SECTION_LENGTH) {
+                        section.commands.push(cmd);
+                        section.length += neededLength;
+                        placed = true;
+                        break; // Move to the next command
+                    }
+                }
+
+                // If it wasn't placed, create a new part for it
+                if (!placed) {
+                    sectionsData.push({
+                        commands: [cmd],
+                        length: cmd.length
+                    });
                 }
             }
-            if (currentSection.length > 0) sections.push(currentSection.join('\n'));
-            return{lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: sections};
+
+            // Convert the data structure to the final array of strings
+            const finalSections = sectionsData.map(section => section.commands.join('\n'));
+            
+            return { lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: finalSections };
         }
 
         function renderOptions() {
