@@ -446,7 +446,7 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
-        const MAX_SECTION_LENGTH = 53000;
+        const MAX_SECTION_LENGTH = 52000;
 
         // --- Lua Templates and Generator Logic ---
         const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
@@ -988,7 +988,12 @@ end`;
             const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
             
-            if(anyOptionSelected) {
+            // --- UPDATED LOGIC HERE ---
+            // Only add base/scavenger commands if a standard game mode option was chosen.
+            // A custom tweak alone should not trigger this.
+            const isGameModeTriggered = presetCommands.length > 0 || standardCommands.length > 0;
+
+            if(isGameModeTriggered) {
                 const primaryModeSelect = document.getElementById('primary-mode-select');
                 if (gameConfigs.base.length > 0) {
                     finalCommands.push(...gameConfigs.base);
@@ -997,9 +1002,10 @@ end`;
                     finalCommands.push(...gameConfigs.scavengers);
                 }
             }
+            // --------------------------
             
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
-            
+
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
 
@@ -1054,24 +1060,45 @@ end`;
                 renameCommand += `[No Mex]`;
             }
             
-            const sections = [];
-            let currentSection = [];
-            let currentLength = 0;
-            const allCommandsToSection = finalCommands.length > 0 ? [...finalCommands, renameCommand] : [];
+            const sectionsData = [];
+            const allCommandsToSection = finalCommands; 
 
             for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
-                if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
-                    sections.push(currentSection.join('\n'));
-                    currentSection = [cmd];
-                    currentLength = cmd.length;
-                } else {
-                    currentSection.push(cmd);
-                    currentLength += cmd.length + 1;
+                let placed = false;
+                for (const section of sectionsData) {
+                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1;
+                    if (section.length + neededLength <= MAX_SECTION_LENGTH) {
+                        section.commands.push(cmd);
+                        section.length += neededLength;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    sectionsData.push({ commands: [cmd], length: cmd.length });
                 }
             }
-            if (currentSection.length > 0) sections.push(currentSection.join('\n'));
-            return{lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: sections};
+
+            if (anyOptionSelected) {
+                if (sectionsData.length === 0) {
+                    sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                } else {
+                    const lastSection = sectionsData[sectionsData.length - 1];
+                    const neededLength = lastSection.length === 0 ? renameCommand.length : renameCommand.length + 1;
+                    
+                    if (lastSection.length + neededLength <= MAX_SECTION_LENGTH) {
+                        lastSection.commands.push(renameCommand);
+                        lastSection.length += neededLength;
+                    } else {
+                        sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                    }
+                }
+            }
+            
+            const finalSections = sectionsData.map(section => section.commands.join('\n'));
+            
+            return { lobbyName: (anyOptionSelected ? renameCommand : 'No Options Selected'), sections: finalSections };
         }
 
         function renderOptions() {
