@@ -622,31 +622,18 @@ end`;
             parseConfigData(text);
         }
         
-	async function loadLinksContent() {
-	    const linksContentEl = document.getElementById('links-tab');
-	    try {
-	        // 1. Create a new marked renderer instance
-	        const renderer = new marked.Renderer();
-	
-	        // 2. Override the default link rendering function
-	        renderer.link = (href, title, text) => {
-	            // Build an anchor tag that includes target="_blank"
-	            // rel="noopener noreferrer" is added for security and performance
-	            return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-	        };
-	
-	        const response = await fetch(`links.md?t=${Date.now()}`);
-	        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-	        const markdownText = await response.text();
-	        
-	        // 3. Pass the custom renderer to marked.parse()
-	        linksContentEl.innerHTML = marked.parse(markdownText, { renderer });
-	
-	    } catch (error) {
-	        console.error("Could not load links content:", error);
-	        linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
-	    }
-	}
+        async function loadLinksContent() {
+            const linksContentEl = document.getElementById('links-tab');
+            try {
+                const response = await fetch(`links.md?t=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const markdownText = await response.text();
+                linksContentEl.innerHTML = marked.parse(markdownText);
+            } catch (error) {
+                console.error("Could not load links content:", error);
+                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
+            }
+        }
 
         async function parseModesFile(filePath) {
             try {
