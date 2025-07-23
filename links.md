@@ -9,7 +9,7 @@ To install the widgets, download the files here and put them in this game folder
     *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
    
 *   **[Reclaim Selected Widget](https://github.com/manshanko/bar-widgets/blob/main/cmd_reclaim_selected.lua)**
-    *   Adds a button to reclaim selected units with nearby nano turrets. Good for reclaiming wind.
+    *   Adds a button to reclaim selected units with nearby nano turrets. Good for reclaiming wind turbines.
 
 ## Community and Guides
 
