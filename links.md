@@ -7,6 +7,9 @@ To install the widgets, download the files here and put them in this game folder
  
 *   **[Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)**
     *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
+
+*   **[Layout Planner Widget](https://github.com/noryon/BARLayoutPlanner)**
+    *   Adds a button to reclaim selected units with nearby nano turrets. Good for clearing wind turbines.
    
 *   **[Reclaim Selected Widget](https://github.com/manshanko/bar-widgets/blob/defae648f8c3a7ae4e06de6af241e0037bab3b20/cmd_reclaim_selected.lua)**
     *   Adds a button to reclaim selected units with nearby nano turrets. Good for clearing wind turbines.
