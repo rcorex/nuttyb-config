@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Lua Toolchain (Using Local luamin.js)</title>
+    <title>Live Lua Toolchain</title>
 
-    <!-- 1. Load your local luamin.js library for both beautifying and minifying -->
+    <!-- Assumes luamin.js is in the same directory -->
     <script src="luamin.js" defer></script>
 
     <style>
@@ -91,7 +91,7 @@
 <body>
 
     <div class="container">
-        <h1>Live Lua Toolchain (Using Local luamin.js)</h1>
+        <h1>Live Lua Toolchain</h1>
         <div id="statusLabel" class="status-label">Loading luamin.js...</div>
 
         <!-- Step 1: Decoder -->
@@ -122,7 +122,7 @@
 
         <!-- Step 3: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Edit Minified Lua</label>
+            <label for="minifiedOutput">3. Minified Lua</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput">Copy</button>
@@ -187,8 +187,6 @@
             if (!originalCode.trim()) return;
 
             try {
-                // CHANGED: Use luaminp.Beautify from your local script
-                // We set RenameVariables to false for beautification.
                 const beautifyOptions = {
                     Indentation: '\t',
                     RenameVariables: false,
@@ -213,14 +211,36 @@
             }
 
             try {
-                // CHANGED: Use luaminp.Minify from your local script
-                // We enable variable renaming for minification.
+                // Step 1: Minify the code using the library
                 const minifyOptions = {
                     RenameVariables: true,
-                    RenameGlobals: false, // Set to false for safety with external libraries
+                    RenameGlobals: false, 
                     SolveMath: true
                 };
-                minifiedOutput.value = luaminp.Minify(originalCode, minifyOptions);
+                const minifiedCode = luaminp.Minify(originalCode, minifyOptions);
+
+                // --- NEW LOGIC TO PRESERVE COMMENTS ---
+                const commentsToKeep = [];
+                const lines = originalCode.split('\n');
+                for (const line of lines) {
+                    if (commentsToKeep.length >= 3) {
+                        break; // Stop after finding 3 comments
+                    }
+                    // If the trimmed line starts with '--', it's a comment to keep.
+                    if (line.trim().startsWith('--')) {
+                        commentsToKeep.push(line);
+                    }
+                }
+                
+                // Step 3: Combine the extracted comments and the minified code
+                if (commentsToKeep.length > 0) {
+                    const header = commentsToKeep.join('\n');
+                    minifiedOutput.value = `${header}\n${minifiedCode}`;
+                } else {
+                    minifiedOutput.value = minifiedCode;
+                }
+                // --- END OF NEW LOGIC ---
+
             } catch (e) {
                 minifiedOutput.value = `Minify Error: ${e.message}`;
             }
@@ -309,7 +329,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
-                // CHANGED: Check for the 'luaminp' object and its methods from your script.
+                // Ensure the global luaminp object and its methods are available
                 if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
                     clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Library Loaded. Ready.';
