@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Lua Minifier & Encoder</title>
+    <title>Live Lua Toolchain</title>
 
     <!-- 1. Load the dependency: luaparse -->
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
@@ -106,9 +106,9 @@
 
         <!-- Step 3: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Minified Lua (first 2 lines preserved)</label>
+            <label for="minifiedOutput">3. Edit Minified Lua (first 2 lines preserved)</label>
             <div class="output-container">
-                <textarea id="minifiedOutput" readonly></textarea>
+                <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput" disabled>Copy</button>
             </div>
             <div id="charCountInfo" class="info-label"></div>
@@ -148,21 +148,14 @@
             if (!b64urlString.trim()) return;
 
             try {
-                // 1. Replace URL-safe characters with standard Base64 characters
                 let base64 = b64urlString.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) { base64 += '='; }
 
-                // 2. Add padding if necessary
-                while (base64.length % 4) {
-                    base64 += '=';
-                }
-
-                // 3. Decode the Base64 string and handle UTF-8 characters correctly
                 const decodedCode = decodeURIComponent(atob(base64).split('').map(function(c) {
                     return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
                 }).join(''));
                 
                 luaInput.value = decodedCode;
-
             } catch (e) {
                 alert(`Decoding Error: ${e.message}\n\nPlease ensure you have pasted a valid Base64URL string.`);
             }
@@ -179,24 +172,19 @@
             base64Output.value = '';
             charCountInfo.textContent = '';
             encodeBtn.disabled = true;
-            allCopyBtns.forEach(btn => { if(btn.dataset.target !== 'base64Input') btn.disabled = true; });
-
+            document.querySelector('.copyBtn[data-target="minifiedOutput"]').disabled = true;
+            document.querySelector('.copyBtn[data-target="base64Output"]').disabled = true;
 
             if (!originalCode.trim()) return;
 
             try {
-                // Preserve the first two lines
                 const lines = originalCode.split('\n');
                 const header = lines.slice(0, 2).join('\n');
-                
-                // Minify and combine
                 const minifiedCode = luamin.minify(originalCode);
                 const finalCode = header + '\n' + minifiedCode;
                 
                 minifiedOutput.value = finalCode;
-                
-                // Update character count info
-                charCountInfo.textContent = `Total characters: ${finalCode.length}`;
+                updateCharCount(); // Update character count
 
                 // Enable next steps
                 encodeBtn.disabled = false;
@@ -213,25 +201,36 @@
          */
         function handleEncode() {
             const codeToEncode = minifiedOutput.value;
+            const copyBtn = document.querySelector('.copyBtn[data-target="base64Output"]');
+
             if (!codeToEncode || codeToEncode.startsWith('Minify Error')) {
                 base64Output.value = '';
-                document.querySelector('.copyBtn[data-target="base64Output"]').disabled = true;
+                copyBtn.disabled = true;
                 return;
             }
 
             try {
-                // Safely handle UTF-8 characters before encoding
                 const utf8SafeString = unescape(encodeURIComponent(codeToEncode));
                 const base64String = btoa(utf8SafeString);
-                
-                // Make the Base64 string URL-safe
                 const base64UrlString = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
                 
                 base64Output.value = base64UrlString;
-                document.querySelector('.copyBtn[data-target="base64Output"]').disabled = false;
+                copyBtn.disabled = false;
             } catch (e) {
                 base64Output.value = `Encoding Error: ${e.message}`;
-                document.querySelector('.copyBtn[data-target="base64Output"]').disabled = true;
+                copyBtn.disabled = true;
+            }
+        }
+
+        /**
+         * Updates the character count display for the minified output box.
+         */
+        function updateCharCount() {
+            const currentText = minifiedOutput.value;
+            if (currentText && !currentText.startsWith('Minify Error')) {
+                charCountInfo.textContent = `Total characters: ${currentText.length}`;
+            } else if (!currentText) {
+                charCountInfo.textContent = '';
             }
         }
 
@@ -259,6 +258,7 @@
         decodeBtn.addEventListener('click', handleDecode);
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
+        minifiedOutput.addEventListener('input', updateCharCount);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
 
         document.addEventListener('DOMContentLoaded', () => {
