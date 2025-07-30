@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Lua Generator & Encoder</title>
-    
+    <title>Live Lua Minifier & Encoder</title>
+
     <!-- 1. Load the dependency: luaparse -->
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
-    
+
     <!-- 2. Load the main library: luamin -->
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
-    
+
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -30,35 +30,38 @@
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 1400px;
+            max-width: 900px;
         }
         h1 {
             text-align: center; color: #1a1a1a; margin-top: 0;
             border-bottom: 1px solid #e5e5e5; padding-bottom: 15px; margin-bottom: 25px;
         }
-        h2 { font-size: 1.2em; border: none; padding-bottom: 5px; margin-bottom: 15px; text-align: left;}
-        .main-layout { display: flex; gap: 30px; }
-        .pipeline { flex: 1; min-width: 0; }
-        .section {
-            border: 1px solid #ddd; padding: 20px;
-            border-radius: 8px; margin-bottom: 25px;
-        }
-        .input-group { margin-bottom: 20px; }
+        .pipeline-step { margin-bottom: 25px; }
         label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
-        select, textarea {
+        textarea {
             width: 100%; padding: 10px; border: 1px solid #ccc;
             border-radius: 6px; font-size: 14px; box-sizing: border-box;
             background-color: #fff;
-        }
-        textarea {
-            min-height: 180px; resize: vertical;
+            min-height: 200px; resize: vertical;
             font-family: "Courier New", Courier, monospace;
         }
-        .options-group {
-            display: flex; justify-content: center; align-items: center;
-            margin-bottom: 25px; gap: 8px;
+        textarea[readonly] { background-color: #f8f9fa; }
+        .action-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.2s ease;
         }
-        .options-group label { margin-bottom: 0; font-weight: normal; cursor: pointer; user-select: none; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; }
+        .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         .output-container { position: relative; }
         .copyBtn {
             position: absolute; top: 10px; right: 10px; padding: 5px 10px;
@@ -66,11 +69,10 @@
             border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
         }
         .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
-        .status-label {
+        .status-label, .info-label {
             display: block;
             text-align: center;
-            margin-top: -15px;
-            margin-bottom: 15px;
+            margin: 15px 0 -10px 0;
             color: #888;
             font-style: italic;
         }
@@ -79,246 +81,143 @@
 <body>
 
     <div class="container">
-        <h1>Live Lua Toolchain</h1>
-        <div class="options-group">
-            <input type="checkbox" id="minifyCheckbox" checked>
-            <label for="minifyCheckbox">Minify Lua code before encoding (preserves first line)</label>
-        </div>
+        <h1>Live Lua Minifier & Encoder</h1>
         <div id="statusLabel" class="status-label">Loading libraries...</div>
 
-        <div class="main-layout">
-            <!-- QHP PIPELINE -->
-            <div class="pipeline">
-                <div class="section">
-                    <h2>QHP Generator</h2>
-                    <div class="input-group">
-                        <label for="qhpMultiplierSelect">Queen Health Multiplier</label>
-                        <select id="qhpMultiplierSelect">
-                            <option value="1">1x HP</option>
-                            <option value="1.3" selected>1.3x HP</option>
-                            <option value="1.5">1.5x HP</option>
-                            <option value="1.7">1.7x HP</option>
-                            <option value="2">2x HP</option>
-                            <option value="2.5">2.5x HP</option>
-                            <option value="3">3x HP</option>
-                            <option value="4">4x HP</option>
-                            <option value="5">5x HP</option>
-                            <option value="7">7x HP</option>
-                            <option value="9">9x HP</option>
-                            <option value="11">11x HP</option>
-                            <option value="13">13x HP</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="qhpLuaOutput">QHP Lua Code</label>
-                    <textarea id="qhpLuaOutput" spellcheck="false" readonly></textarea>
-                </div>
-                <div class="input-group">
-                    <label for="qhpBase64Output">QHP Base64URL Result</label>
-                    <div class="output-container">
-                        <textarea id="qhpBase64Output" readonly></textarea>
-                        <button class="copyBtn" data-type="qhp">Copy</button>
-                    </div>
-                </div>
-            </div>
+        <!-- Step 1: User Input -->
+        <div class="pipeline-step">
+            <label for="luaInput">1. Paste your Lua code here</label>
+            <textarea id="luaInput" spellcheck="false" placeholder="-- Your code starts here..."></textarea>
+            <button id="minifyBtn" class="action-button" disabled>Minify Code</button>
+        </div>
 
-            <!-- HP PIPELINE -->
-            <div class="pipeline">
-                <div class="section">
-                    <h2>HP Generator</h2>
-                    <div class="input-group">
-                        <label for="hpMultiplierSelect">Raptor Health Multiplier</label>
-                        <select id="hpMultiplierSelect">
-                            <option value="1">1x HP</option>
-                            <option value="1.3" selected>1.3x HP</option>
-                            <option value="1.5">1.5x HP</option>
-                            <option value="1.7">1.7x HP</option>
-                            <option value="2">2x HP</option>
-                            <option value="2.5">2.5x HP</option>
-                            <option value="3">3x HP</option>
-                            <option value="4">4x HP</option>
-                            <option value="5">5x HP</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label for="hpLuaOutput">HP Lua Code</label>
-                    <textarea id="hpLuaOutput" spellcheck="false" readonly></textarea>
-                </div>
-                <div class="input-group">
-                    <label for="hpBase64Output">HP Base64URL Result</label>
-                    <div class="output-container">
-                        <textarea id="hpBase64Output" readonly></textarea>
-                        <button class="copyBtn" data-type="hp">Copy</button>
-                    </div>
-                </div>
+        <!-- Step 2: Minified Output -->
+        <div class="pipeline-step">
+            <label for="minifiedOutput">2. Minified Lua (first line preserved)</label>
+            <textarea id="minifiedOutput" readonly></textarea>
+            <div id="charCountInfo" class="info-label"></div>
+            <button id="encodeBtn" class="action-button" disabled>Encode to Base64URL</button>
+        </div>
+        
+        <!-- Step 3: Base64URL Output -->
+        <div class="pipeline-step">
+            <label for="base64Output">3. Final Base64URL Result</label>
+            <div class="output-container">
+                <textarea id="base64Output" readonly></textarea>
+                <button id="copyBtn" class="copyBtn" disabled>Copy</button>
             </div>
         </div>
     </div>
 
     <script>
         // --- DOM Element References ---
-        const qhpMultiplierSelect = document.getElementById('qhpMultiplierSelect');
-        const qhpLuaOutput = document.getElementById('qhpLuaOutput');
-        const qhpBase64Output = document.getElementById('qhpBase64Output');
-
-        const hpMultiplierSelect = document.getElementById('hpMultiplierSelect');
-        const hpLuaOutput = document.getElementById('hpLuaOutput');
-        const hpBase64Output = document.getElementById('hpBase64Output');
-
-        const minifyCheckbox = document.getElementById('minifyCheckbox');
+        const luaInput = document.getElementById('luaInput');
+        const minifyBtn = document.getElementById('minifyBtn');
+        const minifiedOutput = document.getElementById('minifiedOutput');
+        const charCountInfo = document.getElementById('charCountInfo');
+        const encodeBtn = document.getElementById('encodeBtn');
+        const base64Output = document.getElementById('base64Output');
+        const copyBtn = document.getElementById('copyBtn');
         const statusLabel = document.getElementById('statusLabel');
-        const copyBtns = document.querySelectorAll('.copyBtn');
+
+        // --- Event Handlers ---
         
-        // --- Lua Templates ---
-        const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
--- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
-for b, c in pairs(UnitDefs) do
-	if b:match('^raptor_queen_.*') then
-		c.repairable = false
-		c.canbehealed = false
-		c.buildtime = 9999999
-		c.autoheal = 2
-		c.canSelfRepair = false
-		c.health = c.health * __HEALTH_MULTIPLIER__
-	end
-end`;
-
-        const luaHpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X HP
--- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
-for f, g in pairs(UnitDefs) do
-	if string.sub(f, 1, 24) == 'raptor_land_swarmer_heal' then
-		g.reclaimspeed = 100
-		g.stealth = 0
-		g.builder = false
-		__WORKERTIME_LINE__
-		g.canassist = 0
-		g.maxthisunit = 0
-	end
-	if
-		g.customparams and g.customparams.subfolder and g.customparams.subfolder == 'other/raptors' and g.health and
-			not f:match('^raptor_queen_.*')
-	 then
-		g.health = __HEALTH_MULTIPLIER__ * g.health
-	end
-end
-
-local h = UnitDef_Post
-function UnitDef_Post(i, j)
-	h(i, j)
-	for i, k in pairs(UnitDefs) do
-		if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
-			if k then
-				__METAL_COST_LINE__
-				k.nochasecategory = "OBJECT"
-			end
-		end
-	end
-end`;
-
-        // --- Master Update Function ---
-        function updatePipeline(type) {
-            let originalCode, targetLuaTextarea, targetBase64Textarea;
-
-            if (type === 'qhp') {
-                const multiplierValue = qhpMultiplierSelect.value;
-                originalCode = luaQhpTemplate
-                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
-                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
-                targetLuaTextarea = qhpLuaOutput;
-                targetBase64Textarea = qhpBase64Output;
-            } else { // type === 'hp'
-                const multiplierValue = hpMultiplierSelect.value;
-                const multiplierNum = parseFloat(multiplierValue);
-                let metalCostLine, workerTimeLine;
-                switch (multiplierNum) {
-                    case 2:
-                        metalCostLine = 'k.metalcost = math.floor(k.health * .35)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.65';
-                        break;
-                    case 2.5:
-                        metalCostLine = 'k.metalcost = math.floor(k.health * .34)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.6';
-                        break;
-                    case 3:
-                        metalCostLine = 'k.metalcost = math.floor(k.health * .33)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.55';
-                        break;
-                    case 4:
-                        metalCostLine = 'k.metalcost = math.floor(k.health * .25)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.45';
-                        break;
-                    case 5:
-                        metalCostLine = 'k.metalcost = math.floor(k.health * .15)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.25';
-                        break;
-                    default:
-                        metalCostLine = 'k.metalcost = math.floor(k.metalcost)';
-                        workerTimeLine = 'g.workertime = g.workertime * 0.5';
-                        break;
-                }
-                originalCode = luaHpTemplate
-                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
-                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
-                    .replace('__METAL_COST_LINE__', metalCostLine)
-                    .replace('__WORKERTIME_LINE__', workerTimeLine);
-                targetLuaTextarea = hpLuaOutput;
-                targetBase64Textarea = hpBase64Output;
+        /**
+         * Minifies the user's Lua code.
+         */
+        function handleMinify() {
+            const originalCode = luaInput.value;
+            if (!originalCode.trim()) {
+                minifiedOutput.value = '';
+                base64Output.value = '';
+                charCountInfo.textContent = '';
+                encodeBtn.disabled = true;
+                return;
             }
 
-            // Update the Lua code textarea
-            targetLuaTextarea.value = originalCode;
-
-            // --- Encoding Process ---
-            let finalCodeToEncode;
-            if (minifyCheckbox.checked) {
-                try {
-                    const firstLineComment = originalCode.split('\n')[0];
-                    const minifiedCode = luamin.minify(originalCode);
-                    finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
-                } catch (e) {
-                    targetBase64Textarea.value = `Minify Error: ${e.message}`;
-                    return;
+            try {
+                const firstLine = originalCode.split('\n')[0];
+                const minifiedCode = luamin.minify(originalCode);
+                const finalCode = firstLine + '\n' + minifiedCode;
+                
+                minifiedOutput.value = finalCode;
+                
+                // Update character count and divisibility info
+                const charCount = finalCode.length;
+                const remainder = charCount % 4;
+                if (remainder === 0) {
+                    charCountInfo.textContent = `Total characters: ${charCount} (divisible by 4)`;
+                } else {
+                    charCountInfo.textContent = `Total characters: ${charCount} (remainder: ${remainder})`;
                 }
-            } else {
-                finalCodeToEncode = originalCode;
+
+                encodeBtn.disabled = false;
+                base64Output.value = ''; // Clear previous output
+                copyBtn.disabled = true;
+
+            } catch (e) {
+                minifiedOutput.value = `Minify Error: ${e.message}`;
+                charCountInfo.textContent = 'Could not process due to error.';
+                encodeBtn.disabled = true;
             }
-            
-            const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
-            const base64String = btoa(utf8SafeString);
-            targetBase64Textarea.value = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         }
 
-        function handleCopy(event) {
-            const type = event.target.dataset.type;
-            const sourceTextarea = (type === 'qhp') ? qhpBase64Output : hpBase64Output;
-            if (!sourceTextarea.value || sourceTextarea.value.startsWith('Minify Error')) return;
-            navigator.clipboard.writeText(sourceTextarea.value).then(() => {
-                const originalText = event.target.textContent;
-                event.target.textContent = 'Copied!';
-                setTimeout(() => { event.target.textContent = 'Copy'; }, 1500);
+        /**
+         * Encodes the minified text to Base64URL.
+         */
+        function handleEncode() {
+            const codeToEncode = minifiedOutput.value;
+            if (!codeToEncode || codeToEncode.startsWith('Minify Error')) {
+                base64Output.value = '';
+                copyBtn.disabled = true;
+                return;
+            }
+
+            try {
+                // Safely handle UTF-8 characters before encoding
+                const utf8SafeString = unescape(encodeURIComponent(codeToEncode));
+                const base64String = btoa(utf8SafeString);
+                
+                // Make the Base64 string URL-safe
+                const base64UrlString = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                
+                base64Output.value = base64UrlString;
+                copyBtn.disabled = false;
+            } catch (e) {
+                base64Output.value = `Encoding Error: ${e.message}`;
+                copyBtn.disabled = true;
+            }
+        }
+
+        /**
+         * Copies the final Base64URL output to the clipboard.
+         */
+        function handleCopy() {
+            if (!base64Output.value) return;
+            
+            navigator.clipboard.writeText(base64Output.value).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.disabled = true;
+                setTimeout(() => { 
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.disabled = false;
+                }, 1500);
             }).catch(err => console.error('Failed to copy text: ', err));
         }
-        
-        // --- Event Listeners & Initializer ---
-        function runAllUpdates() {
-            updatePipeline('qhp');
-            updatePipeline('hp');
-        }
 
-        qhpMultiplierSelect.addEventListener('change', () => updatePipeline('qhp'));
-        hpMultiplierSelect.addEventListener('change', () => updatePipeline('hp'));
-        minifyCheckbox.addEventListener('change', runAllUpdates);
-        copyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
-        
+        // --- Event Listeners & Initializer ---
+        minifyBtn.addEventListener('click', handleMinify);
+        encodeBtn.addEventListener('click', handleEncode);
+        copyBtn.addEventListener('click', handleCopy);
+
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
                     clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Libraries Loaded. Ready.';
+                    minifyBtn.disabled = false;
                     setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
-                    runAllUpdates(); // Run initial generation and encoding
                 }
             }, 100);
         });
