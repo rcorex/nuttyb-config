@@ -100,13 +100,13 @@
             <label for="luaInput">2. Edit Lua Code</label>
             <textarea id="luaInput" spellcheck="false" placeholder="-- Your Lua code will appear here after decoding,
 -- or you can paste it directly.
--- The first two lines will be preserved during minification."></textarea>
+-- Up to 3 comment lines at the start will be preserved."></textarea>
             <button id="minifyBtn" class="action-button" disabled>Minify Code</button>
         </div>
 
         <!-- Step 3: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Edit Minified Lua (first 2 lines preserved)</label>
+            <label for="minifiedOutput">3. Edit Minified Lua (header preserved & padded)</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput" disabled>Copy</button>
@@ -162,7 +162,7 @@
         }
         
         /**
-         * Minifies the user's Lua code, preserving the first two lines.
+         * Minifies Lua code, preserving and padding the initial comment header.
          */
         function handleMinify() {
             const originalCode = luaInput.value;
@@ -179,9 +179,36 @@
 
             try {
                 const lines = originalCode.split('\n');
-                const header = lines.slice(0, 2).join('\n');
+                const headerLines = [];
+                
+                // 1. Extract up to 3 consecutive comment lines from the start
+                for (let i = 0; i < 3 && i < lines.length; i++) {
+                    if (lines[i].trim().startsWith('--')) {
+                        headerLines.push(lines[i]);
+                    } else {
+                        break; // Stop if a non-comment line is found
+                    }
+                }
+
+                // 2. Calculate length of header content (excluding '--')
+                let headerContentLength = 0;
+                if (headerLines.length > 0) {
+                    headerContentLength = headerLines.map(line => line.substring(2).length).reduce((a, b) => a + b, 0);
+                }
+
+                // 3. Calculate and apply padding if needed
+                const remainder = headerContentLength % 3;
+                if (remainder !== 0 && headerLines.length > 0) {
+                    const spacesNeeded = 3 - remainder;
+                    // Add padding to the last line of the header
+                    headerLines[headerLines.length - 1] += ' '.repeat(spacesNeeded);
+                }
+                
+                const header = headerLines.join('\n');
                 const minifiedCode = luamin.minify(originalCode);
-                const finalCode = header + '\n' + minifiedCode;
+                
+                // 4. Combine header and minified code
+                const finalCode = header ? (header + '\n' + minifiedCode) : minifiedCode;
                 
                 minifiedOutput.value = finalCode;
                 updateCharCount(); // Update character count
