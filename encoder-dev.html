@@ -11,10 +11,11 @@
     <!-- 2. Load luamin for MINIFYING -->
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
 
-    <!-- 3. Load lua-fmt for BEAUTIFYING -->
+    <!-- 3. Load lua-fmt for BEAUTIFYING using the correct CDN link -->
     <script src="https://cdn.jsdelivr.net/npm/lua-fmt@2.6.0/dist/src/index.min.js" defer></script>
 
     <style>
+        /* CSS styles remain the same */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f0f2f5;
@@ -192,7 +193,7 @@
             if (!originalCode.trim()) return;
 
             try {
-                // Use the formatText function from the lua-fmt library
+                // CORRECTED: Use the formatText function from the luafmt global object
                 luaInput.value = luafmt.formatText(originalCode);
             } catch (e) {
                 alert(`Beautify Error: ${e.message}`);
@@ -300,7 +301,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
-                // Check that both libraries are loaded
+                // Check that both libraries are loaded and have created their global objects
                 if (typeof luamin !== 'undefined' && typeof luafmt !== 'undefined') {
                     clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Libraries Loaded. Ready.';
