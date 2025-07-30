@@ -4483,6 +4483,8 @@ luaminp.Beautify = function(scr, options) {
     return result
 }
 
+// ADD THIS LINE TO EXPOSE THE OBJECT TO THE BROWSER
+window.luaminp = luaminp;
 
 try {
     if (module != null && module.exports != null) {
