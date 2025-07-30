@@ -104,9 +104,9 @@
         <div class="pipeline-step">
             <label for="luaInput">2. Edit Lua Code</label>
             <div class="output-container">
-                <textarea id="luaInput" spellcheck="false" placeholder="-- Your Lua code will appear here after decoding,
--- or you can paste it directly.
--- The first two lines will be preserved during minification."></textarea>
+                <textarea id="luaInput" spellcheck="false" placeholder="-- Comment headers (up to 3) are preserved.
+-- Example: This is a comment.
+-- Your code starts here..."></textarea>
                 <button class="copyBtn" data-target="luaInput" disabled>Copy</button>
             </div>
             <div id="luaInputInfo" class="info-label"></div>
@@ -115,7 +115,7 @@
 
         <!-- Step 3: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Edit Minified Lua (first 2 lines preserved)</label>
+            <label for="minifiedOutput">3. Edit Minified Lua (Comment Headers Preserved)</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput" disabled>Copy</button>
@@ -185,10 +185,38 @@
             }
 
             try {
-                const lines = originalCode.split('\n');
-                const header = lines.slice(0, 2).join('\n');
+                const allLines = originalCode.split('\n');
+                const headerLines = [];
+                let commentCharCount = 0;
+
+                // Check up to the first 3 lines for comments
+                for (let i = 0; i < Math.min(3, allLines.length); i++) {
+                    if (allLines[i].startsWith('--')) {
+                        headerLines.push(allLines[i]);
+                    } else {
+                        break; // Stop if a non-comment line is found
+                    }
+                }
+
+                // If comment headers were found, process them
+                if (headerLines.length > 0) {
+                    // Calculate character count of comment content (excluding '--')
+                    for (const line of headerLines) {
+                        commentCharCount += line.substring(2).length;
+                    }
+
+                    // If total comment characters are divisible by 3, add a space to the last comment
+                    if (commentCharCount % 3 === 0) {
+                        headerLines[headerLines.length - 1] += ' ';
+                    }
+                }
+
+                const header = headerLines.join('\n');
                 const minifiedCode = luamin.minify(originalCode);
-                minifiedOutput.value = header + '\n' + minifiedCode;
+                
+                // Combine header (if it exists) with minified code
+                minifiedOutput.value = header ? header + '\n' + minifiedCode : minifiedCode;
+
             } catch (e) {
                 minifiedOutput.value = `Minify Error: ${e.message}`;
             }
