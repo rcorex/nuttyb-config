@@ -69,6 +69,7 @@
             border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
         }
         .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
+        .copyBtn:disabled { background-color: #b0b5ba; }
         .status-label, .info-label {
             display: block;
             text-align: center;
@@ -87,14 +88,19 @@
         <!-- Step 1: User Input -->
         <div class="pipeline-step">
             <label for="luaInput">1. Paste your Lua code here</label>
-            <textarea id="luaInput" spellcheck="false" placeholder="-- Your code starts here..."></textarea>
+            <textarea id="luaInput" spellcheck="false" placeholder="-- First line to be preserved
+-- Second line to be preserved
+-- Your code starts here..."></textarea>
             <button id="minifyBtn" class="action-button" disabled>Minify Code</button>
         </div>
 
         <!-- Step 2: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">2. Minified Lua (first line preserved)</label>
-            <textarea id="minifiedOutput" readonly></textarea>
+            <label for="minifiedOutput">2. Minified & Padded Lua (first 2 lines preserved)</label>
+            <div class="output-container">
+                <textarea id="minifiedOutput" readonly></textarea>
+                <button class="copyBtn" data-target="minifiedOutput" disabled>Copy</button>
+            </div>
             <div id="charCountInfo" class="info-label"></div>
             <button id="encodeBtn" class="action-button" disabled>Encode to Base64URL</button>
         </div>
@@ -104,7 +110,7 @@
             <label for="base64Output">3. Final Base64URL Result</label>
             <div class="output-container">
                 <textarea id="base64Output" readonly></textarea>
-                <button id="copyBtn" class="copyBtn" disabled>Copy</button>
+                <button class="copyBtn" data-target="base64Output" disabled>Copy</button>
             </div>
         </div>
     </div>
@@ -113,52 +119,64 @@
         // --- DOM Element References ---
         const luaInput = document.getElementById('luaInput');
         const minifyBtn = document.getElementById('minifyBtn');
+        
         const minifiedOutput = document.getElementById('minifiedOutput');
         const charCountInfo = document.getElementById('charCountInfo');
+        const copyMinifiedBtn = document.querySelector('.copyBtn[data-target="minifiedOutput"]');
+
         const encodeBtn = document.getElementById('encodeBtn');
         const base64Output = document.getElementById('base64Output');
-        const copyBtn = document.getElementById('copyBtn');
+        const copyBase64Btn = document.querySelector('.copyBtn[data-target="base64Output"]');
+        
         const statusLabel = document.getElementById('statusLabel');
 
         // --- Event Handlers ---
         
         /**
-         * Minifies the user's Lua code.
+         * Minifies the user's Lua code, preserves the first two lines, and pads the result.
          */
         function handleMinify() {
             const originalCode = luaInput.value;
-            if (!originalCode.trim()) {
-                minifiedOutput.value = '';
-                base64Output.value = '';
-                charCountInfo.textContent = '';
-                encodeBtn.disabled = true;
-                return;
-            }
+            
+            // Reset subsequent fields
+            minifiedOutput.value = '';
+            base64Output.value = '';
+            charCountInfo.textContent = '';
+            encodeBtn.disabled = true;
+            copyMinifiedBtn.disabled = true;
+            copyBase64Btn.disabled = true;
+
+            if (!originalCode.trim()) return;
 
             try {
-                const firstLine = originalCode.split('\n')[0];
+                // Preserve the first two lines
+                const lines = originalCode.split('\n');
+                const header = lines.slice(0, 2).join('\n');
+                
+                // Minify and combine
                 const minifiedCode = luamin.minify(originalCode);
-                const finalCode = firstLine + '\n' + minifiedCode;
+                let finalCode = header + '\n' + minifiedCode;
+                
+                // Pad with spaces to be divisible by 4
+                const remainder = finalCode.length % 4;
+                if (remainder !== 0) {
+                    const spacesNeeded = 4 - remainder;
+                    finalCode += ' '.repeat(spacesNeeded);
+                }
                 
                 minifiedOutput.value = finalCode;
                 
                 // Update character count and divisibility info
                 const charCount = finalCode.length;
-                const remainder = charCount % 4;
-                if (remainder === 0) {
-                    charCountInfo.textContent = `Total characters: ${charCount} (divisible by 4)`;
-                } else {
-                    charCountInfo.textContent = `Total characters: ${charCount} (remainder: ${remainder})`;
-                }
+                charCountInfo.textContent = `Total characters: ${charCount} (divisible by 4)`;
 
+                // Enable next steps
                 encodeBtn.disabled = false;
-                base64Output.value = ''; // Clear previous output
-                copyBtn.disabled = true;
+                copyMinifiedBtn.disabled = false;
 
             } catch (e) {
                 minifiedOutput.value = `Minify Error: ${e.message}`;
                 charCountInfo.textContent = 'Could not process due to error.';
-                encodeBtn.disabled = true;
             }
         }
 
@@ -169,7 +187,7 @@
             const codeToEncode = minifiedOutput.value;
             if (!codeToEncode || codeToEncode.startsWith('Minify Error')) {
                 base64Output.value = '';
-                copyBtn.disabled = true;
+                copyBase64Btn.disabled = true;
                 return;
             }
 
@@ -182,26 +200,29 @@
                 const base64UrlString = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
                 
                 base64Output.value = base64UrlString;
-                copyBtn.disabled = false;
+                copyBase64Btn.disabled = false;
             } catch (e) {
                 base64Output.value = `Encoding Error: ${e.message}`;
-                copyBtn.disabled = true;
+                copyBase64Btn.disabled = true;
             }
         }
 
         /**
-         * Copies the final Base64URL output to the clipboard.
+         * Copies text from a target textarea to the clipboard.
          */
-        function handleCopy() {
-            if (!base64Output.value) return;
+        function handleCopy(event) {
+            const targetId = event.target.dataset.target;
+            const sourceTextarea = document.getElementById(targetId);
             
-            navigator.clipboard.writeText(base64Output.value).then(() => {
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
-                copyBtn.disabled = true;
+            if (!sourceTextarea || !sourceTextarea.value) return;
+            
+            navigator.clipboard.writeText(sourceTextarea.value).then(() => {
+                const button = event.target;
+                button.textContent = 'Copied!';
+                button.disabled = true;
                 setTimeout(() => { 
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.disabled = false;
+                    button.textContent = 'Copy';
+                    button.disabled = false;
                 }, 1500);
             }).catch(err => console.error('Failed to copy text: ', err));
         }
@@ -209,12 +230,12 @@
         // --- Event Listeners & Initializer ---
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
-        copyBtn.addEventListener('click', handleCopy);
+        document.querySelectorAll('.copyBtn').forEach(btn => btn.addEventListener('click', handleCopy));
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
-                    clearInterval(libraryCheckInterval);
+                    clearInterval(libraryCheck-checkInterval);
                     statusLabel.textContent = 'Libraries Loaded. Ready.';
                     minifyBtn.disabled = false;
                     setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
