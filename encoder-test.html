@@ -235,7 +235,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luamin !== 'undefined') {
-                    clearInterval(libraryCheck-checkInterval);
+                    // **FIXED THE TYPO ON THE NEXT LINE**
+                    clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Libraries Loaded. Ready.';
                     minifyBtn.disabled = false;
                     setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
