@@ -193,8 +193,8 @@
             if (!originalCode.trim()) return;
 
             try {
-                // CORRECTED: Use the formatText function from the luafmt global object
-                luaInput.value = luafmt.formatText(originalCode);
+                // CORRECTED: Use the global object 'luaFmt' (with a capital F)
+                luaInput.value = luaFmt.formatText(originalCode);
             } catch (e) {
                 alert(`Beautify Error: ${e.message}`);
             }
@@ -301,8 +301,8 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
-                // Check that both libraries are loaded and have created their global objects
-                if (typeof luamin !== 'undefined' && typeof luafmt !== 'undefined') {
+                // CORRECTED: Check for 'luaFmt' (with a capital F)
+                if (typeof luamin !== 'undefined' && typeof luaFmt !== 'undefined') {
                     clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Libraries Loaded. Ready.';
                     updateAllUI(); // Initial check
