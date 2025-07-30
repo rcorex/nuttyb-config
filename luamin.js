@@ -4436,7 +4436,7 @@ function SolveCFlow(ast) {
 }
 
 
-let watermark = `--[[\n\tCode generated using github.com/Herrtt/luamin.js\n\tAn open source Lua beautifier and minifier.\n--]]\n\n`
+//let watermark = `--[[\n\tCode generated using github.com/Herrtt/luamin.js\n\tAn open source Lua beautifier and minifier.\n--]]\n\n`
 
 let luaminp = {}
 
@@ -4456,7 +4456,7 @@ luaminp.Minify = function(scr, options) {
     StripAst(ast)
 
     let result = PrintAst(ast)
-    result = `${watermark}\n\n${result}`
+    //result = `${watermark}\n\n${result}`
 
     return result
 }
@@ -4478,7 +4478,7 @@ luaminp.Beautify = function(scr, options) {
     FormatAst(ast, options.Indentation)
 
     let result = PrintAst(ast)
-    result = `${watermark}\n\n${result}`
+    //result = `${watermark}\n\n${result}`
 
     return result
 }
