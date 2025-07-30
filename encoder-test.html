@@ -115,7 +115,7 @@
 
         <!-- Step 3: Minified Output -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Edit Minified Lua (Comment Headers Preserved)</label>
+            <label for="minifiedOutput">3. Edit Minified Lua (Comment Headers Preserved & Padded)</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput" disabled>Copy</button>
@@ -191,7 +191,7 @@
 
                 // Check up to the first 3 lines for comments
                 for (let i = 0; i < Math.min(3, allLines.length); i++) {
-                    if (allLines[i].startsWith('--')) {
+                    if (allLines[i].trim().startsWith('--')) {
                         headerLines.push(allLines[i]);
                     } else {
                         break; // Stop if a non-comment line is found
@@ -202,12 +202,14 @@
                 if (headerLines.length > 0) {
                     // Calculate character count of comment content (excluding '--')
                     for (const line of headerLines) {
-                        commentCharCount += line.substring(2).length;
+                        commentCharCount += line.substring(line.indexOf('--') + 2).length;
                     }
 
-                    // If total comment characters are divisible by 3, add a space to the last comment
-                    if (commentCharCount % 3 === 0) {
-                        headerLines[headerLines.length - 1] += ' ';
+                    // If total comment characters are not divisible by 3, add padding
+                    const remainder = commentCharCount % 3;
+                    if (remainder !== 0) {
+                        const spacesNeeded = 3 - remainder;
+                        headerLines[headerLines.length - 1] += ' '.repeat(spacesNeeded);
                     }
                 }
 
