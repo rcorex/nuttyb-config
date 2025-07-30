@@ -3,341 +3,1570 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Lua Toolchain (With Comment Preservation)</title>
-
-    <!-- Assumes luamin.js is in the same directory -->
-    <script src="luamin.js" defer></script>
+    <title>NuttyB Configurator</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
 
     <style>
-        /* CSS styles remain the same */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            font-family: sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #121212;
+            color: #e0e0e0;
         }
+        h1, h2, h3 {
+            color: #f5f5f5;
+            margin-top: 0px;
+            margin-bottom: 16px;
+        }
+        a { color: #4caf50; }
         .container {
-            background-color: #ffffff;
-            padding: 25px 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 900px;
+            max-width: 950px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        h1 {
-            text-align: center; color: #1a1a1a; margin-top: 0;
-            border-bottom: 1px solid #e5e5e5; padding-bottom: 15px; margin-bottom: 25px;
-        }
-        .pipeline-step { margin-bottom: 25px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
-        textarea {
-            width: 100%; padding: 10px; border: 1px solid #ccc;
-            border-radius: 6px; font-size: 14px; box-sizing: border-box;
-            background-color: #fff;
-            min-height: 150px; resize: vertical;
-            font-family: "Courier New", Courier, monospace;
-        }
-        #luaInput { min-height: 200px; }
-        textarea[readonly] { background-color: #f8f9fa; }
-        .button-group {
+        .tabs {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            border-bottom: 1px solid #333;
         }
-        .action-button {
-            flex: 1;
-            display: block;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-            background-color: #007bff;
-            border: none;
-            border-radius: 6px;
+        .tab-button {
+            padding: 10px 18px;
             cursor: pointer;
+            background-color: #2c2c2c;
+            border: 1px solid #333;
+            border-bottom: none;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            color: #aaa;
+            font-size: 1em;
+            margin-right: 2px;
+            position: relative;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .tab-button:not(.active):hover {
+            background-color: #3a3a3a;
+            color: #e0e0e0;
+        }
+        .tab-button.active {
+            background-color: #1e1e1e;
+            color: #f5f5f5;
+            font-weight: bold;
+            margin-bottom: -1px; 
+            border-color: #333;
+            border-bottom-color: #1e1e1e;
+            z-index: 1;
+        }
+        .tab-content {
+            display: none;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border: 1px solid #333;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+        }
+        .tab-content.active { display: block; }
+        .settings-container, .output-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #2c2c2c;
+        }
+        #options-form-columns, #custom-options-form-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .options-column {
+            flex: 1 1 45%;
+            min-width: 250px;
+        }
+        #left-column label, #right-column label, #custom-options-form-columns label {
+            display: block;
+            margin-bottom: 3px;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 4px;
             transition: background-color 0.2s ease;
         }
-        .action-button.secondary { background-color: #28a745; }
-        .action-button.tertiary { background-color: #17a2b8; }
-        .action-button:hover:not(:disabled) { background-color: #0056b3; }
-        .action-button.secondary:hover:not(:disabled) { background-color: #218838; }
-        .action-button.tertiary:hover:not(:disabled) { background-color: #138496; }
-        .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
-        .output-container { position: relative; }
-        .copyBtn {
-            position: absolute; top: 10px; right: 10px; padding: 5px 10px;
-            font-size: 12px; background-color: #6c757d; color: white; border: none;
-            border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
+        #left-column label:hover, #right-column label:hover, #custom-options-form-columns label:hover {
+            background-color: #333;
         }
-        .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
-        .copyBtn:disabled { background-color: #b0b5ba; }
-        .status-label, .info-label {
-            display: block;
+        input[type="checkbox"] {
+            accent-color: #66bb6a;
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        input[type="checkbox"]:disabled { cursor: not-allowed; }
+        .custom-option-label-text.disabled { color: #777; }
+        input[type="checkbox"]:disabled:checked {
+            appearance: none; -webkit-appearance: none;
+            background-color: #66bb6a;
+            border: 1px solid #777;
+            border-radius: 3px;
+            position: relative;
+            cursor: not-allowed;
+        }
+        input[type="checkbox"]:disabled:checked::after {
+            content: '✓'; display: block; font-size: 1.1em;
+            font-weight: bold; color: #1e1e1e;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); line-height: 0;
+        }
+        select {
+            box-sizing: border-box; margin-left: 5px;
+            background-color: #4a4a4a; color: #f0f0f0;
+            border: 1px solid #777; border-radius: 4px;
+            padding: 2px 6px; font-size: 0.9em; vertical-align: middle; 
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        select:focus {
+            border-color: #66bb6a;
+            box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.4);
+            outline: none;
+        }
+        
+        .command-output-section { 
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 15px;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        .command-output-section h3 { margin-top: 0; margin-bottom: 5px; }
+        .command-output-section textarea {
+            width: 100%; box-sizing: border-box; padding: 10px;
+            border: 1px solid #555; border-radius: 4px;
+            font-family: monospace; white-space: pre-wrap; word-wrap: break-word;
+            resize: vertical; background-color: #1e1e1e; color: #f5f5f5;
+        }
+        .copy-button {
+            display: inline-block; padding: 10px 15px;
+            background-color: #4caf50; color: white;
+            border: none; border-radius: 4px; cursor: pointer;
+            font-size: 1em; transition: background-color 0.3s ease;
+            white-space: nowrap;
             text-align: center;
-            margin: 15px 0 -10px 0;
-            color: #888;
-            font-style: italic;
-            min-height: 1em;
+        }
+        .copy-button:hover { background-color: #66bb6a; }
+        .copy-button:active { background-color: #388e3c; }
+        .lobby-name-output {
+            margin-top: 20px; padding: 10px; border: 1px dashed #555;
+            background-color: #333; font-family: monospace; word-break: break-all;
+        }
+        #data-table, #custom-tweaks-table, #maps-modes-table {
+            width: 100%; border-collapse: collapse;
+            margin-top: 15px; table-layout: fixed;
+        }
+        #data-table th, #data-table td, #custom-tweaks-table th, #custom-tweaks-table td, #maps-modes-table th, #maps-modes-table td {
+            border: 1px solid #444; padding: 8px;
+            text-align: left; vertical-align: top;
+            font-family: monospace;
+        }
+        #data-table th, #custom-tweaks-table th, #maps-modes-table th { background-color: #333; }
+        #data-table tr:nth-child(even), #custom-tweaks-table tr:nth-child(even), #maps-modes-table tr:nth-child(even) { background-color: #2c2c2c; }
+        #data-table td:first-child, #data-table td:nth-child(2), #data-table td:nth-child(3),
+        #custom-tweaks-table td, #maps-modes-table td {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #data-table th:first-child, #data-table td:first-child { width: 28%; }
+        #data-table th:nth-child(2), #data-table td:nth-child(2) { width: 15%; }
+        #data-table th:nth-child(3), #data-table td:nth-child(3) { width: 27%; }
+        #data-table th:last-child, #data-table td:last-child { width: 30%; }
+        #custom-tweaks-table th:first-child, #custom-tweaks-table td:first-child { width: 25%; }
+        #custom-tweaks-table th:nth-child(2), #custom-tweaks-table td:nth-child(2) { width: 15%; }
+        #custom-tweaks-table th:nth-child(3), #custom-tweaks-table td:nth-child(3) { width: 45%; }
+        #custom-tweaks-table th:last-child, #custom-tweaks-table td:last-child { width: 15%; text-align: center; }
+        
+        #maps-modes-table th:first-child, #maps-modes-table td:first-child { width: 15%; }
+        #maps-modes-table th:nth-child(2), #maps-modes-table td:nth-child(2) { width: 25%; }
+        #maps-modes-table th:last-child, #maps-modes-table td:last-child { width: 60%; }
+
+        #data-table td:last-child, #custom-tweaks-table td:nth-child(3), #maps-modes-table td:last-child { 
+            white-space: normal; overflow: visible; 
+        }
+
+        .command-cell-wrapper {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; width: 100%; overflow: hidden;
+        }
+        .command-text {
+            white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; flex-grow: 1;
+        }
+        .copy-row-button, .delete-tweak-btn {
+            padding: 4px 8px; font-size: 0.8em; margin-left: 10px; flex-shrink: 0;
+            background-color: #4a4a4a; color: #e0e0e0; border: 1px solid #777;
+            border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
+        .delete-tweak-btn { background-color: #8c3a3a; }
+        .delete-tweak-btn:hover { background-color: #a74848; }
+        #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
+        #links-tab ul { padding-left: 20px; }
+        #links-tab li { margin-bottom: 10px; }
+        #custom-tweak-form {
+            display: grid; grid-template-columns: 180px 1fr; gap: 10px;
+            align-items: center; margin-bottom: 30px;
+        }
+        #custom-tweak-form label { text-align: right; padding-right: 10px; }
+        #custom-tweak-form input, #custom-tweak-form select, #custom-tweak-form textarea, #custom-tweak-form button {
+            width: 100%; box-sizing: border-box; background-color: #4a4a4a; color: #f0f0f0;
+            border: 1px solid #777; border-radius: 4px; padding: 6px; font-family: sans-serif;
+        }
+
+        #custom-tweak-form input[type="text"], 
+        #custom-tweak-form textarea {
+            width: 80%;
+        }
+        
+        #custom-tweak-form #custom-option-type {
+            width: auto;
+            justify-self: start;
+        }
+        #custom-tweak-form textarea { resize: vertical; min-height: 60px; font-family: monospace; }
+        #custom-tweak-form button {
+            grid-column: 2;
+            background-color: #4caf50;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            width: auto; 
+            justify-self: start; 
+        }
+        #custom-tweak-form button:hover { background-color: #66bb6a; }
+        
+        #custom-tweak-form button[type="submit"] {
+            width: auto;
+            justify-self: start;
+        }
+
+        #slot-warning-messages p {
+            color: #aaa;
+            text-align: left;
+            font-size: 0.9em;
+            margin: 10px 0 0 0;
+        }
+        .custom-option-type-display {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-left: 4px;
+        }
+        .action-buttons-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #444;
+        }
+        .action-button {
+            padding: 8px 16px;
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            border: 1px solid #777;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+        .action-button:hover {
+            background-color: #666;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Live Lua Toolchain</h1>
-        <div id="statusLabel" class="status-label">Loading luamin.js...</div>
-
-        <!-- Step 1: Decoder -->
-        <div class="pipeline-step">
-            <label for="base64Input">1. (Optional) Paste Base64URL to Decode</label>
-            <div class="output-container">
-                <textarea id="base64Input" spellcheck="false" placeholder="Paste your Base64URL encoded string here..."></textarea>
-                <button class="copyBtn" data-target="base64Input">Copy</button>
-            </div>
-            <div id="base64InputInfo" class="info-label"></div>
-            <button id="decodeBtn" class="action-button secondary">Decode to Lua</button>
+        <h1>NuttyB Configurator</h1>
+        
+        <div class="tabs">
+            <button class="tab-button active" data-tab="config">Configuration</button>
+            <button class="tab-button" data-tab="data">Data</button>
+            <button class="tab-button" data-tab="custom">Custom</button>
+            <button class="tab-button" data-tab="links">Links</button>
+            <button class="tab-button" data-tab="comments">Comments</button>
         </div>
 
-        <!-- Step 2: User Input & Beautify -->
-        <div class="pipeline-step">
-            <label for="luaInput">2. Edit or Beautify Lua Code</label>
-            <div class="output-container">
-                <textarea id="luaInput" spellcheck="false" placeholder="-- Your Lua code will appear here after decoding,
--- or you can paste it directly."></textarea>
-                <button class="copyBtn" data-target="luaInput">Copy</button>
+        <div id="config-tab" class="tab-content active">
+            <div class="settings-container">
+                <h2>Game Tweaks</h2>
+                <div id="options-form-columns">
+                    <div class="options-column" id="left-column">
+                        <p>Loading configuration data...</p>
+                    </div>
+                    <div class="options-column" id="right-column"></div>
+                </div>
+                <div class="action-buttons-container">
+                    <button id="reset-default-btn" class="action-button">Reset</button>
+                    <button id="reset-none-btn" class="action-button">None</button>
+                </div>
             </div>
-            <div id="luaInputInfo" class="info-label"></div>
-            <div class="button-group">
-                <button id="beautifyBtn" class="action-button tertiary">Beautify Code</button>
-                <button id="minifyBtn" class="action-button">Minify Code</button>
-            </div>
-        </div>
 
-        <!-- Step 3: Minified Output -->
-        <div class="pipeline-step">
-            <label for="minifiedOutput">3. Minified Lua</label>
-            <div class="output-container">
-                <textarea id="minifiedOutput" spellcheck="false"></textarea>
-                <button class="copyBtn" data-target="minifiedOutput">Copy</button>
+            <div id="custom-settings-container" class="settings-container" style="display: none;">
+                <h2>Custom Tweaks</h2>
+                <div id="custom-options-form-columns">
+                    <div class="options-column" id="custom-left-column"></div>
+                    <div class="options-column" id="custom-right-column"></div>
+                </div>
+                <div id="slot-warning-messages"></div>
             </div>
-            <div id="minifiedOutputInfo" class="info-label"></div>
-            <button id="encodeBtn" class="action-button">Encode to Base64URL</button>
+
+            <div class="output-container">
+                <h2>Generated Commands</h2>
+                <p>Copy and paste all parts separately to the lobby</p>
+                <div id="part-1-section" class="command-output-section">
+                    <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
+                    <textarea id="command-output-1" rows="5" readonly></textarea>
+                </div>
+                <div id="part-2-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-2">Copy Part 2</button>
+                    <textarea id="command-output-2" rows="5" readonly></textarea>
+                </div>
+                <div id="part-3-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-3">Copy Part 3</button>
+                    <textarea id="command-output-3" rows="5" readonly></textarea>
+                </div>
+                <div id="part-4-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-4">Copy Part 4</button>
+                    <textarea id="command-output-4" rows="5" readonly></textarea>
+                </div>
+                <div id="part-5-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-5">Copy Part 5</button>
+                    <textarea id="command-output-5" rows="5" readonly></textarea>
+                </div>
+                <div id="part-6-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-6">Copy Part 6</button>
+                    <textarea id="command-output-6" rows="5" readonly></textarea>
+                </div>
+                <div id="part-7-section" class="command-output-section" style="display: none;">
+                    <button class="copy-button" data-target="command-output-7">Copy Part 7</button>
+                    <textarea id="command-output-7" rows="5" readonly></textarea>
+                </div>
+
+                <div class="lobby-name-output">
+                    <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
+                </div>
+            </div>
         </div>
         
-        <!-- Step 4: Base64URL Output -->
-        <div class="pipeline-step">
-            <label for="base64Output">4. Final Base64URL Result</label>
-            <div class="output-container">
-                <textarea id="base64Output" readonly></textarea>
-                <button class="copyBtn" data-target="base64Output">Copy</button>
-            </div>
-            <div id="base64OutputInfo" class="info-label"></div>
+        <div id="data-tab" class="tab-content">
+            <h2>Configuration Data</h2>
+            <p>This table shows a summary for each configurable option</p>
+            <table id="data-table">
+                <thead>
+                    <tr><th>Option</th><th>Status</th><th>Summary</th><th>Command Blocks</th></tr>
+                </thead>
+                <tbody>
+                     <tr><td colspan="4">Loading data...</td></tr>
+                </tbody>
+            </table>
+
+            <h2 style="margin-top: 30px;">Maps and Modes</h2>
+            <p>This table shows the available maps and modes</p>
+            <table id="maps-modes-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Name</th>
+                        <th>Commands</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="3">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="custom-tab" class="tab-content">
+            <p>Save your custom tweaks for use in the configurator</p>
+            <h2>Add Custom Tweak</h2>
+            <form id="custom-tweak-form">
+                <label for="custom-option-desc">Description:</label>
+                <input type="text" id="custom-option-desc" placeholder="e.g., Super Fast Tanks" required>
+                <label for="custom-option-type">Type:</label>
+                <select id="custom-option-type">
+                    <option value="tweakdefs">tweakdefs</option>
+                    <option value="tweakunits">tweakunits</option>
+                </select>
+                <label for="custom-tweak-code">Tweak Code (Base64URL):</label>
+                <textarea id="custom-tweak-code" placeholder="Paste your base64url encoded tweak code here" required></textarea>
+                <label></label>
+                <button type="submit">Save Tweak</button>
+            </form>
+
+            <h2>Saved Tweaks</h2>
+            <table id="custom-tweaks-table">
+                <thead>
+                    <tr><th>Tweak</th><th>Type</th><th>Code</th><th>Actions</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="links-tab" class="tab-content">
+            <p>Loading links...</p>
+        </div>
+
+        <div id="comments-tab" class="tab-content">
+            <p>Share feedback, tips, tweaks or widgets here. Edit comments by clicking on the timestamp.</a></p>
+		<script src="https://giscus.app/client.js"
+			data-repo="rcorex/nuttyb-config"
+			data-repo-id="R_kgDOPJlKyQ"
+			data-category="Announcements"
+			data-category-id="DIC_kwDOPJlKyc4CtRUV"
+			data-mapping="pathname"
+			data-strict="0"
+			data-reactions-enabled="0"
+			data-emit-metadata="0"
+			data-input-position="bottom"
+			data-theme="dark"
+			data-lang="en"
+			data-loading="lazy"
+			crossorigin="anonymous"
+			async>
+		</script>
         </div>
     </div>
 
     <script>
-        // --- DOM Element References ---
-        const base64Input = document.getElementById('base64Input');
-        const base64InputInfo = document.getElementById('base64InputInfo');
-        const decodeBtn = document.getElementById('decodeBtn');
-
-        const luaInput = document.getElementById('luaInput');
-        const luaInputInfo = document.getElementById('luaInputInfo');
-        const beautifyBtn = document.getElementById('beautifyBtn');
-        const minifyBtn = document.getElementById('minifyBtn');
-
-        const minifiedOutput = document.getElementById('minifiedOutput');
-        const minifiedOutputInfo = document.getElementById('minifiedOutputInfo');
-        const encodeBtn = document.getElementById('encodeBtn');
-
-        const base64Output = document.getElementById('base64Output');
-        const base64OutputInfo = document.getElementById('base64OutputInfo');
+        let rawOptionsData = [];
+        let formOptionsConfig = [];
+        let customOptions = [];
+        let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
+        const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
+        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakunits ' ];
+        const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
+        const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
+        const hiddenLabels = [ 'Slow raptors/scavs' ];
+        const defaultSelectedLabels = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Legion NuttyB Evolving Commander', 'Armada NuttyB Evolving Commander', 'Cortex NuttyB Evolving Commander' ];
+        const rightColumnOrder = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2' ];
         
-        const statusLabel = document.getElementById('statusLabel');
-        const allCopyBtns = document.querySelectorAll('.copyBtn');
+        const optionsFormColumns = document.getElementById('options-form-columns');
+        const leftColumn = document.getElementById('left-column');
+        const rightColumn = document.getElementById('right-column');
+        const customSettingsContainer = document.getElementById('custom-settings-container');
+        const customLeftColumn = document.getElementById('custom-left-column');
+        const customRightColumn = document.getElementById('custom-right-column');
+        const slotWarningContainer = document.getElementById('slot-warning-messages');
+        const lobbyNameDisplay = document.getElementById('lobby-name-display');
+        const copyButtons = document.querySelectorAll('.copy-button');
+        const dataTableBody = document.querySelector('#data-table tbody');
+        const customTweakForm = document.getElementById('custom-tweak-form');
+        const customTweaksTableBody = document.querySelector('#custom-tweaks-table tbody');
+        const mapsModesTableBody = document.querySelector('#maps-modes-table tbody');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const resetNoneBtn = document.getElementById('reset-none-btn');
+        const resetDefaultBtn = document.getElementById('reset-default-btn');
+        const MAX_SECTION_LENGTH = 51000;
 
-        // --- Main Functions ---
+        // --- Lua Templates and Generator Logic ---
+        const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for b, c in pairs(UnitDefs) do
+	if b:match('^raptor_queen_.*') then
+		c.repairable = false
+		c.canbehealed = false
+		c.buildtime = 9999999
+		c.autoheal = 2
+		c.canSelfRepair = false
+		c.health = c.health * __HEALTH_MULTIPLIER__
+	end
+end`;
 
-        function handleDecode() {
-            const b64urlString = base64Input.value;
-            if (!b64urlString.trim()) return;
+        const luaHpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X HP
+-- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
+for f, g in pairs(UnitDefs) do
+	if string.sub(f, 1, 24) == 'raptor_land_swarmer_heal' then
+		g.reclaimspeed = 100
+		g.stealth = 0
+		g.builder = false
+		__WORKERTIME_LINE__
+		g.canassist = 0
+		g.maxthisunit = 0
+	end
+	if
+		g.customparams and g.customparams.subfolder and g.customparams.subfolder == 'other/raptors' and g.health and
+			not f:match('^raptor_queen_.*')
+	 then
+		g.health = __HEALTH_MULTIPLIER__ * g.health
+	end
+end
 
-            try {
-                let base64 = b64urlString.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) { base64 += '='; }
-
-                const decodedCode = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                
-                luaInput.value = decodedCode;
-            } catch (e) {
-                alert(`Decoding Error: ${e.message}\n\nPlease ensure you have pasted a valid Base64URL string.`);
-            }
-            updateAllUI();
-        }
-
-        function handleBeautify() {
-            const originalCode = luaInput.value;
-            if (!originalCode.trim()) return;
-
-            try {
-                const beautifyOptions = {
-                    Indentation: '\t',
-                    RenameVariables: false,
-                    RenameGlobals: false,
-                    SolveMath: false
-                };
-                luaInput.value = luaminp.Beautify(originalCode, beautifyOptions);
-            } catch (e) {
-                alert(`Beautify Error: ${e.message}`);
-            }
-            updateAllUI();
-        }
+local h = UnitDef_Post
+function UnitDef_Post(j, k)
+	h(j, k)
+	if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
+		if k then
+			__METAL_COST_LINE__
+			k.nochasecategory = "OBJECT"
+		end
+	end
+end`;
         
-        function handleMinify() {
-            const originalCode = luaInput.value;
+        const luaBossHpTemplate = `--Scav Boss HP __MULTIPLIER_TEXT__X
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
+	if unitDef.health and unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end
+end`;
+
+        const luaScavHpTemplate = `--Scavengers HP __MULTIPLIER_TEXT__X
+local originalUnitDef_Post = UnitDef_Post
+
+function UnitDef_Post(unitName, unitDef)
+	originalUnitDef_Post(unitName, unitDef)
+	if unitDef.health and unitName:match("_scav$") and not unitName:match("^scavengerbossv4") then
+		unitDef.health = math.floor(unitDef.health * __HEALTH_MULTIPLIER__)
+	end 
+	if unitName:match("_scav$") then
+		if unitDef.metalcost and type(unitDef.metalcost) == "number" then
+ 			unitDef.metalcost = math.floor(unitDef.metalcost * __HEALTH_MULTIPLIER__)
+    		end
+		unitDef.nochasecategory = "OBJECT"
+	end
+end`;
+
+        function generateLuaTweak(type, multiplierValue) {
+            let originalCode;
             
-            minifiedOutput.value = '';
-            base64Output.value = '';
-            if (!originalCode.trim()) {
-                updateAllUI();
-                return;
+            if (typeof luamin === 'undefined') {
+                console.error("luamin library not loaded yet!");
+                return "Error: Lib not loaded";
+            }
+
+            if (type === 'qhp') { // Raptor Queen HP
+                originalCode = luaQhpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+            } else if (type === 'hp') { // Raptor HP
+                const multiplierNum = parseFloat(multiplierValue);
+                let metalCostLine, workerTimeLine;
+                switch (multiplierNum) {
+                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * .35)'; workerTimeLine = 'g.workertime = g.workertime * 0.65'; break;
+                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * .34)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
+                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * .33)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
+                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * .25)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
+                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * .15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
+                    default: metalCostLine = 'k.metalcost = math.floor(k.metalcost)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                }
+                originalCode = luaHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
+                    .replace('__METAL_COST_LINE__', metalCostLine)
+                    .replace('__WORKERTIME_LINE__', workerTimeLine);
+            } else if (type === 'boss') { // Boss HP
+                 originalCode = luaBossHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
+            } else if (type === 'scav') { // Scavenger HP
+                originalCode = luaScavHpTemplate
+                    .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
+                    .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
             }
 
             try {
-                // Step 1: Minify the code using the library
-                const minifyOptions = {
-                    RenameVariables: true,
-                    RenameGlobals: false, 
-                    SolveMath: true
-                };
-                const minifiedCode = luaminp.Minify(originalCode, minifyOptions);
-
-                // --- NEW LOGIC TO PRESERVE COMMENTS ---
-                const commentsToKeep = [];
-                const lines = originalCode.split('\n');
-                for (const line of lines) {
-                    if (commentsToKeep.length >= 3) {
-                        break; // Stop after finding 3 comments
-                    }
-                    // If the trimmed line starts with '--', it's a comment to keep.
-                    if (line.trim().startsWith('--')) {
-                        commentsToKeep.push(line);
-                    }
-                }
-                
-                // Step 3: Combine the extracted comments and the minified code
-                if (commentsToKeep.length > 0) {
-                    const header = commentsToKeep.join('\n');
-                    minifiedOutput.value = `${header}\n${minifiedCode}`;
-                } else {
-                    minifiedOutput.value = minifiedCode;
-                }
-                // --- END OF NEW LOGIC ---
-
-            } catch (e) {
-                minifiedOutput.value = `Minify Error: ${e.message}`;
-            }
-            updateAllUI();
-        }
-
-        function handleEncode() {
-            const codeToEncode = minifiedOutput.value;
-            if (!codeToEncode || codeToEncode.startsWith('Minify Error')) {
-                base64Output.value = '';
-                updateAllUI();
-                return;
-            }
-
-            try {
-                const utf8SafeString = unescape(encodeURIComponent(codeToEncode));
+                const firstLineComment = originalCode.split('\n')[0];
+                const minifiedCode = luamin.minify(originalCode);
+                const finalCodeToEncode = firstLineComment + '\n' + minifiedCode;
+                const utf8SafeString = unescape(encodeURIComponent(finalCodeToEncode));
                 const base64String = btoa(utf8SafeString);
-                base64Output.value = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
             } catch (e) {
-                base64Output.value = `Encoding Error: ${e.message}`;
-            }
-            updateAllUI();
-        }
-
-        // --- UI Update Functions ---
-
-        function updateCharCount(inputEl, infoEl) {
-            const text = inputEl.value;
-            const errorPrefixes = ['Minify Error:', 'Encoding Error:'];
-            const hasError = errorPrefixes.some(prefix => text.startsWith(prefix));
-
-            if (text && !hasError) {
-                infoEl.textContent = `Characters: ${text.length}`;
-            } else {
-                infoEl.textContent = '';
+                console.error(`Lua Minify Error: ${e.message}`);
+                return `Error: ${e.message}`;
             }
         }
 
-        function updateAllUI() {
-            // Update character counts
-            updateCharCount(base64Input, base64InputInfo);
-            updateCharCount(luaInput, luaInputInfo);
-            updateCharCount(minifiedOutput, minifiedOutputInfo);
-            updateCharCount(base64Output, base64OutputInfo);
-            
-            // Update button states
-            allCopyBtns.forEach(btn => {
-                const target = document.getElementById(btn.dataset.target);
-                btn.disabled = !target.value;
-            });
-            decodeBtn.disabled = !base64Input.value;
-            beautifyBtn.disabled = !luaInput.value;
-            minifyBtn.disabled = !luaInput.value;
-            encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
-        }
+        function populateStartSelector() {
+            const startSelect = document.getElementById('modes-select');
+            if (!startSelect) return;
 
-        function handleCopy(event) {
-            const targetId = event.target.dataset.target;
-            const sourceTextarea = document.getElementById(targetId);
-            
-            if (!sourceTextarea || !sourceTextarea.value) return;
-            
-            navigator.clipboard.writeText(sourceTextarea.value).then(() => {
-                const button = event.target;
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.disabled = true;
-                setTimeout(() => { 
-                    button.textContent = originalText;
-                    updateAllUI();
-                }, 1500);
-            }).catch(err => console.error('Failed to copy text: ', err));
-        }
+            const originalValue = startSelect.value;
+            startSelect.innerHTML = ''; 
 
-        // --- Event Listeners & Initializer ---
-        
-        ['base64Input', 'luaInput', 'minifiedOutput'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updateAllUI);
-        });
-
-        decodeBtn.addEventListener('click', handleDecode);
-        beautifyBtn.addEventListener('click', handleBeautify);
-        minifyBtn.addEventListener('click', handleMinify);
-        encodeBtn.addEventListener('click', handleEncode);
-        allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const libraryCheckInterval = setInterval(() => {
-                // Ensure the global luaminp object and its methods are available
-                if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
-                    clearInterval(libraryCheckInterval);
-                    statusLabel.textContent = 'Library Loaded. Ready.';
-                    updateAllUI(); // Initial check
-                    setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
+            if (gameConfigs && gameConfigs.modes) {
+                gameConfigs.modes.forEach((mode, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = mode.name;
+                    startSelect.appendChild(option);
+                });
+                
+                if (Array.from(startSelect.options).some(opt => opt.value === originalValue)) {
+                    startSelect.value = originalValue;
+                } else if (startSelect.options.length > 0) {
+                    startSelect.selectedIndex = 0;
                 }
-            }, 100);
+            }
+            
+            updateOutput();
+        }
+        
+        async function loadConfigData() {
+            const response = await fetch(`tweakdata.txt?t=${Date.now()}`);
+            if (!response.ok) throw new Error(`Could not load tweakdata.txt: ${response.statusText}`);
+            const text = await response.text();
+            parseConfigData(text);
+        }
+        
+        async function loadLinksContent() {
+            const linksContentEl = document.getElementById('links-tab');
+            try {
+                const response = await fetch(`links.md?t=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const markdownText = await response.text();
+                linksContentEl.innerHTML = marked.parse(markdownText);
+            } catch (error) {
+                console.error("Could not load links content:", error);
+                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
+            }
+        }
+
+        async function parseModesFile(filePath) {
+            try {
+                const response = await fetch(`${filePath}?t=${Date.now()}`);
+                if (!response.ok) {
+                    throw new Error(`Could not load ${filePath}: ${response.statusText}`);
+                }
+                const text = await response.text();
+                
+                const configs = { maps: [], modes: [], base: [], scavengers: [] };
+                
+                const categoryBlocks = text.split('## CATEGORY:').slice(1);
+
+                for (const block of categoryBlocks) {
+                    const lines = block.trim().split(/\r?\n/);
+                    const categoryName = lines.shift().trim();
+                    const content = lines.join('\n').trim();
+
+                    if (categoryName === 'base') {
+                        configs.base = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    } else if (categoryName === 'scavengers') {
+                        configs.scavengers = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    } else {
+                        const items = content.split('---').filter(item => item.trim() !== '');
+                        for (const item of items) {
+                            const itemLines = item.trim().split(/\r?\n/).filter(line => line.trim() !== '');
+                            if (itemLines.length === 0) continue;
+
+                            const name = itemLines.shift().trim();
+                            const commands = itemLines;
+                            
+                            if (categoryName === 'maps' && configs.maps) {
+                                configs.maps.push({ name, commands });
+                            } else if (categoryName === 'modes' && configs.modes) {
+                                configs.modes.push({ name, commands });
+                            }
+                        }
+                    }
+                }
+                return configs;
+            } catch (error) {
+                console.error("Failed to parse game configs:", error);
+                return { maps: [], modes: [], base: [], scavengers: [] }; 
+            }
+        }
+
+        function loadCustomOptions() {
+            const savedTweaks = localStorage.getItem(CUSTOM_TWEAKS_KEY);
+            customOptions = savedTweaks ? JSON.parse(savedTweaks) : [];
+        }
+
+        function saveCustomOptions() {
+            localStorage.setItem(CUSTOM_TWEAKS_KEY, JSON.stringify(customOptions));
+        }
+
+        function addCustomTweak(event) {
+            event.preventDefault();
+            const desc = document.getElementById('custom-option-desc').value.trim();
+            const type = document.getElementById('custom-option-type').value;
+            const tweak = document.getElementById('custom-tweak-code').value.trim();
+            if (!desc || !tweak) return;
+            customOptions.push({ id: Date.now(), desc, type, tweak });
+            saveCustomOptions();
+            renderAllCustomComponents();
+            updateOutput();
+            customTweakForm.reset();
+        }
+
+        function deleteCustomTweak(id) {
+            customOptions = customOptions.filter(tweak => tweak.id !== id);
+            saveCustomOptions();
+            renderAllCustomComponents();
+            updateOutput();
+        }
+
+        function renderAllCustomComponents() {
+            renderCustomTweaksTable();
+            renderCustomTweaksAsCheckboxes();
+        }
+
+        function renderCustomTweaksTable() {
+            customTweaksTableBody.innerHTML = '';
+            if (customOptions.length === 0) {
+                customTweaksTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No custom tweaks saved</td></tr>';
+                return;
+            }
+            customOptions.forEach(tweak => {
+                const row = customTweaksTableBody.insertRow();
+                row.innerHTML = `<td title="${tweak.desc}">${tweak.desc}</td><td title="${tweak.type}">${tweak.type}</td><td><div class="command-cell-wrapper"><span class="command-text" title="${tweak.tweak}">${tweak.tweak}</span><button class="copy-row-button" data-tweak-code="${tweak.tweak}">Copy</button></div></td><td><button class="delete-tweak-btn" data-id="${tweak.id}">Delete</button></td>`;
+            });
+        }
+
+        function renderCustomTweaksAsCheckboxes() {
+            customLeftColumn.innerHTML = '';
+            customRightColumn.innerHTML = '';
+            if (customOptions.length > 0) {
+                customSettingsContainer.style.display = 'block';
+                customOptions.forEach((tweak, index) => {
+                    const label = document.createElement('label');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.dataset.isCustom = 'true';
+                    checkbox.dataset.customData = JSON.stringify({ type: tweak.type, tweak: tweak.tweak });
+                    checkbox.addEventListener('change', updateOutput);
+                    
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'custom-option-label-text';
+                    textSpan.textContent = ` ${tweak.desc}`;
+                    
+                    const typeSpan = document.createElement('span');
+                    typeSpan.className = 'custom-option-type-display';
+                    typeSpan.textContent = `(${tweak.type})`;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(textSpan);
+                    label.appendChild(typeSpan);
+                    
+                    if (index % 2 === 0) customLeftColumn.appendChild(label);
+                    else customRightColumn.appendChild(label);
+                });
+            } else {
+                customSettingsContainer.style.display = 'none';
+            }
+        }
+
+        function updateCustomOptionUI() {
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
+            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
+            
+            allFormElements.forEach(el => {
+                if(el.dataset.isCustom) return;
+
+                if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
+                    return;
+                }
+
+                let commands = [];
+                if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
+                else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
+                
+                commands.forEach(cmd => {
+                    if (!cmd) return;
+                    const match = cmd.match(slotRegex);
+                    if (match) {
+                        const slotNum = parseInt(match[2] || 0, 10);
+                        if (slotNum > 0) {
+                            if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                            else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                        }
+                    }
+                });
+            });
+            
+            document.querySelectorAll('select[data-slot]').forEach(select => {
+                if (select.value) {
+                    const slot = parseInt(select.dataset.slot, 10);
+                    if (select.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slot);
+                    else if (select.dataset.slotType === 'tweakunits') usedTweakUnits.add(slot);
+                }
+            });
+
+
+            const customCheckboxes = document.querySelectorAll('input[data-is-custom="true"]');
+            customCheckboxes.forEach(checkbox => {
+                const typeSpan = checkbox.nextElementSibling.nextElementSibling;
+                const textSpan = checkbox.nextElementSibling;
+                textSpan.classList.remove('disabled');
+
+                if (checkbox.checked) {
+                    const tweakData = JSON.parse(checkbox.dataset.customData);
+                    const targetSet = (tweakData.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
+                    let assignedSlot = null;
+                    for (let i = 1; i <= 9; i++) {
+                        if (!targetSet.has(i)) {
+                            assignedSlot = i;
+                            break;
+                        }
+                    }
+                    if (assignedSlot !== null) {
+                        typeSpan.textContent = `(${tweakData.type}${assignedSlot})`;
+                        targetSet.add(assignedSlot);
+                    } else {
+                        typeSpan.textContent = `(${tweakData.type} - No Slot!)`;
+                    }
+                } else {
+                     const tweakData = JSON.parse(checkbox.dataset.customData);
+                     typeSpan.textContent = `(${tweakData.type})`;
+                }
+            });
+
+            let defsAvailable = 9 - usedTweakDefs.size;
+            let unitsAvailable = 9 - usedTweakUnits.size;
+            
+            customCheckboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    const tweakData = JSON.parse(checkbox.dataset.customData);
+                    let shouldBeDisabled = false;
+                    if ((tweakData.type === 'tweakdefs' && defsAvailable <= 0) || (tweakData.type === 'tweakunits' && unitsAvailable <= 0)) {
+                        shouldBeDisabled = true;
+                    }
+                    checkbox.disabled = shouldBeDisabled;
+                    checkbox.nextElementSibling.classList.toggle('disabled', shouldBeDisabled);
+                }
+            });
+
+            slotWarningContainer.innerHTML = '';
+            const defsSlotWord = defsAvailable === 1 ? 'slot' : 'slots';
+            const unitsSlotWord = unitsAvailable === 1 ? 'slot' : 'slots';
+            const message = document.createElement('p');
+            message.textContent = `${defsAvailable} available tweakdefs ${defsSlotWord} and ${unitsAvailable} available tweakunits ${unitsSlotWord}`;
+            slotWarningContainer.appendChild(message);
+        }
+
+        function decodeBase64Url(base64Url) {
+            if (!base64Url) return '';
+            try {
+                let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const padding = base64.length % 4;
+                if (padding) base64 += '===='.slice(padding);
+                const decodedData = atob(base64);
+                return new TextDecoder('utf-8').decode(Uint8Array.from(decodedData, c => c.charCodeAt(0)));
+            } catch (e) { console.error(`Base64URL decoding failed for: ${base64Url}`, e); return 'Error decoding data'; }
+        }
+
+        function parseConfigData(text) {
+            const lines = text.trim().split('\n');
+            const groupedOptions = { 
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
+                otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
+            };
+            rawOptionsData = [];
+
+            const dynamicHPGroup = {
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: 2, slotType: 'tweakdefs',
+                defaultValue: "1.3",
+                choices: [
+                    { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
+                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" }, { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
+                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" }, { label: "2x HP", value: "2", shortLabel: "2x HP" },
+                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" }, { label: "3x HP", value: "3", shortLabel: "3x HP" },
+                    { label: "4x HP", value: "4", shortLabel: "4x HP" }, { label: "5x HP", value: "5", shortLabel: "5x HP" },
+                ]
+            };
+            const dynamicQHPGroup = {
+                label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left', slot: 1, slotType: 'tweakdefs',
+                defaultValue: "1.3",
+                choices: [
+                     { label: "Default", value: "", shortLabel: "" }, { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
+                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" }, { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
+                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
+                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
+                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" }, { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
+                ]
+            };
+
+            lines.forEach(line => {
+                const parts = line.split('\t');
+                if (parts.length >= 2) {
+                    const label = parts[0].trim(), commandBlock = parts[1].trim();
+                    let summary = '', status = "Optional", addedToFormGroup = false;
+
+                    // --- Ignore these tweaks if in the file ---
+                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
+                        return; 
+                    }
+                    if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
+                        const commandParts = commandBlock.split(' ');
+                        if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
+                    }
+                    if (extraRaptorsPrefixes.some(p => commandBlock.startsWith(p))) {
+                        status = "Optional/Grouped";
+                        let shortLabel = (label === "Mini Bosses") ? "[Mini Bosses]" : (label === "Experimental Wave Challenge") ? "[Expo Waves]" : "";
+                        groupedOptions.extraRaptors.choices.push({ label, value: commandBlock, shortLabel });
+                        if (commandBlock.startsWith('!bset tweakdefs4')) groupedOptions.extraRaptors.defaultValue = commandBlock;
+                        addedToFormGroup = true;
+                    }
+                    if (mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
+                    if (evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
+                    if (hiddenLabels.includes(label)) status = "Hidden";
+                    rawOptionsData.push({ label, commandBlock, status, summary });
+                    if (!addedToFormGroup && !hiddenLabels.includes(label)) { groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); }
+                }
+            });
+            groupedOptions.otherCheckboxes.options.sort((a,b) => { const ia=rightColumnOrder.indexOf(a.label),ib=rightColumnOrder.indexOf(b.label); return ((ia===-1)?Infinity:ia)-((ib===-1)?Infinity:ib); });
+            
+            formOptionsConfig = [];
+            if (groupedOptions.mainTweaks.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.mainTweaks);
+            if (groupedOptions.evolvingCommanders.commandBlocks.length > 0) formOptionsConfig.push(groupedOptions.evolvingCommanders);
+            
+            formOptionsConfig.push(dynamicHPGroup, dynamicQHPGroup);
+
+            if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
+            formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
+        }
+
+        function generateCommands() {
+            const presetCommands = [];
+            const mapsSelect = document.getElementById('maps-select');
+            const modesSelect = document.getElementById('modes-select');
+
+            if (mapsSelect && mapsSelect.value !== "") {
+                const selectedMap = gameConfigs.maps[mapsSelect.value];
+                if (selectedMap && selectedMap.commands) presetCommands.push(...selectedMap.commands);
+            }
+            if (modesSelect && modesSelect.value !== "") {
+                const selectedMode = gameConfigs.modes[modesSelect.value];
+                if (selectedMode && selectedMode.commands) presetCommands.push(...selectedMode.commands);
+            }
+
+            const standardCommands = [];
+            const customTweaksToProcess = [];
+            const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
+            
+            formElements.forEach(el => {
+                if (el.dataset.isCustom) {
+                    if (el.checked) customTweaksToProcess.push(JSON.parse(el.dataset.customData));
+                } 
+                else if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
+                    const multiplier = el.value;
+                    if (multiplier) {
+                        const type = el.dataset.hpType;
+                        const slot = el.dataset.slot;
+                        const slotType = el.dataset.slotType;
+                        const commandSlot = `${slotType}${slot}`;
+                        const base64string = generateLuaTweak(type, multiplier);
+                        if (!base64string.startsWith("Error")) {
+                            standardCommands.push(`!bset ${commandSlot} ${base64string}`);
+                        }
+                    }
+                }
+                else {
+                    let commands = [];
+                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select') && !el.id.includes('primary-mode-select')) {
+                        if (el.value) commands.push(el.value);
+                    } 
+                    else if (el.type === 'checkbox' && el.checked) { 
+                        commands = JSON.parse(el.dataset.commandBlocks);
+                    }
+                    commands.forEach(cmd => { if (cmd) standardCommands.push(cmd.trim()); });
+                }
+            });
+
+            const usedTweakDefs = new Set();
+            const usedTweakUnits = new Set();
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
+
+            [...standardCommands].forEach(cmd => {
+                const match = cmd.match(slotRegex);
+                if (match) {
+                    const slotNum = parseInt(match[2] || 0, 10);
+                    if (slotNum > 0) {
+                      if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                      else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
+                    }
+                }
+            });
+
+            const customCommands = [];
+            customTweaksToProcess.forEach(tweak => {
+                const targetSet = (tweak.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
+                let availableSlot = null;
+                for (let i = 1; i <= 9; i++) { if (!targetSet.has(i)) { availableSlot = i; break; } }
+                if (availableSlot !== null) {
+                    customCommands.push(`!bset ${tweak.type}${availableSlot} ${tweak.tweak}`);
+                    targetSet.add(availableSlot);
+                } else { console.warn(`All slots for '${tweak.type}' are full. Could not add custom tweak.`); }
+            });
+
+            const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
+            const finalCommands = [];
+            
+            // --- UPDATED LOGIC HERE ---
+            // Only add base/scavenger commands if a standard game mode option was chosen.
+            // A custom tweak alone should not trigger this.
+            const isGameModeTriggered = presetCommands.length > 0 || standardCommands.length > 0;
+
+            if(isGameModeTriggered) {
+                const primaryModeSelect = document.getElementById('primary-mode-select');
+                if (gameConfigs.base.length > 0) {
+                    finalCommands.push(...gameConfigs.base);
+                }
+                if (primaryModeSelect && primaryModeSelect.value === 'Scavengers' && gameConfigs.scavengers.length > 0) {
+                    finalCommands.push(...gameConfigs.scavengers);
+                }
+            }
+            // --------------------------
+            
+            finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
+
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
+
+            let renameCommand = isScavengers ? `$rename [Mod] NuttyB Scavengers ` : `$rename [Mod] NuttyB Raptors `;
+            const renameParts = [];
+
+            if (isScavengers) {
+                const scavHpSelect = document.getElementById('scav-hp-select');
+                const bossHpSelect = document.getElementById('boss-hp-select');
+                const scavHpText = scavHpSelect && scavHpSelect.value ? scavHpSelect.options[scavHpSelect.selectedIndex].text : '';
+                const bossHpText = bossHpSelect && bossHpSelect.value ? bossHpSelect.options[bossHpSelect.selectedIndex].text : '';
+
+                const combinedScavHp = [scavHpText, bossHpText].filter(Boolean).join(' ');
+                if (combinedScavHp) {
+                    const formattedHpPart = combinedScavHp.replace(/\./g, '_');
+                    renameParts.push(`[${formattedHpPart}]`);
+                }
+
+            } else { 
+                let extraRaptorsPart = "", raptorHealthPart = "", queenHealthPart = "";
+                document.querySelectorAll('#raptor-only-options select').forEach(el => {
+                    const o = el.options[el.selectedIndex];
+                    if (o.value) {
+                        const g = formOptionsConfig.find(gr => gr.label === el.dataset.optionType);
+                        if (g) {
+                            const c = g.choices.find(ch => ch.value === o.value);
+                            if (c && c.shortLabel !== undefined) {
+                                if (g.label === "Extras") extraRaptorsPart = c.shortLabel;
+                                else if (g.label === "Raptor Health") raptorHealthPart = c.shortLabel;
+                                else if (g.label === "Queen Health") queenHealthPart = c.shortLabel;
+                            }
+                        }
+                    }
+                });
+                
+                if (extraRaptorsPart) renameParts.push(extraRaptorsPart);
+                
+                const combinedRaptorHp = [queenHealthPart, raptorHealthPart].filter(Boolean).join(' ');
+                if (combinedRaptorHp) renameParts.push(`[${combinedRaptorHp}]`);
+            }
+            
+            const noMexCommand = '!unit_restrictions_noextractors 1';
+            const allowMexCommand = '!unit_restrictions_noextractors 0';
+            const lastNoMexIndex = finalCommands.lastIndexOf(noMexCommand);
+            const lastAllowMexIndex = finalCommands.lastIndexOf(allowMexCommand);
+            const noMexEnabled = lastNoMexIndex > -1 && lastNoMexIndex > lastAllowMexIndex;
+            
+            if (renameParts.length > 0) {
+                renameCommand += renameParts.join('');
+            }
+            if (noMexEnabled) {
+                renameCommand += `[No Mex]`;
+            }
+            
+            const sectionsData = [];
+            const allCommandsToSection = finalCommands; 
+
+            for (const cmd of allCommandsToSection) {
+                if (!cmd) continue;
+                let placed = false;
+                for (const section of sectionsData) {
+                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1;
+                    if (section.length + neededLength <= MAX_SECTION_LENGTH) {
+                        section.commands.push(cmd);
+                        section.length += neededLength;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    sectionsData.push({ commands: [cmd], length: cmd.length });
+                }
+            }
+
+            if (anyOptionSelected) {
+                if (sectionsData.length === 0) {
+                    sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                } else {
+                    const lastSection = sectionsData[sectionsData.length - 1];
+                    const neededLength = lastSection.length === 0 ? renameCommand.length : renameCommand.length + 1;
+                    
+                    if (lastSection.length + neededLength <= MAX_SECTION_LENGTH) {
+                        lastSection.commands.push(renameCommand);
+                        lastSection.length += neededLength;
+                    } else {
+                        sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                    }
+                }
+            }
+            
+            const finalSections = sectionsData.map(section => section.commands.join('\n'));
+            
+            return { lobbyName: (anyOptionSelected ? renameCommand : 'No Options Selected'), sections: finalSections };
+        }
+
+        function renderOptions() {
+            leftColumn.innerHTML = ''; 
+            rightColumn.innerHTML = '';
+
+            const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
+
+            specialLeftOptions.forEach(optLabel => {
+                const optionGroup = formOptionsConfig.find(og => og.label === optLabel);
+                if (optionGroup) {
+                    const label = document.createElement('label');
+                    const inputElement = document.createElement('input'); 
+                    inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default; 
+                    inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); 
+                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
+                    leftColumn.appendChild(label);
+                }
+            });
+
+            const primaryModeLabel = document.createElement('label');
+            primaryModeLabel.textContent = 'Mode: ';
+            const primaryModeSelect = document.createElement('select');
+            primaryModeSelect.id = 'primary-mode-select';
+            primaryModeSelect.innerHTML = `<option value="Raptors">Raptors</option><option value="Scavengers">Scavengers</option>`;
+            primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
+            primaryModeLabel.appendChild(primaryModeSelect);
+            leftColumn.appendChild(primaryModeLabel);
+
+            const scavOnlyContainer = document.createElement('div');
+            scavOnlyContainer.id = 'scav-only-options';
+            
+            const scavHpLabel = document.createElement('label');
+            scavHpLabel.textContent = 'Scavengers HP: ';
+            const scavHpSelect = document.createElement('select');
+            scavHpSelect.id = 'scav-hp-select';
+            scavHpSelect.dataset.isScavHpGenerator = true;
+            scavHpSelect.dataset.hpType = 'scav';
+            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slotType = 'tweakdefs';
+            const scavHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
+                {v: "2", t: "2x HP"}, {v: "2.5", t: "2.5x HP"}, {v: "3", t: "3x HP"}, {v: "4", t: "4x HP"}, {v: "5", t: "5x HP"}
+            ];
+            scavHpOptions.forEach(opt => scavHpSelect.add(new Option(opt.t, opt.v)));
+            scavHpSelect.value = ""; 
+            scavHpSelect.addEventListener('change', updateOutput);
+            scavHpLabel.appendChild(scavHpSelect);
+            scavOnlyContainer.appendChild(scavHpLabel);
+
+            const bossHpLabel = document.createElement('label');
+            bossHpLabel.textContent = 'Scav Boss HP: ';
+            const bossHpSelect = document.createElement('select');
+            bossHpSelect.id = 'boss-hp-select';
+            bossHpSelect.dataset.isScavHpGenerator = true;
+            bossHpSelect.dataset.hpType = 'boss';
+            bossHpSelect.dataset.slot = '1';
+            bossHpSelect.dataset.slotType = 'tweakdefs';
+            const bossHpOptions = [
+                {v: "", t: "Default"}, {v: "1", t: "1x BHP"}, {v: "1.3", t: "1.3x BHP"}, {v: "1.5", t: "1.5x BHP"}, {v: "1.7", t: "1.7x BHP"},
+                {v: "2", t: "2x BHP"}, {v: "2.5", t: "2.5x BHP"}, {v: "3", t: "3x BHP"}, {v: "4", t: "4x BHP"}, {v: "5", t: "5x BHP"},
+            ];
+            bossHpOptions.forEach(opt => bossHpSelect.add(new Option(opt.t, opt.v)));
+            bossHpSelect.value = ""; 
+            bossHpSelect.addEventListener('change', updateOutput);
+            bossHpLabel.appendChild(bossHpSelect);
+            scavOnlyContainer.appendChild(bossHpLabel);
+
+            leftColumn.appendChild(scavOnlyContainer);
+
+            const raptorOnlyContainer = document.createElement('div');
+            raptorOnlyContainer.id = 'raptor-only-options';
+            leftColumn.appendChild(raptorOnlyContainer);
+            
+            formOptionsConfig.forEach(optionGroup => {
+                if (specialLeftOptions.includes(optionGroup.label)) return;
+
+                const label = document.createElement('label');
+                let inputElement;
+                if (optionGroup.type === 'checkbox') {
+                    inputElement = document.createElement('input'); inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default; inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
+                } else if (optionGroup.type === 'select') {
+                    inputElement = document.createElement('select'); 
+                    inputElement.dataset.optionType = optionGroup.label;
+
+                    if (optionGroup.isHpGenerator) {
+                        inputElement.dataset.isHpGenerator = true;
+                        inputElement.dataset.hpType = optionGroup.hpType;
+                        inputElement.dataset.slot = optionGroup.slot;
+                        inputElement.dataset.slotType = optionGroup.slotType;
+                        inputElement.disabled = true;
+                    }
+
+                    optionGroup.choices.forEach(choice => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = choice.value; 
+                        optionElement.textContent = choice.label;
+                        if (optionGroup.defaultValue && choice.value === optionGroup.defaultValue) {
+                            optionElement.selected = true;
+                        }
+                        optionElement.dataset.shortLabel = choice.shortLabel || "";
+                        inputElement.appendChild(optionElement);
+                    });
+                    label.textContent = optionGroup.label + ': '; label.appendChild(inputElement);
+                    inputElement.addEventListener('change', updateOutput);
+                }
+
+                if (optionGroup.column === 'right') {
+                    rightColumn.appendChild(label);
+                } else if (optionGroup.label === 'Raptor Health' || optionGroup.label === 'Queen Health' || optionGroup.label === 'Extras') {
+                    raptorOnlyContainer.appendChild(label);
+                } else {
+                    leftColumn.appendChild(label);
+                }
+            });
+
+            if (gameConfigs && (gameConfigs.maps.length > 0 || gameConfigs.modes.length > 0)) {
+                let mapsLabel, modesLabel;
+
+                if (gameConfigs.maps.length > 0) {
+                    mapsLabel = document.createElement('label');
+                    mapsLabel.textContent = 'Map: ';
+                    const mapsSelect = document.createElement('select');
+                    mapsSelect.id = 'maps-select';
+                    gameConfigs.maps.forEach((map, index) => {
+                        mapsSelect.add(new Option(map.name, index));
+                    });
+                    mapsSelect.selectedIndex = 0;
+                    mapsSelect.addEventListener('change', updateOutput);
+                    mapsLabel.appendChild(mapsSelect);
+                }
+                if (gameConfigs.modes.length > 0) {
+                    modesLabel = document.createElement('label');
+                    modesLabel.textContent = 'Start: ';
+                    const modesSelect = document.createElement('select');
+                    modesSelect.id = 'modes-select';
+                    modesSelect.addEventListener('change', updateOutput);
+                    modesLabel.appendChild(modesSelect);
+                }
+
+                const container = document.getElementById('raptor-only-options');
+                if (container) {
+                    if (modesLabel) container.after(modesLabel);
+                    if (mapsLabel) container.after(mapsLabel);
+                } else {
+                    if (mapsLabel) leftColumn.appendChild(mapsLabel);
+                    if (modesLabel) leftColumn.appendChild(modesLabel);
+                }
+            }
+
+            renderAllCustomComponents();
+            populateStartSelector();
+        }
+        
+        function updateOutput(event) {
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            const raptorOnlyContainer = document.getElementById('raptor-only-options');
+            const scavOnlyContainer = document.getElementById('scav-only-options');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            const bossHpSelect = document.getElementById('boss-hp-select');
+
+            if (primaryModeSelect && raptorOnlyContainer && scavOnlyContainer) {
+                const newMode = primaryModeSelect.value;
+                const modeChanged = event && event.target === primaryModeSelect;
+
+                if (modeChanged) {
+                    if (newMode === 'Scavengers') {
+                        scavHpSelect.value = "1.3";
+                        bossHpSelect.value = "1.3";
+                        raptorOnlyContainer.querySelectorAll('select').forEach(sel => sel.value = "");
+                    } else { // Switching back to Raptors
+                        scavHpSelect.value = "";
+                        bossHpSelect.value = "";
+                        raptorOnlyContainer.querySelectorAll('select[data-option-type]').forEach(sel => {
+                            const optionGroup = formOptionsConfig.find(og => og.label === sel.dataset.optionType);
+                            if (optionGroup) {
+                                sel.value = optionGroup.defaultValue || "";
+                            }
+                        });
+                    }
+                }
+                
+                const isScavengers = newMode === 'Scavengers';
+                raptorOnlyContainer.style.display = isScavengers ? 'none' : 'block';
+                scavOnlyContainer.style.display = isScavengers ? 'block' : 'none';
+            }
+            
+            updateCustomOptionUI();
+            const generatedData = generateCommands();
+            lobbyNameDisplay.textContent = generatedData.lobbyName;
+            
+            for (let i = 1; i <= 7; i++) {
+                const sectionDiv = document.getElementById(`part-${i}-section`);
+                const textArea = document.getElementById(`command-output-${i}`);
+                if (generatedData.sections[i-1]) {
+                    textArea.value = generatedData.sections[i-1];
+                    sectionDiv.style.display = 'grid';
+                } else {
+                    textArea.value = '';
+                    sectionDiv.style.display = 'none';
+                }
+            }
+        }
+
+        function populateDataTable() {
+            dataTableBody.innerHTML = ''; 
+            
+            rawOptionsData.filter(item => item.status !== 'Hidden').forEach(item => {
+                const row = dataTableBody.insertRow();
+                row.insertCell().textContent = item.label; 
+                row.insertCell().textContent = item.status; 
+                row.insertCell().textContent = item.summary;
+                const commandsCell = row.insertCell(); 
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text'; 
+                textSpan.textContent = item.commandBlock; textSpan.title = item.commandBlock;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy'; 
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = item.commandBlock;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+            });
+
+            document.querySelectorAll('select[data-slot]').forEach(selector => {
+                const selectedValue = selector.value;
+                if (!selectedValue) return;
+
+                const selectedOptionText = selector.options[selector.selectedIndex].text;
+                const type = selector.dataset.hpType;
+                const slot = selector.dataset.slot;
+                const slotType = selector.dataset.slotType;
+                const commandSlot = `${slotType}${slot}`;
+                const base64tweak = generateLuaTweak(type, selectedValue);
+
+                if (base64tweak.startsWith("Error")) return;
+
+                const fullCommand = `!bset ${commandSlot} ${base64tweak}`;
+                const summary = decodeBase64Url(base64tweak).split('\n')[0].trim();
+
+                const row = dataTableBody.insertRow();
+                row.insertCell().textContent = selectedOptionText;
+                row.insertCell().textContent = 'Optional/Generated';
+                row.insertCell().textContent = summary;
+                
+                const commandsCell = row.insertCell();
+                const wrapper = document.createElement('div'); wrapper.className = 'command-cell-wrapper';
+                const textSpan = document.createElement('span'); textSpan.className = 'command-text';
+                textSpan.textContent = fullCommand; textSpan.title = fullCommand;
+                const copyBtn = document.createElement('button'); copyBtn.textContent = 'Copy';
+                copyBtn.className = 'copy-row-button'; copyBtn.dataset.command = fullCommand;
+                wrapper.appendChild(textSpan); wrapper.appendChild(copyBtn); commandsCell.appendChild(wrapper);
+            });
+        }
+
+        function populateMapsModesTable() {
+            const tableBody = document.querySelector('#maps-modes-table tbody');
+            tableBody.innerHTML = ''; 
+
+            if (gameConfigs.maps.length === 0 && gameConfigs.modes.length === 0 && gameConfigs.scavengers.length === 0 && gameConfigs.base.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No maps or modes found.</td></tr>';
+                return;
+            }
+            
+            const createCommandCellWithSingleCopy = (cell, commands) => {
+                if (!commands || commands.length === 0) {
+                    cell.textContent = 'N/A';
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'command-cell-wrapper';
+
+                const textSpan = document.createElement('span');
+                textSpan.style.whiteSpace = 'normal';
+                textSpan.innerHTML = commands.join('<br>');
+
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy All';
+                copyBtn.className = 'copy-row-button';
+                copyBtn.dataset.command = commands.join('\n');
+
+                wrapper.appendChild(textSpan);
+                wrapper.appendChild(copyBtn);
+                cell.appendChild(wrapper);
+            };
+
+            const populateCategory = (category, categoryName) => {
+                category.forEach(item => {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = categoryName;
+                    row.insertCell().textContent = item.name;
+                    createCommandCellWithSingleCopy(row.insertCell(), item.commands);
+                });
+            };
+
+            const populateSimpleCategory = (commands, categoryName, name) => {
+                 if(commands.length > 0) {
+                    const row = tableBody.insertRow();
+                    row.insertCell().textContent = categoryName;
+                    row.insertCell().textContent = name;
+                    createCommandCellWithSingleCopy(row.insertCell(), commands);
+                }
+            };
+            
+            populateSimpleCategory(gameConfigs.base, 'base', 'Raptors (Default)');
+            populateSimpleCategory(gameConfigs.scavengers, 'scavengers', 'Default');
+            populateCategory(gameConfigs.maps, 'maps');
+            populateCategory(gameConfigs.modes, 'modes');
+        }
+
+        function switchTab(event) {
+            const targetTabId = event.target.dataset.tab + '-tab';
+            tabButtons.forEach(button => button.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(targetTabId).classList.add('active');
+            
+            if (event.target.dataset.tab === 'data') {
+                populateDataTable();
+                populateMapsModesTable();
+            }
+            if (event.target.dataset.tab === 'custom') {
+                renderCustomTweaksTable();
+            }
+        }
+
+        copyButtons.forEach(button => button.addEventListener('click', event => {
+            const targetTextArea = document.getElementById(event.target.dataset.target);
+            const originalText = event.target.textContent;
+            navigator.clipboard.writeText(targetTextArea.value)
+                .then(() => {
+                    event.target.textContent = 'Copied!';
+                    setTimeout(() => { event.target.textContent = originalText; }, 2000);
+                }).catch(err => { console.error('Failed to copy: ', err); });
+        }));
+
+        [dataTableBody, customTweaksTableBody, mapsModesTableBody].forEach(tbody => {
+            if (!tbody) return;
+            tbody.addEventListener('click', event => {
+                const button = event.target;
+                if (button.matches('.copy-row-button')) {
+                    const textToCopy = button.dataset.command || button.dataset.tweakCode;
+                    if (!textToCopy) return;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalText = button.textContent;
+                        button.textContent = 'Copied!';
+                        setTimeout(() => { button.textContent = originalText; }, 2000);
+                    }).catch(err => { console.error('Failed to copy command: ', err); });
+                } else if (button.matches('.delete-tweak-btn')) {
+                     deleteCustomTweak(parseInt(button.dataset.id, 10));
+                }
+            });
         });
+
+        resetNoneBtn.addEventListener('click', () => {
+            const formElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select');
+            formElements.forEach(el => {
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else if (el.tagName === 'SELECT') {
+                    if (el.id === 'maps-select' || el.id === 'modes-select') {
+                        el.selectedIndex = -1; 
+                    } else if (el.id !== 'primary-mode-select') {
+                        el.value = ""; 
+                    }
+                }
+            });
+            updateOutput();
+        });
+
+        resetDefaultBtn.addEventListener('click', () => {
+            const primaryModeSelect = document.getElementById('primary-mode-select');
+            if (primaryModeSelect) primaryModeSelect.value = 'Raptors';
+            
+            formOptionsConfig.forEach(optionGroup => {
+                if (optionGroup.type === 'checkbox') {
+                    const allLabels = document.querySelectorAll('#options-form-columns label');
+                    const label = Array.from(allLabels).find(l => l.textContent.trim().includes(optionGroup.label));
+                    if (label) {
+                        const checkbox = label.querySelector('input[type="checkbox"]');
+                        if (checkbox) checkbox.checked = optionGroup.default;
+                    }
+                } else if (optionGroup.type === 'select') {
+                    const select = optionsFormColumns.querySelector(`select[data-option-type="${optionGroup.label}"]`);
+                    if (select) select.value = optionGroup.defaultValue || "";
+                }
+            });
+            
+            const bossHpSelect = document.getElementById('boss-hp-select');
+            const scavHpSelect = document.getElementById('scav-hp-select');
+            if (bossHpSelect) bossHpSelect.value = "";
+            if (scavHpSelect) scavHpSelect.value = "";
+
+            const mapsSelect = document.getElementById('maps-select');
+            if (mapsSelect && mapsSelect.options.length > 0) mapsSelect.selectedIndex = 0;
+
+            const modesSelect = document.getElementById('modes-select');
+            if(modesSelect && modesSelect.options.length > 0) {
+                modesSelect.selectedIndex = 0;
+            }
+            
+            updateOutput();
+        });
+        
+        customTweakForm.addEventListener('submit', addCustomTweak);
+        tabButtons.forEach(button => button.addEventListener('click', switchTab));
+
+        async function initializeApp() {
+            try {
+                loadCustomOptions();
+                
+                const [parsedConfigs] = await Promise.all([
+                    parseModesFile('modes.txt'),
+                    loadConfigData(), 
+                    loadLinksContent()
+                ]);
+
+                gameConfigs = parsedConfigs;
+                console.log("Modes file loaded and parsed:", gameConfigs);
+
+                renderOptions();
+
+                const libraryCheckInterval = setInterval(() => {
+                    if (typeof luamin !== 'undefined') {
+                        clearInterval(libraryCheckInterval);
+                        console.log("Lua libraries loaded.");
+                        document.querySelectorAll('select[data-is-hp-generator="true"], select[data-is-scav-hp-generator="true"]').forEach(select => {
+                           select.disabled = false;
+                        });
+                        updateOutput();
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error("Failed to initialize the configurator:", error);
+                document.querySelector('.container').innerHTML = '<h1>Initialization Error</h1><p style="color: red;">Could not load essential configuration files (e.g., modes.txt or tweakdata.txt). Please check that the files exist and refresh the page.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
     </script>
 </body>
 </html>
