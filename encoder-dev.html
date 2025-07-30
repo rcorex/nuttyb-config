@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Lua Toolchain</title>
+    <title>Live Lua Toolchain (Using Local luamin.js)</title>
 
-    <!-- 1. Load luaparse (dependency for both libraries) -->
-    <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
-
-    <!-- 2. Load luamin for MINIFYING -->
-    <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
-
-    <!-- 3. Load lua-fmt for BEAUTIFYING using the correct CDN link -->
-    <script src="https://cdn.jsdelivr.net/npm/lua-fmt@2.6.0/dist/src/index.min.js" defer></script>
+    <!-- 1. Load your local luamin.js library for both beautifying and minifying -->
+    <script src="luamin.js" defer></script>
 
     <style>
         /* CSS styles remain the same */
@@ -97,8 +91,8 @@
 <body>
 
     <div class="container">
-        <h1>Live Lua Toolchain</h1>
-        <div id="statusLabel" class="status-label">Loading libraries...</div>
+        <h1>Live Lua Toolchain (Using Local luamin.js)</h1>
+        <div id="statusLabel" class="status-label">Loading luamin.js...</div>
 
         <!-- Step 1: Decoder -->
         <div class="pipeline-step">
@@ -193,8 +187,15 @@
             if (!originalCode.trim()) return;
 
             try {
-                // CORRECTED: Use the global object 'luaFmt' (with a capital F)
-                luaInput.value = luaFmt.formatText(originalCode);
+                // CHANGED: Use luaminp.Beautify from your local script
+                // We set RenameVariables to false for beautification.
+                const beautifyOptions = {
+                    Indentation: '\t',
+                    RenameVariables: false,
+                    RenameGlobals: false,
+                    SolveMath: false
+                };
+                luaInput.value = luaminp.Beautify(originalCode, beautifyOptions);
             } catch (e) {
                 alert(`Beautify Error: ${e.message}`);
             }
@@ -212,7 +213,14 @@
             }
 
             try {
-                minifiedOutput.value = luamin.minify(originalCode);
+                // CHANGED: Use luaminp.Minify from your local script
+                // We enable variable renaming for minification.
+                const minifyOptions = {
+                    RenameVariables: true,
+                    RenameGlobals: false, // Set to false for safety with external libraries
+                    SolveMath: true
+                };
+                minifiedOutput.value = luaminp.Minify(originalCode, minifyOptions);
             } catch (e) {
                 minifiedOutput.value = `Minify Error: ${e.message}`;
             }
@@ -301,10 +309,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
-                // CORRECTED: Check for 'luaFmt' (with a capital F)
-                if (typeof luamin !== 'undefined' && typeof luaFmt !== 'undefined') {
+                // CHANGED: Check for the 'luaminp' object and its methods from your script.
+                if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
                     clearInterval(libraryCheckInterval);
-                    statusLabel.textContent = 'Libraries Loaded. Ready.';
+                    statusLabel.textContent = 'Library Loaded. Ready.';
                     updateAllUI(); // Initial check
                     setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
                 }
