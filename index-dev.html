@@ -555,7 +555,7 @@ end`;
                 const multiplierNum = parseFloat(multiplierValue);
                 let metalCostLine, workerTimeLine;
                 switch (multiplierNum) {
-                    case 1.3: metalCostLine = 'k.metalcost = math.floor(k.health * .0.576923077)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.576923077)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
                     case 1.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.466666667)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
                     case 1.7: metalCostLine = 'k.metalcost = math.floor(k.health * 0.411764706)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
                     case 2: metalCostLine = 'k.metalcost = math.floor(k.health * 0.35)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
