@@ -293,6 +293,7 @@
             <button class="tab-button" data-tab="data">Data</button>
             <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="links">Links</button>
+            <button class="tab-button" data-tab="comments">Comments</button>
         </div>
 
         <div id="config-tab" class="tab-content active">
@@ -356,7 +357,7 @@
                 </div>
             </div>
         </div>
-
+        
         <div id="data-tab" class="tab-content">
             <h2>Configuration Data</h2>
             <p>This table shows a summary for each configurable option</p>
@@ -414,6 +415,26 @@
         <div id="links-tab" class="tab-content">
             <p>Loading links...</p>
         </div>
+
+        <div id="comments-tab" class="tab-content">
+            <p>Share feedback, tips, tweaks or widgets here. Edit comments by clicking on the timestamp.</a></p>
+		<script src="https://giscus.app/client.js"
+			data-repo="rcorex/nuttyb-config"
+			data-repo-id="R_kgDOPJlKyQ"
+			data-category="Announcements"
+			data-category-id="DIC_kwDOPJlKyc4CtRUV"
+			data-mapping="pathname"
+			data-strict="0"
+			data-reactions-enabled="0"
+			data-emit-metadata="0"
+			data-input-position="bottom"
+			data-theme="dark"
+			data-lang="en"
+			data-loading="lazy"
+			crossorigin="anonymous"
+			async>
+		</script>
+        </div>
     </div>
 
     <script>
@@ -422,12 +443,12 @@
         let customOptions = [];
         let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
-        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakdefs3 ', '!bset tweakunits ' ];
+        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
         const hiddenLabels = [ 'Slow raptors/scavs' ];
         const defaultSelectedLabels = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Legion NuttyB Evolving Commander', 'Armada NuttyB Evolving Commander', 'Cortex NuttyB Evolving Commander' ];
-        const rightColumnOrder = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Mega Nuke' ];
+        const rightColumnOrder = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2' ];
         
         const optionsFormColumns = document.getElementById('options-form-columns');
         const leftColumn = document.getElementById('left-column');
@@ -446,7 +467,7 @@
         const tabContents = document.querySelectorAll('.tab-content');
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
-        const MAX_SECTION_LENGTH = 55000;
+        const MAX_SECTION_LENGTH = 51000;
 
         // --- Lua Templates and Generator Logic ---
         const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
@@ -842,8 +863,8 @@ end`;
         function parseConfigData(text) {
             const lines = text.trim().split('\n');
             const groupedOptions = { 
-                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
-                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'right' },
+                mainTweaks: { label: "NuttyB Main Tweaks", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
+                evolvingCommanders: { label: "NuttyB Evolving Commanders", type: "checkbox", commandBlocks: [], default: true, disabled: false, column: 'left' },
                 extraRaptors: { label: "Extras", type: "select", choices: [{ label: "None", value: "", shortLabel: "" }], column: 'left' },
                 otherCheckboxes: { type: "checkboxes", options: [], column: 'right' }
             };
@@ -878,10 +899,10 @@ end`;
                     const label = parts[0].trim(), commandBlock = parts[1].trim();
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
+                    // --- Ignore these tweaks if in the file ---
                     if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
                         return; 
                     }
-
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
                         const commandParts = commandBlock.split(' ');
                         if (commandParts.length >= 3) summary = decodeBase64Url(commandParts[2]).split('\n')[0].trim();
@@ -893,8 +914,8 @@ end`;
                         if (commandBlock.startsWith('!bset tweakdefs4')) groupedOptions.extraRaptors.defaultValue = commandBlock;
                         addedToFormGroup = true;
                     }
-                    if (!addedToFormGroup && mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
-                    if (!addedToFormGroup && evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
+                    if (mainTweaksPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.mainTweaks.commandBlocks.push(commandBlock); addedToFormGroup = true; }
+                    if (evolvingCommandersPrefixes.some(p => commandBlock.startsWith(p))) { status = "Optional"; groupedOptions.evolvingCommanders.commandBlocks.push(commandBlock); if (defaultSelectedLabels.includes(label)) groupedOptions.evolvingCommanders.default = true; addedToFormGroup = true; }
                     if (hiddenLabels.includes(label)) status = "Hidden";
                     rawOptionsData.push({ label, commandBlock, status, summary });
                     if (!addedToFormGroup && !hiddenLabels.includes(label)) { groupedOptions.otherCheckboxes.options.push({ label, type: "checkbox", commandBlocks: [commandBlock], default: defaultSelectedLabels.includes(label), column: 'right' }); }
@@ -911,7 +932,7 @@ end`;
             if (groupedOptions.extraRaptors.choices.length > 1) formOptionsConfig.push(groupedOptions.extraRaptors);
             formOptionsConfig = formOptionsConfig.concat(groupedOptions.otherCheckboxes.options);
         }
-        
+
         function generateCommands() {
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
@@ -988,7 +1009,12 @@ end`;
             const anyOptionSelected = presetCommands.length > 0 || standardCommands.length > 0 || customCommands.length > 0;
             const finalCommands = [];
             
-            if(anyOptionSelected) {
+            // --- UPDATED LOGIC HERE ---
+            // Only add base/scavenger commands if a standard game mode option was chosen.
+            // A custom tweak alone should not trigger this.
+            const isGameModeTriggered = presetCommands.length > 0 || standardCommands.length > 0;
+
+            if(isGameModeTriggered) {
                 const primaryModeSelect = document.getElementById('primary-mode-select');
                 if (gameConfigs.base.length > 0) {
                     finalCommands.push(...gameConfigs.base);
@@ -997,9 +1023,10 @@ end`;
                     finalCommands.push(...gameConfigs.scavengers);
                 }
             }
+            // --------------------------
             
             finalCommands.push(...presetCommands, ...standardCommands, ...customCommands);
-            
+
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
 
@@ -1054,29 +1081,68 @@ end`;
                 renameCommand += `[No Mex]`;
             }
             
-            const sections = [];
-            let currentSection = [];
-            let currentLength = 0;
-            const allCommandsToSection = finalCommands.length > 0 ? [...finalCommands, renameCommand] : [];
+            const sectionsData = [];
+            const allCommandsToSection = finalCommands; 
 
             for (const cmd of allCommandsToSection) {
                 if (!cmd) continue;
-                if (currentLength > 0 && currentLength + cmd.length + 1 > MAX_SECTION_LENGTH) {
-                    sections.push(currentSection.join('\n'));
-                    currentSection = [cmd];
-                    currentLength = cmd.length;
-                } else {
-                    currentSection.push(cmd);
-                    currentLength += cmd.length + 1;
+                let placed = false;
+                for (const section of sectionsData) {
+                    const neededLength = section.length === 0 ? cmd.length : cmd.length + 1;
+                    if (section.length + neededLength <= MAX_SECTION_LENGTH) {
+                        section.commands.push(cmd);
+                        section.length += neededLength;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    sectionsData.push({ commands: [cmd], length: cmd.length });
                 }
             }
-            if (currentSection.length > 0) sections.push(currentSection.join('\n'));
-            return{lobbyName: (allCommandsToSection.length > 0 ? renameCommand : 'No Options Selected'), sections: sections};
+
+            if (anyOptionSelected) {
+                if (sectionsData.length === 0) {
+                    sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                } else {
+                    const lastSection = sectionsData[sectionsData.length - 1];
+                    const neededLength = lastSection.length === 0 ? renameCommand.length : renameCommand.length + 1;
+                    
+                    if (lastSection.length + neededLength <= MAX_SECTION_LENGTH) {
+                        lastSection.commands.push(renameCommand);
+                        lastSection.length += neededLength;
+                    } else {
+                        sectionsData.push({ commands: [renameCommand], length: renameCommand.length });
+                    }
+                }
+            }
+            
+            const finalSections = sectionsData.map(section => section.commands.join('\n'));
+            
+            return { lobbyName: (anyOptionSelected ? renameCommand : 'No Options Selected'), sections: finalSections };
         }
 
         function renderOptions() {
             leftColumn.innerHTML = ''; 
             rightColumn.innerHTML = '';
+
+            const specialLeftOptions = ['NuttyB Main Tweaks', 'NuttyB Evolving Commanders'];
+
+            specialLeftOptions.forEach(optLabel => {
+                const optionGroup = formOptionsConfig.find(og => og.label === optLabel);
+                if (optionGroup) {
+                    const label = document.createElement('label');
+                    const inputElement = document.createElement('input'); 
+                    inputElement.type = 'checkbox';
+                    inputElement.dataset.commandBlocks = JSON.stringify(optionGroup.commandBlocks);
+                    inputElement.checked = optionGroup.default; 
+                    inputElement.disabled = optionGroup.disabled || false;
+                    label.appendChild(inputElement); 
+                    label.appendChild(document.createTextNode(' ' + optionGroup.label));
+                    if (!inputElement.disabled) inputElement.addEventListener('change', updateOutput);
+                    leftColumn.appendChild(label);
+                }
+            });
 
             const primaryModeLabel = document.createElement('label');
             primaryModeLabel.textContent = 'Mode: ';
@@ -1133,6 +1199,8 @@ end`;
             leftColumn.appendChild(raptorOnlyContainer);
             
             formOptionsConfig.forEach(optionGroup => {
+                if (specialLeftOptions.includes(optionGroup.label)) return;
+
                 const label = document.createElement('label');
                 let inputElement;
                 if (optionGroup.type === 'checkbox') {
@@ -1462,6 +1530,7 @@ end`;
             updateOutput();
         });
         
+        customTweakForm.addEventListener('submit', addCustomTweak);
         tabButtons.forEach(button => button.addEventListener('click', switchTab));
 
         async function initializeApp() {
