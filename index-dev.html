@@ -443,7 +443,7 @@
         let customOptions = [];
         let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
-        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakunits ' ];
+        const mainTweaksPrefixes = [ '!bset tweakdefs2 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
         const hiddenLabels = [ 'Slow raptors/scavs' ];
@@ -871,7 +871,7 @@ end`;
             rawOptionsData = [];
 
             const dynamicHPGroup = {
-                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: 2, slotType: 'tweakdefs',
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: '', slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
                     { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
@@ -900,7 +900,7 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     // --- Ignore these tweaks if in the file ---
-                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
+                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs ')) {
                         return; 
                     }
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
@@ -1162,7 +1162,7 @@ end`;
             scavHpSelect.id = 'scav-hp-select';
             scavHpSelect.dataset.isScavHpGenerator = true;
             scavHpSelect.dataset.hpType = 'scav';
-            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slot = '';
             scavHpSelect.dataset.slotType = 'tweakdefs';
             const scavHpOptions = [
                 {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
