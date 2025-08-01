@@ -555,11 +555,14 @@ end`;
                 const multiplierNum = parseFloat(multiplierValue);
                 let metalCostLine, workerTimeLine;
                 switch (multiplierNum) {
-                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * .35)'; workerTimeLine = 'g.workertime = g.workertime * 0.65'; break;
-                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * .34)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
-                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * .33)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
-                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * .25)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
-                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * .15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
+                    case 1.3: metalCostLine = 'k.metalcost = math.floor(k.health * .0.576923077)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.466666667)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.7: metalCostLine = 'k.metalcost = math.floor(k.health * 0.411764706)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * 0.35)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.3)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
+                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.25)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
+                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * 0.1875)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
+                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
                     default: metalCostLine = 'k.metalcost = math.floor(k.metalcost)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
                 }
                 originalCode = luaHpTemplate
