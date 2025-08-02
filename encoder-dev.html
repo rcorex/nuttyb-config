@@ -9,7 +9,7 @@
     <script src="luamin.js" defer></script>
 
     <style>
-        /* CSS styles are unchanged, except for the removal of the shadowScroller style */
+        /* CSS styles are unchanged */
         body {
             font-size: 14px; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -120,9 +120,22 @@
             min-height: 1em;
             font-size: 11px;
         }
+
+        /* Styles for the hidden shadow element */
+        #shadowScroller {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            visibility: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
+    <!-- The hidden shadow element for calculations -->
+    <div id="shadowScroller"></div>
+
     <div class="container">
         <h1>Live Lua Toolchain</h1>
         <div id="statusLabel" class="status-label">Loading luamin.js...</div>
@@ -190,7 +203,7 @@
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
         const highlightBtn = document.getElementById('highlightBtn');
-        // The shadowScroller const has been removed.
+        const shadowScroller = document.getElementById('shadowScroller');
 
         // --- Main Functions ---
 
@@ -311,23 +324,53 @@
             }
             return null;
         }
-        
-        // *** REVISED: Simplified function using the blur()/focus() method ***
+
+        // *** REVISED: The updated function to fix scroll timing and centering ***
         function handleHighlightOffender() {
             const offendingBlock = findOffendingBlock(minifiedOutput.value);
 
             if (offendingBlock) {
-                // This approach is much simpler but gives up control over the exact scroll position.
-                // The browser will decide how to scroll the selection into view.
-
-                // 1. Set the selection range on the textarea first. This tells the browser
-                //    what part of the text is of interest.
+                // --- FOCUS & HIGHLIGHT FIRST ---
+                // By focusing and selecting first, we ensure the browser has the element
+                // active, which can help prevent timing issues with the scroll update.
+                minifiedOutput.focus();
                 minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index + offendingBlock.length);
 
-                // 2. Use the blur() and focus() trick to force the browser
-                //    to scroll the current selection into its visible area.
-                minifiedOutput.blur();
-                minifiedOutput.focus();
+                // --- SCROLL CALCULATION ---
+                try {
+                    const computedStyle = window.getComputedStyle(minifiedOutput);
+                    
+                    // Apply all critical styles to the shadow element for accurate measurement.
+                    // This includes the text-wrapping styles crucial for correctness.
+                    shadowScroller.style.width = computedStyle.width;
+                    shadowScroller.style.font = computedStyle.font;
+                    shadowScroller.style.lineHeight = computedStyle.lineHeight;
+                    shadowScroller.style.padding = computedStyle.padding;
+                    shadowScroller.style.border = computedStyle.border;
+                    shadowScroller.style.boxSizing = computedStyle.boxSizing;
+                    shadowScroller.style.whiteSpace = computedStyle.whiteSpace;
+                    shadowScroller.style.wordWrap = computedStyle.wordWrap;
+
+                    // Insert the text *before* the selection into the shadow element.
+                    const textBefore = minifiedOutput.value.substring(0, offendingBlock.index);
+                    shadowScroller.textContent = textBefore;
+
+                    // This gives the pixel position for the top of the selection.
+                    const scrollHeight = shadowScroller.scrollHeight;
+                    
+                    // Get the visible height of the textarea.
+                    const viewHeight = minifiedOutput.clientHeight;
+
+                    // Calculate the new scroll position to center the selection.
+                    // We subtract half the textarea's visible height from the target scroll position.
+                    const targetScrollTop = scrollHeight - (viewHeight / 2);
+
+                    // Set the scroll position, ensuring it's not a negative number.
+                    minifiedOutput.scrollTop = Math.max(0, targetScrollTop);
+
+                } catch (e) {
+                    console.error("Could not calculate scroll position:", e);
+                }
 
             } else {
                 const originalText = highlightBtn.textContent;
