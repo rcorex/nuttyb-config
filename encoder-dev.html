@@ -315,18 +315,16 @@
             const offendingBlock = findOffendingBlock(minifiedOutput.value);
 
             if (offendingBlock) {
-                // 1. Focus the textarea first. This is important.
+                // 1. Focus the textarea.
                 minifiedOutput.focus();
 
-                // 2. Set the selection to a zero-width cursor at the start of the block.
-                minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index);
-
-                // 3. Dispatch a single, harmless keyboard event. This is the "nudge"
-                //    that triggers the browser's native scroll-to-caret logic.
-                const keyEvent = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: false });
-                minifiedOutput.dispatchEvent(keyEvent);
+                // 2. "Wiggle" the cursor to trigger the browser's native scroll-into-view logic.
+                //    This happens too fast for the user to see, but the browser reacts to the move.
+                const originalEnd = offendingBlock.index + offendingBlock.length;
+                minifiedOutput.setSelectionRange(originalEnd, originalEnd); // Move cursor to the end of the block
+                minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index); // Move cursor to the start
                 
-                // 4. AFTER the scroll has been triggered, set the final selection to highlight the full block.
+                // 3. AFTER the scroll is triggered, apply the final highlight.
                 minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index + offendingBlock.length);
 
             } else {
