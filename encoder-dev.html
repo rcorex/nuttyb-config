@@ -165,7 +165,6 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
-            <!-- *** BUTTON REPURPOSED HERE *** -->
             <button id="fixEncodingBtn" class="action-button warning" style="margin-top: 10px;">Fix Encoding</button>
         </div>
     </div>
@@ -190,7 +189,6 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
-        // *** NEW BUTTON REFERENCE ***
         const fixEncodingBtn = document.getElementById('fixEncodingBtn');
 
         // --- Main Functions ---
@@ -293,37 +291,37 @@
             updateAllUI();
         }
         
-        // *** NEW INTELLIGENT FIX FUNCTION ***
+        // *** RE-ENGINEERED FIX FUNCTION WITH CORRECTED LOGIC ***
         function handleFixEncoding() {
             const textToAnalyze = minifiedOutput.value;
             if (!textToAnalyze) return;
 
-            // 1. Convert the input string to a binary string representation
             let binaryString = '';
             for (let i = 0; i < textToAnalyze.length; i++) {
-                // This handles basic UTF-8 characters correctly for our purpose.
-                const byte = textToAnalyze.charCodeAt(i);
-                binaryString += byte.toString(2).padStart(8, '0');
+                binaryString += textToAnalyze.charCodeAt(i).toString(2).padStart(8, '0');
             }
 
-            // 2. Scan the bitstream for problematic 6-bit chunks
             for (let i = 0; i <= binaryString.length - 6; i++) {
                 const chunk = binaryString.substring(i, i + 6);
                 
-                // Check for the binary values that result in '+' (62) or '/' (63)
                 if (chunk === '111110' || chunk === '111111') {
-                    // 3. If found, calculate the position in the original string
+                    // Problematic chunk found.
                     const problematicCharIndex = Math.floor(i / 8);
 
-                    // 4. Find the beginning of the word at that position
-                    let wordStartIndex = textToAnalyze.lastIndexOf(' ', problematicCharIndex);
-                    wordStartIndex = (wordStartIndex === -1) ? 0 : wordStartIndex + 1;
+                    // *** NEW CORRECTED LOGIC STARTS HERE ***
 
-                    // 5. Insert a space to modify the bitstream
-                    const fixedCode = textToAnalyze.slice(0, wordStartIndex) + ' ' + textToAnalyze.slice(wordStartIndex);
+                    // 1. Find the starting index of the line containing the problem.
+                    const lineStartIndex = textToAnalyze.lastIndexOf('\n', problematicCharIndex) + 1;
+                    
+                    // 2. Slice the code into two parts: before the line, and the line itself plus the rest.
+                    const codeBefore = textToAnalyze.slice(0, lineStartIndex);
+                    const codeAfter = textToAnalyze.slice(lineStartIndex);
+
+                    // 3. Reassemble the code with a new, harmless comment line inserted before the problematic line.
+                    const fixedCode = codeBefore + '--\n' + codeAfter;
                     minifiedOutput.value = fixedCode;
 
-                    // 6. Re-encode and stop after the first fix
+                    // 4. Re-encode and exit.
                     handleEncode();
                     return; 
                 }
@@ -361,7 +359,6 @@
             minifyBtn.disabled = !luaInput.value;
             encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
             
-            // Logic for the Fix Encoding button
             const finalB64 = base64Output.value;
             fixEncodingBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
         }
@@ -395,7 +392,6 @@
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
-        // *** NEW EVENT LISTENER ***
         fixEncodingBtn.addEventListener('click', handleFixEncoding);
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -410,4 +406,4 @@
         });
     </script>
 </body>
-</html>```
+</html>
