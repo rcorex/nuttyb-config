@@ -11,6 +11,8 @@
     <style>
         /* CSS styles have been adjusted below */
         body {
+            /* Adjusted base font size */
+            font-size: 14px; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f0f2f5;
             color: #333;
@@ -24,38 +26,52 @@
         }
         .container {
             background-color: #ffffff;
-            padding: 25px 30px;
+            padding: 20px 25px; /* Adjusted padding */
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 900px;
         }
         h1 {
+            /* Reduced font size and margins */
+            font-size: 24px; 
             text-align: center; color: #1a1a1a; margin-top: 0;
-            border-bottom: 1px solid #e5e5e5; padding-bottom: 15px; margin-bottom: 25px;
+            border-bottom: 1px solid #e5e5e5; padding-bottom: 12px; margin-bottom: 20px;
         }
-        .pipeline-step { margin-bottom: 25px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; }
+        .pipeline-step { margin-bottom: 20px; } /* Reduced margin */
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 6px; /* Reduced margin */
+            color: #555; 
+            /* Reduced font size */
+            font-size: 13px;
+        }
         textarea {
-            width: 100%; padding: 10px; border: 1px solid #ccc;
-            border-radius: 6px; font-size: 14px; box-sizing: border-box;
+            width: 100%; padding: 8px; border: 1px solid #ccc; /* Adjusted padding */
+            border-radius: 6px;
+            /* Reduced font size */
+            font-size: 12px; 
+            box-sizing: border-box;
             background-color: #fff;
-            min-height: 150px; resize: vertical;
+            min-height: 140px; /* Adjusted height */
+            resize: vertical;
             font-family: "Courier New", Courier, monospace;
         }
-        #luaInput { min-height: 200px; }
+        #luaInput { min-height: 180px; } /* Adjusted height */
         textarea[readonly] { background-color: #f8f9fa; }
         .button-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 12px; /* Adjusted margin */
         }
         .action-button {
             flex: 1;
             display: block;
             width: 100%;
-            padding: 12px;
-            font-size: 16px;
+            padding: 10px; /* Adjusted padding */
+            /* Reduced font size */
+            font-size: 14px; 
             font-weight: 600;
             color: #fff;
             background-color: #007bff;
@@ -66,7 +82,7 @@
         }
         .action-button.secondary { background-color: #28a745; }
         .action-button.tertiary { background-color: #17a2b8; }
-        .action-button.warning { background-color: #ffc107; color: #212529;} /* New style for the fix button */
+        .action-button.warning { background-color: #ffc107; color: #212529;}
         .action-button:hover:not(:disabled) { background-color: #0056b3; }
         .action-button.secondary:hover:not(:disabled) { background-color: #218838; }
         .action-button.tertiary:hover:not(:disabled) { background-color: #138496; }
@@ -74,8 +90,10 @@
         .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         .output-container { position: relative; }
         .copyBtn {
-            position: absolute; top: 10px; right: 10px; padding: 5px 10px;
-            font-size: 12px; background-color: #6c757d; color: white; border: none;
+            position: absolute; top: 8px; right: 8px; padding: 4px 8px; /* Adjusted position and padding */
+            /* Reduced font size */
+            font-size: 11px; 
+            background-color: #6c757d; color: white; border: none;
             border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
         }
         .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
@@ -88,16 +106,19 @@
             color: #888;
             font-style: italic;
             min-height: 1em;
+            /* Reduced font size */
+            font-size: 13px;
         }
 
         .info-label {
             display: block;
             text-align: center;
-            margin: 8px 0 0 0;
+            margin: 6px 0 0 0; /* Adjusted margin */
             color: #888;
             font-style: italic;
             min-height: 1em;
-            font-size: 12px;
+            /* Reduced font size */
+            font-size: 11px;
         }
     </style>
 </head>
@@ -152,7 +173,6 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
-            <!-- *** NEW BUTTON ADDED HERE *** -->
             <button id="fixCommentsBtn" class="action-button warning" style="margin-top: 10px;">Fix Comments</button>
         </div>
     </div>
@@ -177,8 +197,6 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
-
-        // *** NEW ELEMENT REFERENCE ***
         const fixCommentsBtn = document.getElementById('fixCommentsBtn');
 
         // --- Main Functions ---
@@ -282,7 +300,6 @@
             updateAllUI();
         }
         
-        // *** NEW HANDLER FUNCTION ***
         function handleFixComments() {
             const minifiedCode = minifiedOutput.value;
             if (!minifiedCode) return;
@@ -327,7 +344,6 @@
             minifyBtn.disabled = !luaInput.value;
             encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
             
-            // *** LOGIC FOR THE NEW BUTTON'S STATE ***
             const finalB64 = base64Output.value;
             fixCommentsBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
         }
@@ -361,8 +377,6 @@
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
-        
-        // *** NEW EVENT LISTENER ***
         fixCommentsBtn.addEventListener('click', handleFixComments);
 
         document.addEventListener('DOMContentLoaded', () => {
