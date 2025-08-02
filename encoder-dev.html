@@ -11,7 +11,6 @@
     <style>
         /* CSS styles have been adjusted below */
         body {
-            /* Adjusted base font size */
             font-size: 14px; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f0f2f5;
@@ -26,51 +25,47 @@
         }
         .container {
             background-color: #ffffff;
-            padding: 20px 25px; /* Adjusted padding */
+            padding: 20px 25px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 900px;
         }
         h1 {
-            /* Reduced font size and margins */
             font-size: 24px; 
             text-align: center; color: #1a1a1a; margin-top: 0;
             border-bottom: 1px solid #e5e5e5; padding-bottom: 12px; margin-bottom: 20px;
         }
-        .pipeline-step { margin-bottom: 20px; } /* Reduced margin */
+        .pipeline-step { margin-bottom: 20px; }
         label { 
             display: block; 
             font-weight: 600; 
-            margin-bottom: 6px; /* Reduced margin */
+            margin-bottom: 6px;
             color: #555; 
-            /* Reduced font size */
             font-size: 13px;
         }
         textarea {
-            width: 100%; padding: 8px; border: 1px solid #ccc; /* Adjusted padding */
+            width: 100%; padding: 8px; border: 1px solid #ccc;
             border-radius: 6px;
-            /* Reduced font size */
             font-size: 12px; 
             box-sizing: border-box;
             background-color: #fff;
-            min-height: 140px; /* Adjusted height */
+            min-height: 140px;
             resize: vertical;
             font-family: "Courier New", Courier, monospace;
         }
-        #luaInput { min-height: 180px; } /* Adjusted height */
+        #luaInput { min-height: 180px; }
         textarea[readonly] { background-color: #f8f9fa; }
         .button-group {
             display: flex;
             gap: 10px;
-            margin-top: 12px; /* Adjusted margin */
+            margin-top: 12px;
         }
         .action-button {
             flex: 1;
             display: block;
             width: 100%;
-            padding: 10px; /* Adjusted padding */
-            /* Reduced font size */
+            padding: 10px;
             font-size: 14px; 
             font-weight: 600;
             color: #fff;
@@ -90,8 +85,7 @@
         .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         .output-container { position: relative; }
         .copyBtn {
-            position: absolute; top: 8px; right: 8px; padding: 4px 8px; /* Adjusted position and padding */
-            /* Reduced font size */
+            position: absolute; top: 8px; right: 8px; padding: 4px 8px;
             font-size: 11px; 
             background-color: #6c757d; color: white; border: none;
             border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
@@ -106,18 +100,16 @@
             color: #888;
             font-style: italic;
             min-height: 1em;
-            /* Reduced font size */
             font-size: 13px;
         }
 
         .info-label {
             display: block;
             text-align: center;
-            margin: 6px 0 0 0; /* Adjusted margin */
+            margin: 6px 0 0 0;
             color: #888;
             font-style: italic;
             min-height: 1em;
-            /* Reduced font size */
             font-size: 11px;
         }
     </style>
@@ -154,9 +146,10 @@
             </div>
         </div>
 
-        <!-- Step 3: Minified Output -->
+        <!-- Step 3: Output to Encode -->
         <div class="pipeline-step">
-            <label for="minifiedOutput">3. Minified Lua</label>
+            <!-- *** LABEL CHANGED HERE *** -->
+            <label for="minifiedOutput">3. Lua to Encode</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
                 <button class="copyBtn" data-target="minifiedOutput">Copy</button>
@@ -218,9 +211,18 @@
             updateAllUI();
         }
 
+        // *** LOGIC FOR THIS FUNCTION HAS BEEN MODIFIED ***
         function handleBeautify() {
             const originalCode = luaInput.value;
-            if (!originalCode.trim()) return;
+            
+            // Clear subsequent boxes
+            minifiedOutput.value = '';
+            base64Output.value = '';
+
+            if (!originalCode.trim()) {
+                updateAllUI();
+                return;
+            }
 
             try {
                 const beautifyOptions = {
@@ -229,7 +231,8 @@
                     RenameGlobals: false,
                     SolveMath: false
                 };
-                luaInput.value = luaminp.Beautify(originalCode, beautifyOptions);
+                // Place beautified code into the third box, leaving the second box unchanged.
+                minifiedOutput.value = luaminp.Beautify(originalCode, beautifyOptions);
             } catch (e) {
                 alert(`Beautify Error: ${e.message}`);
             }
@@ -247,7 +250,6 @@
             }
 
             try {
-                // Step 1: Minify the code using the library
                 const minifyOptions = {
                     RenameVariables: true,
                     RenameGlobals: false, 
@@ -255,20 +257,17 @@
                 };
                 const minifiedCode = luaminp.Minify(originalCode, minifyOptions);
 
-                // --- LOGIC TO PRESERVE COMMENTS ---
                 const commentsToKeep = [];
                 const lines = originalCode.split('\n');
                 for (const line of lines) {
                     if (commentsToKeep.length >= 3) {
-                        break; // Stop after finding 3 comments
+                        break; 
                     }
-                    // If the trimmed line starts with '--', it's a comment to keep.
                     if (line.trim().startsWith('--')) {
                         commentsToKeep.push(line);
                     }
                 }
                 
-                // Step 3: Combine the extracted comments and the minified code
                 if (commentsToKeep.length > 0) {
                     const header = commentsToKeep.join('\n');
                     minifiedOutput.value = `${header}\n${minifiedCode}`;
@@ -305,11 +304,11 @@
             if (!minifiedCode) return;
 
             const lines = minifiedCode.split('\n');
-            // Ensure there are at least two lines to modify
+
             if (lines.length > 1) {
-                lines[1] = lines[1] + ' '; // Add a space to the end of the second line
+                lines[1] = lines[1] + ' '; 
                 minifiedOutput.value = lines.join('\n');
-                handleEncode(); // Re-run the encoding process
+                handleEncode(); 
             }
         }
 
@@ -381,11 +380,10 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
-                // Ensure the global luaminp object and its methods are available
                 if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
                     clearInterval(libraryCheckInterval);
                     statusLabel.textContent = 'Library Loaded. Ready.';
-                    updateAllUI(); // Initial check
+                    updateAllUI(); 
                     setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
                 }
             }, 100);
