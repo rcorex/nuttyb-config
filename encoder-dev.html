@@ -54,6 +54,8 @@
             min-height: 140px;
             resize: vertical;
             font-family: "Courier New", Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
         textarea:focus {
             border-color: #007bff;
@@ -118,9 +120,22 @@
             min-height: 1em;
             font-size: 11px;
         }
+
+        /* Styles for the hidden shadow element */
+        #shadowScroller {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            visibility: hidden;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
     </style>
 </head>
 <body>
+    <!-- The hidden shadow element for calculations -->
+    <div id="shadowScroller"></div>
+
     <div class="container">
         <h1>Live Lua Toolchain</h1>
         <div id="statusLabel" class="status-label">Loading luamin.js...</div>
@@ -189,6 +204,7 @@
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
         const highlightBtn = document.getElementById('highlightBtn');
+        const shadowScroller = document.getElementById('shadowScroller');
 
         // --- Main Functions ---
 
@@ -310,21 +326,40 @@
             return null;
         }
 
-        // *** REFACTORED: The final, correct, and simple highlight/scroll logic ***
+        // *** REFACTORED: The final, robust highlight/scroll logic using the Shadow DOM method ***
         function handleHighlightOffender() {
             const offendingBlock = findOffendingBlock(minifiedOutput.value);
 
             if (offendingBlock) {
-                // 1. Focus the textarea.
-                minifiedOutput.focus();
+                // --- SCROLL CALCULATION ---
+                try {
+                    const computedStyle = window.getComputedStyle(minifiedOutput);
+                    
+                    // Apply the critical styles to the shadow element to make it a perfect mirror
+                    shadowScroller.style.width = computedStyle.width;
+                    shadowScroller.style.font = computedStyle.font;
+                    shadowScroller.style.lineHeight = computedStyle.lineHeight;
+                    shadowScroller.style.padding = computedStyle.padding;
+                    shadowScroller.style.border = computedStyle.border;
+                    shadowScroller.style.boxSizing = computedStyle.boxSizing;
 
-                // 2. "Wiggle" the cursor to trigger the browser's native scroll-into-view logic.
-                //    This happens too fast for the user to see, but the browser reacts to the move.
-                const originalEnd = offendingBlock.index + offendingBlock.length;
-                minifiedOutput.setSelectionRange(originalEnd, originalEnd); // Move cursor to the end of the block
-                minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index); // Move cursor to the start
-                
-                // 3. AFTER the scroll is triggered, apply the final highlight.
+                    // Insert the text *before* the selection into the shadow element
+                    const textBefore = minifiedOutput.value.substring(0, offendingBlock.index);
+                    shadowScroller.textContent = textBefore;
+
+                    // Measure the rendered height of the shadow element. This is the correct scroll position.
+                    const scrollHeight = shadowScroller.scrollHeight;
+
+                    // Directly set the scroll position of the textarea
+                    minifiedOutput.scrollTop = scrollHeight;
+
+                } catch (e) {
+                    console.error("Could not calculate scroll position:", e);
+                }
+                // --- END SCROLL CALCULATION ---
+
+                // Finally, focus and highlight the text.
+                minifiedOutput.focus();
                 minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index + offendingBlock.length);
 
             } else {
