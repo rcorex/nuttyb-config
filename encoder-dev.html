@@ -133,7 +133,7 @@
 
         <!-- Step 2: User Input & Beautify -->
         <div class="pipeline-step">
-            <label for="luaInput">2. Input Lua Code</label>
+            <label for="luaInput">2. Edit or Beautify Lua Code</label>
             <div class="output-container">
                 <textarea id="luaInput" spellcheck="false" placeholder="-- Your Lua code will appear here after decoding,
 -- or you can paste it directly."></textarea>
@@ -148,7 +148,6 @@
 
         <!-- Step 3: Output to Encode -->
         <div class="pipeline-step">
-            <!-- *** LABEL CHANGED HERE *** -->
             <label for="minifiedOutput">3. Lua to Encode</label>
             <div class="output-container">
                 <textarea id="minifiedOutput" spellcheck="false"></textarea>
@@ -166,7 +165,8 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
-            <button id="fixCommentsBtn" class="action-button warning" style="margin-top: 10px;">Fix Comments</button>
+            <!-- *** BUTTON REPURPOSED HERE *** -->
+            <button id="fixEncodingBtn" class="action-button warning" style="margin-top: 10px;">Fix Encoding</button>
         </div>
     </div>
 
@@ -190,7 +190,8 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
-        const fixCommentsBtn = document.getElementById('fixCommentsBtn');
+        // *** NEW BUTTON REFERENCE ***
+        const fixEncodingBtn = document.getElementById('fixEncodingBtn');
 
         // --- Main Functions ---
 
@@ -211,11 +212,9 @@
             updateAllUI();
         }
 
-        // *** LOGIC FOR THIS FUNCTION HAS BEEN MODIFIED ***
         function handleBeautify() {
             const originalCode = luaInput.value;
             
-            // Clear subsequent boxes
             minifiedOutput.value = '';
             base64Output.value = '';
 
@@ -231,7 +230,6 @@
                     RenameGlobals: false,
                     SolveMath: false
                 };
-                // Place beautified code into the third box, leaving the second box unchanged.
                 minifiedOutput.value = luaminp.Beautify(originalCode, beautifyOptions);
             } catch (e) {
                 alert(`Beautify Error: ${e.message}`);
@@ -260,12 +258,8 @@
                 const commentsToKeep = [];
                 const lines = originalCode.split('\n');
                 for (const line of lines) {
-                    if (commentsToKeep.length >= 3) {
-                        break; 
-                    }
-                    if (line.trim().startsWith('--')) {
-                        commentsToKeep.push(line);
-                    }
+                    if (commentsToKeep.length >= 3) { break; }
+                    if (line.trim().startsWith('--')) { commentsToKeep.push(line); }
                 }
                 
                 if (commentsToKeep.length > 0) {
@@ -299,16 +293,40 @@
             updateAllUI();
         }
         
-        function handleFixComments() {
-            const minifiedCode = minifiedOutput.value;
-            if (!minifiedCode) return;
+        // *** NEW INTELLIGENT FIX FUNCTION ***
+        function handleFixEncoding() {
+            const textToAnalyze = minifiedOutput.value;
+            if (!textToAnalyze) return;
 
-            const lines = minifiedCode.split('\n');
+            // 1. Convert the input string to a binary string representation
+            let binaryString = '';
+            for (let i = 0; i < textToAnalyze.length; i++) {
+                // This handles basic UTF-8 characters correctly for our purpose.
+                const byte = textToAnalyze.charCodeAt(i);
+                binaryString += byte.toString(2).padStart(8, '0');
+            }
 
-            if (lines.length > 1) {
-                lines[1] = lines[1] + ' '; 
-                minifiedOutput.value = lines.join('\n');
-                handleEncode(); 
+            // 2. Scan the bitstream for problematic 6-bit chunks
+            for (let i = 0; i <= binaryString.length - 6; i++) {
+                const chunk = binaryString.substring(i, i + 6);
+                
+                // Check for the binary values that result in '+' (62) or '/' (63)
+                if (chunk === '111110' || chunk === '111111') {
+                    // 3. If found, calculate the position in the original string
+                    const problematicCharIndex = Math.floor(i / 8);
+
+                    // 4. Find the beginning of the word at that position
+                    let wordStartIndex = textToAnalyze.lastIndexOf(' ', problematicCharIndex);
+                    wordStartIndex = (wordStartIndex === -1) ? 0 : wordStartIndex + 1;
+
+                    // 5. Insert a space to modify the bitstream
+                    const fixedCode = textToAnalyze.slice(0, wordStartIndex) + ' ' + textToAnalyze.slice(wordStartIndex);
+                    minifiedOutput.value = fixedCode;
+
+                    // 6. Re-encode and stop after the first fix
+                    handleEncode();
+                    return; 
+                }
             }
         }
 
@@ -343,8 +361,9 @@
             minifyBtn.disabled = !luaInput.value;
             encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
             
+            // Logic for the Fix Encoding button
             const finalB64 = base64Output.value;
-            fixCommentsBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
+            fixEncodingBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
         }
 
         function handleCopy(event) {
@@ -376,7 +395,8 @@
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
-        fixCommentsBtn.addEventListener('click', handleFixComments);
+        // *** NEW EVENT LISTENER ***
+        fixEncodingBtn.addEventListener('click', handleFixEncoding);
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
@@ -390,4 +410,4 @@
         });
     </script>
 </body>
-</html>
+</html>```
