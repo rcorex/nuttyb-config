@@ -9,7 +9,7 @@
     <script src="luamin.js" defer></script>
 
     <style>
-        /* CSS styles have been adjusted below */
+        /* CSS styles are unchanged */
         body {
             font-size: 14px; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -48,6 +48,7 @@
             width: 100%; padding: 8px; border: 1px solid #ccc;
             border-radius: 6px;
             font-size: 12px; 
+            line-height: 1.5;
             box-sizing: border-box;
             background-color: #fff;
             min-height: 140px;
@@ -120,12 +121,11 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Live Lua Toolchain</h1>
         <div id="statusLabel" class="status-label">Loading luamin.js...</div>
 
-        <!-- Step 1: Decoder -->
+        <!-- (Rest of the HTML is unchanged) -->
         <div class="pipeline-step">
             <label for="base64Input">1. (Optional) Paste Base64URL to Decode</label>
             <div class="output-container">
@@ -135,8 +135,6 @@
             <div id="base64InputInfo" class="info-label"></div>
             <button id="decodeBtn" class="action-button secondary">Decode to Lua</button>
         </div>
-
-        <!-- Step 2: User Input & Beautify -->
         <div class="pipeline-step">
             <label for="luaInput">2. Edit or Beautify Lua Code</label>
             <div class="output-container">
@@ -150,8 +148,6 @@
                 <button id="minifyBtn" class="action-button">Minify Code</button>
             </div>
         </div>
-
-        <!-- Step 3: Output to Encode -->
         <div class="pipeline-step">
             <label for="minifiedOutput">3. Lua to Encode</label>
             <div class="output-container">
@@ -161,8 +157,6 @@
             <div id="minifiedOutputInfo" class="info-label"></div>
             <button id="encodeBtn" class="action-button">Encode to Base64URL</button>
         </div>
-        
-        <!-- Step 4: Base64URL Output -->
         <div class="pipeline-step">
             <label for="base64Output">4. Final Base64URL Result</label>
             <div class="output-container">
@@ -296,49 +290,46 @@
             updateAllUI();
         }
         
-        // *** REFACTORED: The new, algorithmically correct search function ***
         function findOffendingBlock(text) {
             if (!text) return null;
 
-            // Iterate through the text in non-overlapping 3-byte blocks, just like Base64 does.
             for (let i = 0; i < text.length; i += 3) {
                 const block = text.substring(i, i + 3);
                 
                 try {
-                    // We must use the proper UTF-8 conversion for btoa to work correctly
                     const utf8SafeString = unescape(encodeURIComponent(block));
                     const base64String = btoa(utf8SafeString);
 
-                    // Check if the 4-character output for this specific block contains a problem
                     if (base64String.includes('+') || base64String.includes('/')) {
-                        // If it does, this block is the source. Return its position and length.
                         return { index: i, length: block.length };
                     }
                 } catch (e) {
-                    // This can happen with incomplete multi-byte UTF-8 chars at the end of the string.
-                    // It's safe to ignore as it won't be the source of a standard '+' or '/'.
                     continue;
                 }
             }
-            return null; // No offending block found
+            return null;
         }
 
-        // *** The handler function now uses the corrected search logic ***
+        // *** REFACTORED: The handler now uses the simple and correct focus() method ***
         function handleHighlightOffender() {
             const offendingBlock = findOffendingBlock(minifiedOutput.value);
 
             if (offendingBlock) {
-                // Focus and highlight the block in Box 3
-                minifiedOutput.focus();
+                // 1. Set the selection range on the textarea.
                 minifiedOutput.selectionStart = offendingBlock.index;
                 minifiedOutput.selectionEnd = offendingBlock.index + offendingBlock.length;
+
+                // 2. Call focus() on the element. The browser will automatically
+                //    scroll the current selection into the visible area.
+                minifiedOutput.focus();
+
             } else {
                 const originalText = highlightBtn.textContent;
                 highlightBtn.textContent = 'No Problem Found';
                 highlightBtn.disabled = true;
                 setTimeout(() => {
                     highlightBtn.textContent = originalText;
-                    updateAllUI(); // Re-evaluates the disabled state
+                    updateAllUI();
                 }, 2000);
             }
         }
