@@ -66,9 +66,11 @@
         }
         .action-button.secondary { background-color: #28a745; }
         .action-button.tertiary { background-color: #17a2b8; }
+        .action-button.warning { background-color: #ffc107; color: #212529;} /* New style for the fix button */
         .action-button:hover:not(:disabled) { background-color: #0056b3; }
         .action-button.secondary:hover:not(:disabled) { background-color: #218838; }
         .action-button.tertiary:hover:not(:disabled) { background-color: #138496; }
+        .action-button.warning:hover:not(:disabled) { background-color: #e0a800; }
         .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         .output-container { position: relative; }
         .copyBtn {
@@ -88,15 +90,14 @@
             min-height: 1em;
         }
 
-        /* --- MODIFIED RULE --- */
         .info-label {
             display: block;
             text-align: center;
-            margin: 8px 0 0 0; /* Changed: Removed negative margin to prevent overlap */
+            margin: 8px 0 0 0;
             color: #888;
             font-style: italic;
             min-height: 1em;
-            font-size: 12px; /* Changed: Made font size smaller */
+            font-size: 12px;
         }
     </style>
 </head>
@@ -151,6 +152,8 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
+            <!-- *** NEW BUTTON ADDED HERE *** -->
+            <button id="fixCommentsBtn" class="action-button warning" style="margin-top: 10px;">Fix Comments</button>
         </div>
     </div>
 
@@ -174,6 +177,9 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
+
+        // *** NEW ELEMENT REFERENCE ***
+        const fixCommentsBtn = document.getElementById('fixCommentsBtn');
 
         // --- Main Functions ---
 
@@ -275,6 +281,20 @@
             }
             updateAllUI();
         }
+        
+        // *** NEW HANDLER FUNCTION ***
+        function handleFixComments() {
+            const minifiedCode = minifiedOutput.value;
+            if (!minifiedCode) return;
+
+            const lines = minifiedCode.split('\n');
+            // Ensure there are at least two lines to modify
+            if (lines.length > 1) {
+                lines[1] = lines[1] + ' '; // Add a space to the end of the second line
+                minifiedOutput.value = lines.join('\n');
+                handleEncode(); // Re-run the encoding process
+            }
+        }
 
         // --- UI Update Functions ---
 
@@ -306,6 +326,10 @@
             beautifyBtn.disabled = !luaInput.value;
             minifyBtn.disabled = !luaInput.value;
             encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
+            
+            // *** LOGIC FOR THE NEW BUTTON'S STATE ***
+            const finalB64 = base64Output.value;
+            fixCommentsBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
         }
 
         function handleCopy(event) {
@@ -337,6 +361,9 @@
         minifyBtn.addEventListener('click', handleMinify);
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
+        
+        // *** NEW EVENT LISTENER ***
+        fixCommentsBtn.addEventListener('click', handleFixComments);
 
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
