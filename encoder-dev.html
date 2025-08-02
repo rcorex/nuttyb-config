@@ -170,7 +170,6 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
-            <!-- *** BUTTON RENAMED AND REPURPOSED *** -->
             <button id="highlightBtn" class="action-button warning" style="margin-top: 10px;">Highlight Problem</button>
         </div>
     </div>
@@ -195,7 +194,6 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
-        // *** UPDATED BUTTON REFERENCE ***
         const highlightBtn = document.getElementById('highlightBtn');
 
         // --- Main Functions ---
@@ -298,41 +296,49 @@
             updateAllUI();
         }
         
-        function findFirstOffendingSequence(text) {
-            if (!text || text.length < 3) return null;
+        // *** REFACTORED: The new, algorithmically correct search function ***
+        function findOffendingBlock(text) {
+            if (!text) return null;
 
-            for (let i = 0; i <= text.length - 3; i++) {
-                const sequence = text.substring(i, i + 3);
+            // Iterate through the text in non-overlapping 3-byte blocks, just like Base64 does.
+            for (let i = 0; i < text.length; i += 3) {
+                const block = text.substring(i, i + 3);
                 
                 try {
-                    const utf8SafeString = unescape(encodeURIComponent(sequence));
+                    // We must use the proper UTF-8 conversion for btoa to work correctly
+                    const utf8SafeString = unescape(encodeURIComponent(block));
                     const base64String = btoa(utf8SafeString);
+
+                    // Check if the 4-character output for this specific block contains a problem
                     if (base64String.includes('+') || base64String.includes('/')) {
-                        return { index: i, length: 3 };
+                        // If it does, this block is the source. Return its position and length.
+                        return { index: i, length: block.length };
                     }
                 } catch (e) {
+                    // This can happen with incomplete multi-byte UTF-8 chars at the end of the string.
+                    // It's safe to ignore as it won't be the source of a standard '+' or '/'.
                     continue;
                 }
             }
-            return null;
+            return null; // No offending block found
         }
 
-        // *** NEW: The "highlight only" handler for the button ***
+        // *** The handler function now uses the corrected search logic ***
         function handleHighlightOffender() {
-            const offendingSequence = findFirstOffendingSequence(minifiedOutput.value);
+            const offendingBlock = findOffendingBlock(minifiedOutput.value);
 
-            if (offendingSequence) {
-                // Focus and highlight the sequence in Box 3
+            if (offendingBlock) {
+                // Focus and highlight the block in Box 3
                 minifiedOutput.focus();
-                minifiedOutput.selectionStart = offendingSequence.index;
-                minifiedOutput.selectionEnd = offendingSequence.index + offendingSequence.length;
+                minifiedOutput.selectionStart = offendingBlock.index;
+                minifiedOutput.selectionEnd = offendingBlock.index + offendingBlock.length;
             } else {
-                // If no offender is found after the button is enabled, something is out of sync.
-                // Briefly show a message to the user.
                 const originalText = highlightBtn.textContent;
                 highlightBtn.textContent = 'No Problem Found';
+                highlightBtn.disabled = true;
                 setTimeout(() => {
                     highlightBtn.textContent = originalText;
+                    updateAllUI(); // Re-evaluates the disabled state
                 }, 2000);
             }
         }
@@ -402,7 +408,6 @@
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
         
-        // *** UPDATED: Event listener points to the new highlight-only function ***
         highlightBtn.addEventListener('click', handleHighlightOffender);
 
         document.addEventListener('DOMContentLoaded', () => {
