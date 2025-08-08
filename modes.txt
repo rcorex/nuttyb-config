@@ -146,6 +146,12 @@ No Rush
 !raptor_firstwavesboost 6
 !raptor_graceperiodmult 3
 ---
+No Rush Solo
+!raptor_queentimemult 1.3
+!raptor_spawncountmult 3
+!raptor_firstwavesboost 3
+!raptor_graceperiodmult 2.7
+---
 Zero Grace
 !raptor_queentimemult 1.4
 !raptor_spawncountmult 3
