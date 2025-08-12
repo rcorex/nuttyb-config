@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Lua Toolchain</title>
+
+    <!-- Assumes luamin.js is in the same directory -->
+    <script src="luamin.js" defer></script>
+
+    <style>
+        /* CSS styles are unchanged */
+        body {
+            font-size: 14px; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+        h1 {
+            font-size: 24px; 
+            text-align: center; color: #1a1a1a; margin-top: 0;
+            border-bottom: 1px solid #e5e5e5; padding-bottom: 12px; margin-bottom: 20px;
+        }
+        .pipeline-step { margin-bottom: 20px; }
+        label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 6px;
+            color: #555; 
+            font-size: 13px;
+        }
+        textarea {
+            width: 100%; padding: 8px; border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 12px; 
+            line-height: 1.5;
+            box-sizing: border-box;
+            background-color: #fff;
+            min-height: 140px;
+            resize: vertical;
+            font-family: "Courier New", Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        #luaInput { min-height: 180px; }
+        textarea[readonly] { background-color: #f8f9fa; }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .action-button {
+            flex: 1;
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 14px; 
+            font-weight: 600;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .action-button.secondary { background-color: #28a745; }
+        .action-button.tertiary { background-color: #17a2b8; }
+        .action-button:hover:not(:disabled) { background-color: #0056b3; }
+        .action-button.secondary:hover:not(:disabled) { background-color: #218838; }
+        .action-button.tertiary:hover:not(:disabled) { background-color: #138496; }
+        .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        .output-container { position: relative; }
+        .copyBtn {
+            position: absolute; top: 8px; right: 8px; padding: 4px 8px;
+            font-size: 11px; 
+            background-color: #6c757d; color: white; border: none;
+            border-radius: 6px; cursor: pointer; transition: all 0.2s ease;
+        }
+        .copyBtn:hover:not(:disabled) { background-color: #5a6268; }
+        .copyBtn:disabled { background-color: #b0b5ba; }
+        
+        .status-label {
+            display: block;
+            text-align: center;
+            margin: 15px 0 -10px 0;
+            color: #888;
+            font-style: italic;
+            min-height: 1em;
+            font-size: 13px;
+        }
+
+        .info-label {
+            display: block;
+            text-align: center;
+            margin: 6px 0 0 0;
+            color: #888;
+            font-style: italic;
+            min-height: 1em;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Lua Toolchain</h1>
+        <div id="statusLabel" class="status-label">Loading luamin.js...</div>
+
+        <div class="pipeline-step">
+            <label for="base64Input">1. (Optional) Paste Base64URL to Decode</label>
+            <div class="output-container">
+                <textarea id="base64Input" spellcheck="false" placeholder="Paste your Base64URL encoded string here..."></textarea>
+                <button class="copyBtn" data-target="base64Input">Copy</button>
+            </div>
+            <div id="base64InputInfo" class="info-label"></div>
+            <button id="decodeBtn" class="action-button secondary">Decode to Lua</button>
+        </div>
+        <div class="pipeline-step">
+            <label for="luaInput">2. Paste and Edit Lua Code</label>
+            <div class="output-container">
+                <textarea id="luaInput" spellcheck="false" placeholder="-- Your Lua code will appear here after decoding,
+-- or you can paste it directly."></textarea>
+                <button class="copyBtn" data-target="luaInput">Copy</button>
+            </div>
+            <div id="luaInputInfo" class="info-label"></div>
+            <div class="button-group">
+                <button id="beautifyBtn" class="action-button tertiary">Beautify Code</button>
+                <button id="minifyBtn" class="action-button">Minify Code</button>
+            </div>
+        </div>
+        <div class="pipeline-step">
+            <label for="minifiedOutput">3. Lua to Encode</label>
+            <div class="output-container">
+                <textarea id="minifiedOutput" spellcheck="false"></textarea>
+                <button class="copyBtn" data-target="minifiedOutput">Copy</button>
+            </div>
+            <div id="minifiedOutputInfo" class="info-label"></div>
+            <button id="encodeBtn" class="action-button">Encode to Base64URL</button>
+        </div>
+        <div class="pipeline-step">
+            <label for="base64Output">4. Final Base64URL Result</label>
+            <div class="output-container">
+                <textarea id="base64Output" readonly></textarea>
+                <button class="copyBtn" data-target="base64Output">Copy</button>
+            </div>
+            <div id="base64OutputInfo" class="info-label"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const base64Input = document.getElementById('base64Input');
+        const base64InputInfo = document.getElementById('base64InputInfo');
+        const decodeBtn = document.getElementById('decodeBtn');
+
+        const luaInput = document.getElementById('luaInput');
+        const luaInputInfo = document.getElementById('luaInputInfo');
+        const beautifyBtn = document.getElementById('beautifyBtn');
+        const minifyBtn = document.getElementById('minifyBtn');
+
+        const minifiedOutput = document.getElementById('minifiedOutput');
+        const minifiedOutputInfo = document.getElementById('minifiedOutputInfo');
+        const encodeBtn = document.getElementById('encodeBtn');
+
+        const base64Output = document.getElementById('base64Output');
+        const base64OutputInfo = document.getElementById('base64OutputInfo');
+        
+        const statusLabel = document.getElementById('statusLabel');
+        const allCopyBtns = document.querySelectorAll('.copyBtn');
+
+        // --- Main Functions ---
+
+        function handleDecode() {
+            const b64urlString = base64Input.value;
+            if (!b64urlString.trim()) return;
+
+            try {
+                let base64 = b64urlString.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) { base64 += '='; }
+
+                const decodedCode = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                
+                luaInput.value = decodedCode;
+            } catch (e) {
+                alert(`Decoding Error: ${e.message}\n\nPlease ensure you have pasted a valid Base64URL string.`);
+            }
+            updateAllUI();
+        }
+
+        function handleBeautify() {
+            const originalCode = luaInput.value;
+            
+            minifiedOutput.value = '';
+            base64Output.value = '';
+
+            if (!originalCode.trim()) {
+                updateAllUI();
+                return;
+            }
+
+            try {
+                const beautifyOptions = {
+                    Indentation: '\t',
+                    RenameVariables: false,
+                    RenameGlobals: false,
+                    SolveMath: false
+                };
+                minifiedOutput.value = luaminp.Beautify(originalCode, beautifyOptions);
+            } catch (e) {
+                alert(`Beautify Error: ${e.message}`);
+            }
+            updateAllUI();
+        }
+        
+        function handleMinify() {
+            const originalCode = luaInput.value;
+            
+            minifiedOutput.value = '';
+            base64Output.value = '';
+            if (!originalCode.trim()) {
+                updateAllUI();
+                return;
+            }
+
+            try {
+                const minifyOptions = {
+                    RenameVariables: true,
+                    RenameGlobals: false, 
+                    SolveMath: true
+                };
+                const minifiedCode = luaminp.Minify(originalCode, minifyOptions);
+
+                const commentsToKeep = [];
+                const lines = originalCode.split('\n');
+                for (const line of lines) {
+                    if (commentsToKeep.length >= 3) { break; }
+                    if (line.trim().startsWith('--')) { commentsToKeep.push(line); }
+                }
+                
+                if (commentsToKeep.length > 0) {
+                    const header = commentsToKeep.join('\n');
+                    minifiedOutput.value = `${header}\n${minifiedCode}`;
+                } else {
+                    minifiedOutput.value = minifiedCode;
+                }
+
+            } catch (e) {
+                minifiedOutput.value = `Minify Error: ${e.message}`;
+            }
+            updateAllUI();
+        }
+
+        function handleEncode() {
+            const codeToEncode = minifiedOutput.value;
+            if (!codeToEncode || codeToEncode.startsWith('Minify Error')) {
+                base64Output.value = '';
+                updateAllUI();
+                return;
+            }
+
+            try {
+                const utf8SafeString = unescape(encodeURIComponent(codeToEncode));
+                const base64String = btoa(utf8SafeString);
+                base64Output.value = base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+            } catch (e) {
+                base64Output.value = `Encoding Error: ${e.message}`;
+            }
+            updateAllUI();
+        }
+        
+        // --- UI Update Functions ---
+
+        function updateCharCount(inputEl, infoEl) {
+            const text = inputEl.value;
+            const errorPrefixes = ['Minify Error:', 'Encoding Error:'];
+            const hasError = errorPrefixes.some(prefix => text.startsWith(prefix));
+
+            if (text && !hasError) {
+                infoEl.textContent = `Characters: ${text.length}`;
+            } else {
+                infoEl.textContent = '';
+            }
+        }
+
+        function updateAllUI() {
+            // Update character counts
+            updateCharCount(base64Input, base64InputInfo);
+            updateCharCount(luaInput, luaInputInfo);
+            updateCharCount(minifiedOutput, minifiedOutputInfo);
+            updateCharCount(base64Output, base64OutputInfo);
+            
+            // Update button states
+            allCopyBtns.forEach(btn => {
+                const target = document.getElementById(btn.dataset.target);
+                btn.disabled = !target.value;
+            });
+            decodeBtn.disabled = !base64Input.value;
+            beautifyBtn.disabled = !luaInput.value;
+            minifyBtn.disabled = !luaInput.value;
+            encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
+        }
+
+        function handleCopy(event) {
+            const targetId = event.target.dataset.target;
+            const sourceTextarea = document.getElementById(targetId);
+            
+            if (!sourceTextarea || !sourceTextarea.value) return;
+            
+            navigator.clipboard.writeText(sourceTextarea.value).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.disabled = true;
+                setTimeout(() => { 
+                    button.textContent = originalText;
+                    updateAllUI();
+                }, 1500);
+            }).catch(err => console.error('Failed to copy text: ', err));
+        }
+
+        // --- Event Listeners & Initializer ---
+        
+        ['base64Input', 'luaInput', 'minifiedOutput'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateAllUI);
+        });
+
+        decodeBtn.addEventListener('click', handleDecode);
+        beautifyBtn.addEventListener('click', handleBeautify);
+        minifyBtn.addEventListener('click', handleMinify);
+        encodeBtn.addEventListener('click', handleEncode);
+        allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const libraryCheckInterval = setInterval(() => {
+                if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
+                    clearInterval(libraryCheckInterval);
+                    statusLabel.textContent = 'Library Loaded. Ready.';
+                    updateAllUI(); 
+                    setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>
