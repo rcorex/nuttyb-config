@@ -497,8 +497,8 @@ for unitName, unitDef in pairs(UnitDefs) do
 
     if unitDef.customparams and unitDef.customparams.subfolder == "other/raptors" and unitDef.health and not unitName:match('^raptor_queen_.*') then
         unitDef.health = unitDef.health * __HEALTH_MULTIPLIER__
-        unitDef.sfxtypes = {}
-        unitDef.explodas = unitDef.explodas
+        --unitDef.sfxtypes = {}
+        --unitDef.explodas = unitDef.explodas
     end
 end
 
