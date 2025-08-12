@@ -85,11 +85,9 @@
         }
         .action-button.secondary { background-color: #28a745; }
         .action-button.tertiary { background-color: #17a2b8; }
-        .action-button.warning { background-color: #ffc107; color: #212529;}
         .action-button:hover:not(:disabled) { background-color: #0056b3; }
         .action-button.secondary:hover:not(:disabled) { background-color: #218838; }
         .action-button.tertiary:hover:not(:disabled) { background-color: #138496; }
-        .action-button.warning:hover:not(:disabled) { background-color: #e0a800; }
         .action-button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
         .output-container { position: relative; }
         .copyBtn {
@@ -120,22 +118,9 @@
             min-height: 1em;
             font-size: 11px;
         }
-
-        /* Styles for the hidden shadow element */
-        #shadowScroller {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            visibility: hidden;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
     </style>
 </head>
 <body>
-    <!-- The hidden shadow element for calculations -->
-    <div id="shadowScroller"></div>
-
     <div class="container">
         <h1>Live Lua Toolchain</h1>
         <div id="statusLabel" class="status-label">Loading luamin.js...</div>
@@ -178,7 +163,6 @@
                 <button class="copyBtn" data-target="base64Output">Copy</button>
             </div>
             <div id="base64OutputInfo" class="info-label"></div>
-            <button id="highlightBtn" class="action-button warning" style="margin-top: 10px;">Highlight Problem</button>
         </div>
     </div>
 
@@ -202,8 +186,6 @@
         
         const statusLabel = document.getElementById('statusLabel');
         const allCopyBtns = document.querySelectorAll('.copyBtn');
-        const highlightBtn = document.getElementById('highlightBtn');
-        const shadowScroller = document.getElementById('shadowScroller');
 
         // --- Main Functions ---
 
@@ -305,84 +287,6 @@
             updateAllUI();
         }
         
-        function findOffendingBlock(text) {
-            if (!text) return null;
-
-            for (let i = 0; i < text.length; i += 3) {
-                const block = text.substring(i, i + 3);
-                
-                try {
-                    const utf8SafeString = unescape(encodeURIComponent(block));
-                    const base64String = btoa(utf8SafeString);
-
-                    if (base64String.includes('+') || base64String.includes('/')) {
-                        return { index: i, length: block.length };
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-            return null;
-        }
-
-        // *** REVISED: The updated function to fix scroll timing and centering ***
-        function handleHighlightOffender() {
-            const offendingBlock = findOffendingBlock(minifiedOutput.value);
-
-            if (offendingBlock) {
-                // --- FOCUS & HIGHLIGHT FIRST ---
-                // By focusing and selecting first, we ensure the browser has the element
-                // active, which can help prevent timing issues with the scroll update.
-                minifiedOutput.focus();
-                minifiedOutput.setSelectionRange(offendingBlock.index, offendingBlock.index + offendingBlock.length);
-
-                // --- SCROLL CALCULATION ---
-                try {
-                    const computedStyle = window.getComputedStyle(minifiedOutput);
-                    
-                    // Apply all critical styles to the shadow element for accurate measurement.
-                    // This includes the text-wrapping styles crucial for correctness.
-                    shadowScroller.style.width = computedStyle.width;
-                    shadowScroller.style.font = computedStyle.font;
-                    shadowScroller.style.lineHeight = computedStyle.lineHeight;
-                    shadowScroller.style.padding = computedStyle.padding;
-                    shadowScroller.style.border = computedStyle.border;
-                    shadowScroller.style.boxSizing = computedStyle.boxSizing;
-                    shadowScroller.style.whiteSpace = computedStyle.whiteSpace;
-                    shadowScroller.style.wordWrap = computedStyle.wordWrap;
-
-                    // Insert the text *before* the selection into the shadow element.
-                    const textBefore = minifiedOutput.value.substring(0, offendingBlock.index);
-                    shadowScroller.textContent = textBefore;
-
-                    // This gives the pixel position for the top of the selection.
-                    const scrollHeight = shadowScroller.scrollHeight;
-                    
-                    // Get the visible height of the textarea.
-                    const viewHeight = minifiedOutput.clientHeight;
-
-                    // Calculate the new scroll position to center the selection.
-                    // We subtract half the textarea's visible height from the target scroll position.
-                    const targetScrollTop = scrollHeight - (viewHeight / 2);
-
-                    // Set the scroll position, ensuring it's not a negative number.
-                    minifiedOutput.scrollTop = Math.max(0, targetScrollTop);
-
-                } catch (e) {
-                    console.error("Could not calculate scroll position:", e);
-                }
-
-            } else {
-                const originalText = highlightBtn.textContent;
-                highlightBtn.textContent = 'No Problem Found';
-                highlightBtn.disabled = true;
-                setTimeout(() => {
-                    highlightBtn.textContent = originalText;
-                    updateAllUI();
-                }, 2000);
-            }
-        }
-
         // --- UI Update Functions ---
 
         function updateCharCount(inputEl, infoEl) {
@@ -413,9 +317,6 @@
             beautifyBtn.disabled = !luaInput.value;
             minifyBtn.disabled = !luaInput.value;
             encodeBtn.disabled = !minifiedOutput.value || minifiedOutput.value.startsWith('Minify Error');
-            
-            const finalB64 = base64Output.value;
-            highlightBtn.disabled = !(finalB64.includes('-') || finalB64.includes('_'));
         }
 
         function handleCopy(event) {
@@ -448,8 +349,6 @@
         encodeBtn.addEventListener('click', handleEncode);
         allCopyBtns.forEach(btn => btn.addEventListener('click', handleCopy));
         
-        highlightBtn.addEventListener('click', handleHighlightOffender);
-
         document.addEventListener('DOMContentLoaded', () => {
             const libraryCheckInterval = setInterval(() => {
                 if (typeof luaminp !== 'undefined' && typeof luaminp.Beautify === 'function' && typeof luaminp.Minify === 'function') {
