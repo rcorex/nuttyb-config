@@ -443,7 +443,7 @@
         let customOptions = [];
         let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
-        const mainTweaksPrefixes = [ '!bset tweakdefs ', '!bset tweakunits ' ];
+        const mainTweaksPrefixes = [ '!bset tweakdefs2 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
         const hiddenLabels = [ 'Slow raptors/scavs' ];
@@ -555,11 +555,14 @@ end`;
                 const multiplierNum = parseFloat(multiplierValue);
                 let metalCostLine, workerTimeLine;
                 switch (multiplierNum) {
-                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * .35)'; workerTimeLine = 'g.workertime = g.workertime * 0.65'; break;
-                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * .34)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
-                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * .33)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
-                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * .25)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
-                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * .15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
+                    case 1.3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.576923077)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.466666667)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.7: metalCostLine = 'k.metalcost = math.floor(k.health * 0.411764706)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * 0.35)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.3)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
+                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.25)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
+                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * 0.1875)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
+                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
                     default: metalCostLine = 'k.metalcost = math.floor(k.metalcost)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
                 }
                 originalCode = luaHpTemplate
@@ -758,54 +761,61 @@ end`;
                 customSettingsContainer.style.display = 'none';
             }
         }
-
+        
+        // --- FIXED FUNCTION ---
         function updateCustomOptionUI() {
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
-            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select, #custom-options-form-columns input[type="checkbox"]');
-            
-            allFormElements.forEach(el => {
-                if(el.dataset.isCustom) return;
+            // Regex to find 'tweakdefs' or 'tweakunits' followed by a number from 1-9
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)([1-9])\b/; 
 
-                if (el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) {
-                    return;
+            const allFormElements = document.querySelectorAll('#options-form-columns input[type="checkbox"], #options-form-columns select');
+
+            // Step 1: Scan all standard options to find which numbered slots are currently being used.
+            allFormElements.forEach(el => {
+                if (el.dataset.isCustom) return; // Skip custom tweaks in this initial scan.
+
+                // Handle HP/Scav generator dropdowns which have a dedicated, numbered slot.
+                if ((el.dataset.isHpGenerator || el.dataset.isScavHpGenerator) && el.value && el.dataset.slot) {
+                    const slotNum = parseInt(el.dataset.slot, 10);
+                    if (!isNaN(slotNum)) { // Ensure the slot is a valid number.
+                        if (el.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slotNum);
+                        else if (el.dataset.slotType === 'tweakunits') usedTweakUnits.add(slotNum);
+                    }
+                    return; // Done processing this HP element.
                 }
 
+                // Handle standard checkboxes and other select dropdowns.
                 let commands = [];
-                if (el.tagName === 'SELECT') { if (el.value) commands.push(el.value); } 
-                else if (el.type === 'checkbox' && el.checked) { commands = JSON.parse(el.dataset.commandBlocks); }
-                
+                if (el.tagName === 'SELECT' && el.value) {
+                    commands.push(el.value);
+                } else if (el.type === 'checkbox' && el.checked) {
+                    commands = JSON.parse(el.dataset.commandBlocks);
+                }
+
                 commands.forEach(cmd => {
                     if (!cmd) return;
                     const match = cmd.match(slotRegex);
                     if (match) {
-                        const slotNum = parseInt(match[2] || 0, 10);
-                        if (slotNum > 0) {
-                            if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
-                            else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
-                        }
+                        // match[1] is 'tweakdefs' or 'tweakunits'
+                        // match[2] is the slot number character (e.g., '4')
+                        const slotNum = parseInt(match[2], 10);
+                        if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                        else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
                     }
                 });
             });
-            
-            document.querySelectorAll('select[data-slot]').forEach(select => {
-                if (select.value) {
-                    const slot = parseInt(select.dataset.slot, 10);
-                    if (select.dataset.slotType === 'tweakdefs') usedTweakDefs.add(slot);
-                    else if (select.dataset.slotType === 'tweakunits') usedTweakUnits.add(slot);
-                }
-            });
 
-
+            // Step 2: Update the UI for custom tweaks based on the now-accurate slot usage.
             const customCheckboxes = document.querySelectorAll('input[data-is-custom="true"]');
             customCheckboxes.forEach(checkbox => {
                 const typeSpan = checkbox.nextElementSibling.nextElementSibling;
                 const textSpan = checkbox.nextElementSibling;
+                const tweakData = JSON.parse(checkbox.dataset.customData);
                 textSpan.classList.remove('disabled');
 
                 if (checkbox.checked) {
-                    const tweakData = JSON.parse(checkbox.dataset.customData);
+                    // If checked, find the first available slot and assign it for display.
                     const targetSet = (tweakData.type === 'tweakdefs') ? usedTweakDefs : usedTweakUnits;
                     let assignedSlot = null;
                     for (let i = 1; i <= 9; i++) {
@@ -816,24 +826,29 @@ end`;
                     }
                     if (assignedSlot !== null) {
                         typeSpan.textContent = `(${tweakData.type}${assignedSlot})`;
+                        // IMPORTANT: Add the slot to the set so the next checked custom tweak doesn't re-use it.
                         targetSet.add(assignedSlot);
                     } else {
                         typeSpan.textContent = `(${tweakData.type} - No Slot!)`;
                     }
                 } else {
-                     const tweakData = JSON.parse(checkbox.dataset.customData);
+                     // If not checked, just show its base type.
                      typeSpan.textContent = `(${tweakData.type})`;
                 }
             });
 
+            // Step 3: Disable any UNCHECKED custom tweaks if no slots of their type are left.
             let defsAvailable = 9 - usedTweakDefs.size;
             let unitsAvailable = 9 - usedTweakUnits.size;
-            
+
             customCheckboxes.forEach(checkbox => {
                 if (!checkbox.checked) {
                     const tweakData = JSON.parse(checkbox.dataset.customData);
                     let shouldBeDisabled = false;
-                    if ((tweakData.type === 'tweakdefs' && defsAvailable <= 0) || (tweakData.type === 'tweakunits' && unitsAvailable <= 0)) {
+                    if (tweakData.type === 'tweakdefs' && defsAvailable <= 0) {
+                        shouldBeDisabled = true;
+                    }
+                    if (tweakData.type === 'tweakunits' && unitsAvailable <= 0) {
                         shouldBeDisabled = true;
                     }
                     checkbox.disabled = shouldBeDisabled;
@@ -841,11 +856,12 @@ end`;
                 }
             });
 
+            // Step 4: Update the warning message with the final count.
             slotWarningContainer.innerHTML = '';
-            const defsSlotWord = defsAvailable === 1 ? 'slot' : 'slots';
-            const unitsSlotWord = unitsAvailable === 1 ? 'slot' : 'slots';
+            const defsSlotWord = Math.max(0, defsAvailable) === 1 ? 'slot' : 'slots';
+            const unitsSlotWord = Math.max(0, unitsAvailable) === 1 ? 'slot' : 'slots';
             const message = document.createElement('p');
-            message.textContent = `${defsAvailable} available tweakdefs ${defsSlotWord} and ${unitsAvailable} available tweakunits ${unitsSlotWord}`;
+            message.textContent = `${Math.max(0, defsAvailable)} available tweakdefs ${defsSlotWord} and ${Math.max(0, unitsAvailable)} available tweakunits ${unitsSlotWord}`;
             slotWarningContainer.appendChild(message);
         }
 
@@ -871,7 +887,7 @@ end`;
             rawOptionsData = [];
 
             const dynamicHPGroup = {
-                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: 2, slotType: 'tweakdefs',
+                label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: '', slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
                     { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
@@ -900,7 +916,7 @@ end`;
                     let summary = '', status = "Optional", addedToFormGroup = false;
 
                     // --- Ignore these tweaks if in the file ---
-                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs2')) {
+                    if (commandBlock.startsWith('!bset tweakdefs1') || commandBlock.startsWith('!bset tweakdefs ')) {
                         return; 
                     }
                     if (commandBlock.startsWith('!bset tweakdefs') || commandBlock.startsWith('!bset tweakunits')) {
@@ -982,16 +998,14 @@ end`;
 
             const usedTweakDefs = new Set();
             const usedTweakUnits = new Set();
-            const slotRegex = /!bset\s+(tweakdefs|tweakunits)(\d*)/;
+            const slotRegex = /!bset\s+(tweakdefs|tweakunits)([1-9])\b/;
 
             [...standardCommands].forEach(cmd => {
                 const match = cmd.match(slotRegex);
                 if (match) {
-                    const slotNum = parseInt(match[2] || 0, 10);
-                    if (slotNum > 0) {
-                      if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
-                      else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
-                    }
+                    const slotNum = parseInt(match[2], 10);
+                    if (match[1] === 'tweakdefs') usedTweakDefs.add(slotNum);
+                    else if (match[1] === 'tweakunits') usedTweakUnits.add(slotNum);
                 }
             });
 
@@ -1162,7 +1176,7 @@ end`;
             scavHpSelect.id = 'scav-hp-select';
             scavHpSelect.dataset.isScavHpGenerator = true;
             scavHpSelect.dataset.hpType = 'scav';
-            scavHpSelect.dataset.slot = '2';
+            scavHpSelect.dataset.slot = '';
             scavHpSelect.dataset.slotType = 'tweakdefs';
             const scavHpOptions = [
                 {v: "", t: "Default"}, {v: "1", t: "1x HP"}, {v: "1.3", t: "1.3x HP"}, {v: "1.5", t: "1.5x HP"}, {v: "1.7", t: "1.7x HP"},
