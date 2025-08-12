@@ -485,32 +485,35 @@ end`;
 
         const luaHpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X HP
 -- docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko
-for f, g in pairs(UnitDefs) do
-	if string.sub(f, 1, 24) == 'raptor_land_swarmer_heal' then
-		g.reclaimspeed = 100
-		g.stealth = 0
-		g.builder = false
-		__WORKERTIME_LINE__
-		g.canassist = 0
-		g.maxthisunit = 0
-	end
-	if
-		g.customparams and g.customparams.subfolder and g.customparams.subfolder == 'other/raptors' and g.health and
-			not f:match('^raptor_queen_.*')
-	 then
-		g.health = __HEALTH_MULTIPLIER__ * g.health
-	end
+for unitName, unitDef in pairs(UnitDefs) do
+    if string.sub(unitName, 1, 24) == "raptor_land_swarmer_heal" then
+        unitDef.reclaimspeed = 100
+        unitDef.stealth = false
+        unitDef.builder = false
+        unitDef.workertime = unitDef.workertime * __WORKERTIME_MULTIPLIER__
+        unitDef.canassist = false
+        unitDef.maxthisunit = 0
+    end
+
+    if unitDef.customparams and unitDef.customparams.subfolder == "other/raptors" and unitDef.health and not unitName:match('^raptor_queen_.*') then
+        unitDef.health = unitDef.health * __HEALTH_MULTIPLIER__
+        unitDef.sfxtypes = {}
+        unitDef.explodas = unitDef.explodas
+    end
 end
 
-local h = UnitDef_Post
-function UnitDef_Post(j, k)
-	h(j, k)
-	if k.customparams and k.customparams.subfolder and k.customparams.subfolder == 'other/raptors' then
-		if k then
-			__METAL_COST_LINE__
-			k.nochasecategory = "OBJECT"
-		end
-	end
+local oldUnitDef_Post = UnitDef_Post
+function UnitDef_Post(unitID, unitDef)
+    if oldUnitDef_Post and oldUnitDef_Post ~= UnitDef_Post then
+        oldUnitDef_Post(unitID, unitDef)
+    end
+
+    if unitDef.customparams and unitDef.customparams.subfolder == "other/raptors" then
+        unitDef.nochasecategory = "OBJECT"
+        if unitDef.metalcost and unitDef.health then
+            unitDef.metalcost = math.floor(unitDef.health * __METAL_COST_FACTOR__)
+        end
+    end
 end`;
         
         const luaBossHpTemplate = `--Scav Boss HP __MULTIPLIER_TEXT__X
@@ -553,23 +556,25 @@ end`;
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue);
             } else if (type === 'hp') { // Raptor HP
                 const multiplierNum = parseFloat(multiplierValue);
-                let metalCostLine, workerTimeLine;
+                let metalCostFactor;
+                let workerTimeMultiplier;
+
                 switch (multiplierNum) {
-                    case 1.3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.576923077)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
-                    case 1.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.466666667)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
-                    case 1.7: metalCostLine = 'k.metalcost = math.floor(k.health * 0.411764706)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
-                    case 2: metalCostLine = 'k.metalcost = math.floor(k.health * 0.35)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
-                    case 2.5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.3)'; workerTimeLine = 'g.workertime = g.workertime * 0.6'; break;
-                    case 3: metalCostLine = 'k.metalcost = math.floor(k.health * 0.25)'; workerTimeLine = 'g.workertime = g.workertime * 0.55'; break;
-                    case 4: metalCostLine = 'k.metalcost = math.floor(k.health * 0.1875)'; workerTimeLine = 'g.workertime = g.workertime * 0.45'; break;
-                    case 5: metalCostLine = 'k.metalcost = math.floor(k.health * 0.15)'; workerTimeLine = 'g.workertime = g.workertime * 0.25'; break;
-                    default: metalCostLine = 'k.metalcost = math.floor(k.metalcost)'; workerTimeLine = 'g.workertime = g.workertime * 0.5'; break;
+                    case 1.3: metalCostFactor = '0.576923077'; workerTimeMultiplier = '0.5'; break;
+                    case 1.5: metalCostFactor = '0.466666667'; workerTimeMultiplier = '0.5'; break;
+                    case 1.7: metalCostFactor = '0.411764706'; workerTimeMultiplier = '0.5'; break;
+                    case 2:   metalCostFactor = '0.35';        workerTimeMultiplier = '0.5'; break;
+                    case 2.5: metalCostFactor = '0.3';         workerTimeMultiplier = '0.6'; break;
+                    case 3:   metalCostFactor = '0.25';        workerTimeMultiplier = '0.55'; break;
+                    case 4:   metalCostFactor = '0.1875';      workerTimeMultiplier = '0.45'; break;
+                    case 5:   metalCostFactor = '0.15';        workerTimeMultiplier = '0.25'; break;
+                    default:  metalCostFactor = '1';           workerTimeMultiplier = '0.5'; break; 
                 }
                 originalCode = luaHpTemplate
                     .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
                     .replace(/__HEALTH_MULTIPLIER__/g, multiplierValue)
-                    .replace('__METAL_COST_LINE__', metalCostLine)
-                    .replace('__WORKERTIME_LINE__', workerTimeLine);
+                    .replace(/__METAL_COST_FACTOR__/g, metalCostFactor)
+                    .replace(/__WORKERTIME_MULTIPLIER__/g, workerTimeMultiplier);
             } else if (type === 'boss') { // Boss HP
                  originalCode = luaBossHpTemplate
                     .replace(/__MULTIPLIER_TEXT__/g, multiplierValue)
