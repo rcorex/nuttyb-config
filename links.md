@@ -11,7 +11,7 @@ To install the widgets, download the files here and put them in this game folder
 *   **[Layout Planner Widget](https://github.com/noryon/BARLayoutPlanner)**
     *   Draws lines for base layout planning.
    
-*   **[Reclaim Selected Widget](https://github.com/manshanko/bar-widgets/blob/defae648f8c3a7ae4e06de6af241e0037bab3b20/cmd_reclaim_selected.lua)**
+*   **[Reclaim Selected Widget](https://github.com/manshanko/bar-widgets/blob/main/cmd_reclaim_selected.lua)**
     *   Adds a button to reclaim selected units with nearby nano turrets. Good for clearing wind turbines.
 
 ## Community and Guides
