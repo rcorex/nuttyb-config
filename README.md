@@ -8,6 +8,31 @@ NuttyB Raptor Configuration Generator for Beyond All Reason
 - modes.txt is used for base tweaks, maps and modes
 - links.md is shown in the Links section
 
+## Run locally (live reload)
+
+Use a simple static server with live reload for development.
+
+- Linux/macOS:
+
+```bash
+npx live-server --port=8080 .
+```
+
+- Windows (PowerShell or CMD):
+
+```bash
+npx live-server --port=8080 .
+```
+
+- Open in the browser:
+  - http://localhost:8080/index.html
+  - Or open a specific page like http://localhost:8080/index.html or http://localhost:8080/encoder-hp.html
+
+- Notes:
+  - Adds live reload automatically when files in the repository root change.
+  - If you do not want the browser to auto-open, add `--no-browser`.
+  - If port 8080 is in use, change it with `--port <otherPort>`.
+
 ## Sync
 
 This repo can build `tweakdata.txt` from all `.lua` files in `NuttyB-Raptors/lua/` using a Node.js script in `scripts/sync.js`.
