@@ -45,7 +45,7 @@
 !unit_restrictions_nonukes 0
 !draft_mode disabled
 !unit_restrictions_notacnukes 0
-$welcome-message Settings made with the nuttyb-collective configurator https://bar-nuttyb-collective.github.io/configurator/
+$welcome-message Settings made with the nuttyb-collective configurator https://bar-nuttyb-collective.github.io/configurator/ - changelog at https://github.com/BAR-NuttyB-collective/NuttyB-Raptors/blob/main/CHANGELOG.md
 !unit_market 0
 !evocom 0
 !nowasting all
@@ -143,7 +143,8 @@ Starwatcher (8P)
 No Rush
 !raptor_queentimemult 1.3
 !raptor_spawncountmult 3
-!raptor_firstwavesboost 6
+!bSet raptor_queen_count 12
+!raptor_firstwavesboost 4
 !raptor_graceperiodmult 3
 ---
 No Rush Solo

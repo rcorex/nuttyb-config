@@ -447,7 +447,7 @@
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
         const hiddenLabels = [ 'Slow raptors/scavs' ];
-        const defaultSelectedLabels = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Legion NuttyB Evolving Commander', 'Armada NuttyB Evolving Commander', 'Cortex NuttyB Evolving Commander' ];
+        const defaultSelectedLabels = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2', 'Legion NuttyB Evolving Commander', 'Armada NuttyB Evolving Commander', 'Cortex NuttyB Evolving Commander', 'T4 Air Rework' ];
         const rightColumnOrder = [ 'Cross Faction T2', 'T3 Eco', 'T3 Builders', 'Unit Launchers', 'LRPC Rebalance v2' ];
         
         const optionsFormColumns = document.getElementById('options-form-columns');
@@ -1049,7 +1049,7 @@ end`;
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
 
-            let renameCommand = isScavengers ? `$rename [Mod] Collective NuttyB Scavengers ` : `$rename [Mod] Collective NuttyB Raptors `;
+            let renameCommand = isScavengers ? `$rename [Mod] NuttyB collective Scavengers ` : `$rename [Mod] collective NuttyB Raptors `;
             const renameParts = [];
 
             if (isScavengers) {
