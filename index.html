@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NuttyB Configurator</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luaparse@0.3.1/luaparse.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/luamin@1.0.4/luamin.min.js" defer></script>
 
@@ -210,10 +209,7 @@
         .copy-row-button:hover, .delete-tweak-btn:hover { background-color: #666; }
         .delete-tweak-btn { background-color: #8c3a3a; }
         .delete-tweak-btn:hover { background-color: #a74848; }
-        #links-tab h2, #links-tab h3 { margin-top: 20px; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        #links-tab code { background-color: #333; padding: 2px 5px; border-radius: 3px; font-family: monospace; }
-        #links-tab ul { padding-left: 20px; }
-        #links-tab li { margin-bottom: 10px; }
+        
         #custom-tweak-form {
             display: grid; grid-template-columns: 180px 1fr; gap: 10px;
             align-items: center; margin-bottom: 30px;
@@ -292,7 +288,6 @@
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="data">Data</button>
             <button class="tab-button" data-tab="custom">Custom</button>
-            <button class="tab-button" data-tab="links">Links</button>
         </div>
 
         <div id="config-tab" class="tab-content active">
@@ -411,9 +406,7 @@
             </table>
         </div>
 
-        <div id="links-tab" class="tab-content">
-            <p>Loading links...</p>
-        </div>
+        
     </div>
 
     <script>
@@ -609,18 +602,7 @@ end`;
             parseConfigData(text);
         }
         
-        async function loadLinksContent() {
-            const linksContentEl = document.getElementById('links-tab');
-            try {
-                const response = await fetch(`links.md?t=${Date.now()}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const markdownText = await response.text();
-                linksContentEl.innerHTML = marked.parse(markdownText);
-            } catch (error) {
-                console.error("Could not load links content:", error);
-                linksContentEl.innerHTML = '<p style="color: red;">Failed to load content.</p>';
-            }
-        }
+        
 
         async function parseModesFile(filePath) {
             try {
@@ -1537,8 +1519,7 @@ end`;
                 
                 const [parsedConfigs] = await Promise.all([
                     parseModesFile('modes.txt'),
-                    loadConfigData(), 
-                    loadLinksContent()
+                    loadConfigData()
                 ]);
 
                 gameConfigs = parsedConfigs;
