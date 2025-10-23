@@ -2,17 +2,25 @@
 
 To install the widgets, download the files here and put them in this game folder: \Beyond-All-Reason\data\LuaUI\Widgets. Create the Widgets folder if it doesn't exist. When the game is running press the widgets key (usually F11) and enable it.
 
-*   **[Raptor Stats Panel with Aggro](https://gist.github.com/tetrisface/2f99f5a5b179e3ac42e7e63825880713)**
-    *   Replaces stock Raptor Stats widget. Shows more info like aggro and queen resistances.
- 
-*   **[Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)**
-    *   Draws lines for 12 player vs Raptors start positions on the Full Metal Plate map.
+*   [**"New" Raptor Panel**](https://github.com/goldjee/BAR-Widgets/tree/main/raptor-panel)
+    *   Detailed infos about you and you'r damage.
+*   [**"Old" Raptor Stats Panel**](https://gist.github.com/tetrisface/2f99f5a5b179e3ac42e7e63825880713)
+    *   Show's you you'r aggro.
+*   [Map Start Lines Widget](https://gist.github.com/rcorex/15ac19cad881b85d2d1e8c1f482b9525)
+    *   The "Lines"
+*   [**Reclaim Selected**](https://github.com/manshanko/bar-widgets/blob/main/cmd_reclaim_selected.lua)
+    *   one-button reclaim (essential).
+*   [**Holo Place**](https://github.com/timuela/BAR-widgets/blob/main/holo_place_no_hijacking.lua)
+    *   Places automaticaly the next building, configureable to 30%, 60%, 90% or instant.
+*   [**Layout Planner**](https://github.com/noryon/BARWidgets/tree/main/LayoutPlanner)
+    *   helps with perfect placement. Also has a nice howto on howto install Widgets!
+*   [**Build Orders**](https://github.com/noryon/BARWidgets/tree/main/BuildOrders)
+    *   Replace any Building with another, VERY OP.
 
-*   **[Layout Planner Widget](https://github.com/noryon/BARLayoutPlanner)**
-    *   Draws lines for base layout planning.
-   
-*   **[Reclaim Selected Widget](https://github.com/manshanko/bar-widgets/blob/main/cmd_reclaim_selected.lua)**
-    *   Adds a button to reclaim selected units with nearby nano turrets. Good for clearing wind turbines.
+## Misc Widgets
+
+*   [**Queen Ping**](https://github.com/timuela/BAR-widgets/blob/main/queen_ping.lua)
+    *   Ping's every dead Queen - count them!
 
 ## Community and Guides
 
