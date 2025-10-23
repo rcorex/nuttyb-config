@@ -45,7 +45,7 @@
 !unit_restrictions_nonukes 0
 !draft_mode disabled
 !unit_restrictions_notacnukes 0
-$welcome-message Made with https://bar-nuttyb-collective.github.io/configurator/ changelog at https://github.com/BAR-NuttyB-collective/NuttyB-Raptors/blob/main/CHANGELOG.md
+$welcome-message See https://github.com/BAR-NuttyB-collective/NuttyB-Raptors
 !unit_market 0
 !evocom 0
 !nowasting all
@@ -77,7 +77,7 @@ Raptor Crater (16P)
 ---
 Raptor Crater Inverted (16P)
 !map Raptor Crater
-!disablemapdamage 0
+!disablemapdamage 0$
 !debugcommands invertmap
 !addbox 84 81 119 116 2
 !clearbox 1
