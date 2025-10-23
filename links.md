@@ -38,10 +38,10 @@ To install the widgets, download the files here and put them in this game folder
 
 ## Sources
 
-*   **[NuttyB Configurator Github](https://github.com/rcorex/nuttyb-config)**
+*   **[NuttyB Collective Configurator Github](https://github.com/BAR-NuttyB-collective/configurator)**
     *   The source code repository for this configurator.
 
-*   **[NuttyB Tweaks Github](https://github.com/Backbash/NuttyB-Raptors)**
+*   **[NuttyB Collective Tweaks Github](https://github.com/BAR-NuttyB-collective/NuttyB-Raptors)**
     *   The official source code repository for NuttyB tweaks used in this configurator.
 
 *   **[The Paste Machine](https://docs.google.com/spreadsheets/d/1QSVsuAAMhBrhiZdTihVfSCwPzbbZWDLCtXWP23CU0ko/edit#gid=0)**
