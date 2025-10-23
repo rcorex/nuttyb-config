@@ -95,43 +95,43 @@ function extractTopComments(content) {
   return out;
 }
 
-function simpleMinifyFallback(lua) {
-  // Remove single-line comments, collapse whitespace.
-  return lua
-    .replace(/--\[\[[\s\S]*?\]\]/g, '') // long comments
-    .replace(/--[^\n]*/g, '') // line comments
-    .replace(/\s+/g, ' ') // collapse whitespace
-    .trim();
-}
+function minifyLua(lua) {
+  // Extract top comments first (first 3 lines starting with --).
+  const topComments = extractTopComments(lua);
 
-function minifyLua(lua, isUnits) {
-  let minified;
-  
+  // Remove comments from input before minifying to avoid luafmt header inclusion.
+  let contentWithoutComments = lua;
+  // Remove multi-line block comments: --[[ ... --]].
+  contentWithoutComments = contentWithoutComments.replace(/--\[\[[\s\S]*?--\]\]/g, '');
+  // Remove single-line comments entirely.
+  contentWithoutComments = contentWithoutComments
+    .split('\n')
+    .filter((line) => !/^\s*--.*/.test(line))
+    .join('\n')
+    .trim();
+
+  let minifiedCode = contentWithoutComments;
   if (luafmt) {
     try {
-      minified = luafmt.Minify(lua, {
+      minifiedCode = luafmt.Minify(contentWithoutComments, {
         RenameVariables: true,
         RenameGlobals: false,
         SolveMath: true,
       });
     } catch (e) {
-      err(`lua-format minification failed: ${e.message}, using fallback`);
-      minified = simpleMinifyFallback(lua);
+      err(`lua-format minification failed: ${e.message}, using unminified content`);
+      minifiedCode = contentWithoutComments;
     }
-  } else {
-    minified = simpleMinifyFallback(lua);
   }
-  
-  // Remove the luamin comment block that lua-format adds
-  const withoutLuaminBlock = minified.replace(/^[\s\S]*?\]\]\s*/, '');
-  
-  if (isUnits) {
-    // Match converter.ts behavior for units: keep from first '{'
-    const m = withoutLuaminBlock.match(/.*?(\{[\s\S]*)/);
-    return (m && m[1]) ? m[1] : withoutLuaminBlock;
-  }
-  
-  return withoutLuaminBlock;
+
+  // Remove lua-format's own header block if any and trim.
+  minifiedCode = minifiedCode.replace(/--\[\[[\s\S]*?--\]\]/g, '').trim();
+
+  // Strip a leading 'return' if present (converter.ts strips it before encoding).
+  minifiedCode = minifiedCode.replace(/^return\s*/, '');
+
+  // Compose final output: top comments + processed code.
+  return topComments + minifiedCode;
 }
 
 function computeTweakKey(luaPath) {
@@ -186,10 +186,8 @@ async function main() {
       const buf = await fetchRaw(opts.owner, opts.repo, opts.branch, pth, token);
       const content = buf.toString('utf8');
       const header = extractTopComments(content);
-      const isUnits = pth.includes('/units/');
-      const minifiedBody = minifyLua(content, isUnits);
-      const minified = header + minifiedBody;
-      const tweakValue = base64UrlEncode(minified);
+      const transformed = minifyLua(content);
+      const tweakValue = base64UrlEncode(transformed);
       const tweakKey = computeTweakKey(pth);
       const title = (header.split('\n')[0] || '').trim();
       tweaks.push({ tweakKey, tweakValue, newSize: tweakValue.length, order: orderIndex++, title });
