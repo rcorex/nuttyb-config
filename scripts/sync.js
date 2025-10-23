@@ -3,7 +3,12 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { execFile } = require('child_process');
+let luafmt;
+try {
+  luafmt = require('lua-format');
+} catch (e) {
+  // lua-format not installed, will use fallback
+}
 
 const DEFAULT_OWNER = 'BAR-NuttyB-collective';
 const DEFAULT_REPO = 'NuttyB-Raptors';
@@ -99,27 +104,34 @@ function simpleMinifyFallback(lua) {
     .trim();
 }
 
-function minifyLuaWithNpx(lua, isUnits) {
-  return new Promise((resolve) => {
-    const cp = execFile('npx', ['-y', 'luamin'], { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
-      if (err) {
-        const minified = simpleMinifyFallback(lua);
-        return resolve(minified);
-      }
-      resolve(stdout && stdout.trim() ? stdout.trim() : simpleMinifyFallback(lua));
-    });
-    if (cp.stdin) {
-      cp.stdin.write(lua);
-      cp.stdin.end();
+function minifyLua(lua, isUnits) {
+  let minified;
+  
+  if (luafmt) {
+    try {
+      minified = luafmt.Minify(lua, {
+        RenameVariables: true,
+        RenameGlobals: false,
+        SolveMath: true,
+      });
+    } catch (e) {
+      err(`lua-format minification failed: ${e.message}, using fallback`);
+      minified = simpleMinifyFallback(lua);
     }
-  }).then((min) => {
-    if (isUnits) {
-      // Match converter.ts behavior for units: keep from first '{'
-      const m = min.match(/.*?(\{[\s\S]*)/);
-      return (m && m[1]) ? m[1] : min;
-    }
-    return min;
-  });
+  } else {
+    minified = simpleMinifyFallback(lua);
+  }
+  
+  // Remove the luamin comment block that lua-format adds
+  const withoutLuaminBlock = minified.replace(/^[\s\S]*?\]\]\s*/, '');
+  
+  if (isUnits) {
+    // Match converter.ts behavior for units: keep from first '{'
+    const m = withoutLuaminBlock.match(/.*?(\{[\s\S]*)/);
+    return (m && m[1]) ? m[1] : withoutLuaminBlock;
+  }
+  
+  return withoutLuaminBlock;
 }
 
 function computeTweakKey(luaPath) {
@@ -175,7 +187,7 @@ async function main() {
       const content = buf.toString('utf8');
       const header = extractTopComments(content);
       const isUnits = pth.includes('/units/');
-      const minifiedBody = await minifyLuaWithNpx(content, isUnits);
+      const minifiedBody = minifyLua(content, isUnits);
       const minified = header + minifiedBody;
       const tweakValue = base64UrlEncode(minified);
       const tweakKey = computeTweakKey(pth);
