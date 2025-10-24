@@ -55,6 +55,12 @@ node scripts/sync.js --dry-run
 node scripts/sync.js
 ```
 
+- Use a local NuttyB-Raptors checkout instead of GitHub:
+
+```bash
+node scripts/sync.js --local-path ../NuttyB-Raptors
+```
+
 - Choose a different branch:
 
 ```bash
@@ -70,13 +76,14 @@ node scripts/sync.js --owner myfork --repo my-raptors
 ### Script options
 
 ```bash
-node scripts/sync.js [--dry-run] [--owner <name>] [--repo <name>] [--branch <name>]
+node scripts/sync.js [--dry-run] [--owner <name>] [--repo <name>] [--branch <name>] [--local-path <path>]
 ```
 
 - `--dry-run`: Show actions without writing files.
 - `--owner <name>`: Repository owner (default `BAR-NuttyB-collective`).
 - `--repo <name>`: Repository name (default `NuttyB-Raptors`).
 - `--branch <name>`: Branch to pull from (default `main`).
+- `--local-path <path>`: Use a local NuttyB-Raptors repository checkout. Expects a `lua/` directory inside `<path>`. When set, `--owner`, `--repo`, and `--branch` are ignored.
 
 ### How it works
 

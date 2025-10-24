@@ -30,6 +30,7 @@ function getCliArgs() {
     else if (a === '--owner') { opts.owner = args[i + 1]; i++; }
     else if (a === '--repo') { opts.repo = args[i + 1]; i++; }
     else if (a === '--branch') { opts.branch = args[i + 1]; i++; }
+    else if (a === '--local-path') { opts.localPath = args[i + 1]; i++; }
     else if (a === '-h' || a === '--help') { opts.help = true; }
   }
   return opts;
@@ -42,6 +43,7 @@ function help() {
       `  --owner <name>       Repository owner (default: ${DEFAULT_OWNER})\n` +
       `  --repo <name>        Repository name (default: ${DEFAULT_REPO})\n` +
       `  --branch <name>      Source branch (default: main)\n` +
+      `  --local-path <path>  Read from local NuttyB-Raptors checkout (overrides owner/repo/branch)\n` +
       `  -h, --help            Show this help`);
 }
 
@@ -171,11 +173,39 @@ async function main() {
 
   const token = process.env.GITHUB_TOKEN || '';
 
-  log(`Listing lua files from ${opts.owner}/${opts.repo}@${opts.branch} ...`);
-  const tree = await fetchGitTree(opts.owner, opts.repo, opts.branch, token);
-  const luaFiles = (tree.tree || [])
-    .filter((t) => t.type === 'blob' && t.path.startsWith('lua/') && t.path.endsWith('.lua'))
-    .map((t) => t.path);
+  let luaFiles = [];
+  let useLocal = false;
+  let localRoot = '';
+  if (opts.localPath) {
+    useLocal = true;
+    localRoot = path.resolve(process.cwd(), opts.localPath);
+    const luaRoot = path.join(localRoot, 'lua');
+    if (!fs.existsSync(luaRoot) || !fs.statSync(luaRoot).isDirectory()) {
+      err(`Local path does not contain lua directory: ${luaRoot}`);
+      process.exit(1);
+    }
+    const stack = [''];
+    while (stack.length) {
+      const rel = stack.pop();
+      const abs = path.join(luaRoot, rel);
+      const entries = fs.readdirSync(abs, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.isDirectory()) {
+          stack.push(path.join(rel, ent.name));
+        } else if (ent.isFile() && ent.name.endsWith('.lua')) {
+          const relPath = path.join('lua', rel, ent.name).replace(/\\/g, '/');
+          luaFiles.push(relPath);
+        }
+      }
+    }
+    log(`Listing lua files from local path ${localRoot} ...`);
+  } else {
+    log(`Listing lua files from ${opts.owner}/${opts.repo}@${opts.branch} ...`);
+    const tree = await fetchGitTree(opts.owner, opts.repo, opts.branch, token);
+    luaFiles = (tree.tree || [])
+      .filter((t) => t.type === 'blob' && t.path.startsWith('lua/') && t.path.endsWith('.lua'))
+      .map((t) => t.path);
+  }
 
   log(`Found ${luaFiles.length} lua files.`);
 
@@ -183,8 +213,14 @@ async function main() {
   let orderIndex = 0;
   for (const pth of luaFiles) {
     try {
-      const buf = await fetchRaw(opts.owner, opts.repo, opts.branch, pth, token);
-      const content = buf.toString('utf8');
+      let content;
+      if (useLocal) {
+        const full = path.join(localRoot, pth);
+        content = fs.readFileSync(full, 'utf8');
+      } else {
+        const buf = await fetchRaw(opts.owner, opts.repo, opts.branch, pth, token);
+        content = buf.toString('utf8');
+      }
       const header = extractTopComments(content);
       const transformed = minifyLua(content);
       const tweakValue = base64UrlEncode(transformed);
