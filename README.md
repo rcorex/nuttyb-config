@@ -5,8 +5,6 @@ NuttyB Raptor Configuration Generator for Beyond All Reason
 - Code is deployed to https://bar-nuttyb-collective.github.io/configurator/
 
 - tweakdata.txt is used for tweaks
-- modes.txt is used for base tweaks, maps and modes
-- links.md is shown in the Links section
 
 ## Run locally (live reload)
 
