@@ -533,14 +533,16 @@ end`;
                 let workerTimeMultiplier;
 
                 switch (multiplierNum) {
+                    case 0.5: metalCostFactor = '1.5'; workerTimeMultiplier = '0.5'; break;
+                    case 0.8: metalCostFactor = '0.9375'; workerTimeMultiplier = '0.5'; break;
                     case 1.3: metalCostFactor = '0.576923077'; workerTimeMultiplier = '0.5'; break;
                     case 1.5: metalCostFactor = '0.466666667'; workerTimeMultiplier = '0.5'; break;
                     case 1.7: metalCostFactor = '0.411764706'; workerTimeMultiplier = '0.5'; break;
-                    case 2:   metalCostFactor = '0.35';        workerTimeMultiplier = '0.5'; break;
+                    case 2.0: metalCostFactor = '0.35';        workerTimeMultiplier = '0.5'; break;
                     case 2.5: metalCostFactor = '0.3';         workerTimeMultiplier = '0.6'; break;
-                    case 3:   metalCostFactor = '0.25';        workerTimeMultiplier = '0.55'; break;
-                    case 4:   metalCostFactor = '0.1875';      workerTimeMultiplier = '0.45'; break;
-                    case 5:   metalCostFactor = '0.15';        workerTimeMultiplier = '0.25'; break;
+                    case 3.0: metalCostFactor = '0.25';        workerTimeMultiplier = '0.55'; break;
+                    case 4.0: metalCostFactor = '0.1875';      workerTimeMultiplier = '0.45'; break;
+                    case 5.0: metalCostFactor = '0.15';        workerTimeMultiplier = '0.25'; break;
                     default:  metalCostFactor = '1';           workerTimeMultiplier = '0.5'; break; 
                 }
                 originalCode = luaHpTemplate
@@ -857,22 +859,41 @@ end`;
                 label: "Raptor Health", type: "select", isHpGenerator: true, hpType: 'hp', column: 'left', slot: '', slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                    { label: "Default", value: "", shortLabel: "" }, { label: "1x HP", value: "1", shortLabel: "1x HP" },
-                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" }, { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
-                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" }, { label: "2x HP", value: "2", shortLabel: "2x HP" },
-                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" }, { label: "3x HP", value: "3", shortLabel: "3x HP" },
-                    { label: "4x HP", value: "4", shortLabel: "4x HP" }, { label: "5x HP", value: "5", shortLabel: "5x HP" },
+                    { label: "Default", value: "", shortLabel: "" },
+                    { label: "0.5x HP", value: "0.5", shortLabel: "0_5x HP" },
+                    { label: "0.8x HP", value: "0.8", shortLabel: "0_8x HP" },
+                    { label: "1.0x HP", value: "1.0", shortLabel: "1_0x HP" },
+                    { label: "1.3x HP", value: "1.3", shortLabel: "1_3x HP" },
+                    { label: "1.5x HP", value: "1.5", shortLabel: "1_5x HP" },
+                    { label: "1.7x HP", value: "1.7", shortLabel: "1_7x HP" }, 
+                    { label: "2.0x HP", value: "2.0", shortLabel: "2_0x HP" },
+                    { label: "2.5x HP", value: "2.5", shortLabel: "2_5x HP" },
+                    { label: "3.0x HP", value: "3.0", shortLabel: "3_0x HP" },
+                    { label: "4.0x HP", value: "4.0", shortLabel: "4_0x HP" }, 
+                    { label: "5.0x HP", value: "5.0", shortLabel: "5_0x HP" },
                 ]
             };
             const dynamicQHPGroup = {
                 label: "Queen Health", type: "select", isHpGenerator: true, hpType: 'qhp', column: 'left', slot: 1, slotType: 'tweakdefs',
                 defaultValue: "1.3",
                 choices: [
-                     { label: "Default", value: "", shortLabel: "" }, { label: "1x QHP", value: "1", shortLabel: "1x QHP" },
-                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" }, { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
-                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, { label: "2x QHP", value: "2", shortLabel: "2x QHP" },
-                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, { label: "3x QHP", value: "3", shortLabel: "3x QHP" },
-                     { label: "4x QHP", value: "4", shortLabel: "4x QHP" }, { label: "5x QHP", value: "5", shortLabel: "5x QHP" },
+                     { label: "Default", value: "", shortLabel: "" },
+                     { label: "0.1x QHP", value: "0.1", shortLabel: "0_1x QHP" },
+                     { label: "0.5x QHP", value: "0.5", shortLabel: "0_5x QHP" },
+                     { label: "0.8x QHP", value: "0.8", shortLabel: "0_8x QHP" },
+                     { label: "1.0x QHP", value: "1.0", shortLabel: "1_0x QHP" },
+                     { label: "1.3x QHP", value: "1.3", shortLabel: "1_3x QHP" }, 
+                    { label: "1.5x QHP", value: "1.5", shortLabel: "1_5x QHP" },
+                     { label: "1.7x QHP", value: "1.7", shortLabel: "1_7x QHP" }, 
+                     { label: "2.0x QHP", value: "2.0", shortLabel: "2_0x QHP" },
+                     { label: "2.5x QHP", value: "2.5", shortLabel: "2_5x QHP" }, 
+                     { label: "3.0x QHP", value: "3.0", shortLabel: "3_0x QHP" },
+                     { label: "4.0x QHP", value: "4.0", shortLabel: "4_0x QHP" }, 
+                     { label: "5.0x QHP", value: "5.0", shortLabel: "5_0x QHP" },
+                     { label: "7.0x QHP", value: "7.0", shortLabel: "7_0x QHP" }, 
+                     { label: "9.0x QHP", value: "9.0", shortLabel: "9_0x QHP" },
+                     { label: "11.0x QHP", value: "11.0", shortLabel: "11_0x QHP" },
+                     { label: "13.0x QHP", value: "13.0", shortLabel: "13_0x QHP" },
                 ]
             };
 
