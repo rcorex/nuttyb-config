@@ -1100,7 +1100,7 @@ end`;
                 }
                 else {
                     let commands = [];
-                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select') && !el.id.includes('primary-mode-select')) {
+                    if (el.tagName === 'SELECT' && !el.id.includes('maps-select') && !el.id.includes('modes-select') && !el.id.includes('primary-mode-select') && !el.id.includes('difficulty-select')) {
                         if (el.value) commands.push(el.value);
                     } 
                     else if (el.type === 'checkbox' && el.checked) { 
