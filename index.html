@@ -157,10 +157,6 @@
         }
         .copy-button:hover { background-color: #66bb6a; }
         .copy-button:active { background-color: #388e3c; }
-        .lobby-name-output {
-            margin-top: 20px; padding: 10px; border: 1px dashed #555;
-            background-color: #333; font-family: monospace; word-break: break-all;
-        }
         #data-table, #custom-tweaks-table, #maps-modes-table {
             width: 100%; border-collapse: collapse;
             margin-top: 15px; table-layout: fixed;
@@ -318,6 +314,7 @@
             <div class="output-container">
                 <h2>Generated Commands</h2>
                 <p>Copy and paste all parts separately to the lobby</p>
+                
                 <div id="part-1-section" class="command-output-section">
                     <button class="copy-button" data-target="command-output-1">Copy Part 1</button>
                     <textarea id="command-output-1" rows="5" readonly></textarea>
@@ -347,8 +344,15 @@
                     <textarea id="command-output-7" rows="5" readonly></textarea>
                 </div>
 
-                <div class="lobby-name-output">
-                    <strong>Lobby Name:</strong> <span id="lobby-name-display">Loading...</span>
+                <div id="changes-section" class="command-output-section" style="display: none; margin-top: 20px;">
+                    <button class="copy-button" data-target="changes-output">Copy Changes</button>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <textarea id="changes-output" rows="5" readonly placeholder="Copy all parts first, then make changes..."></textarea>
+                        <div id="changes-summary" style="font-size: 0.9em; color: #aaa; padding: 5px 0;">
+                            <span id="changes-count">Waiting for initial copy...</span>
+                        </div>
+                        <div id="changes-details" style="font-size: 0.85em; color: #ccc; max-height: 150px; overflow-y: auto; border: 1px solid #444; border-radius: 4px; padding: 8px; background-color: #2a2a2a;">Copy all parts to the lobby to start tracking changes</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -416,6 +420,11 @@
         let customOptions = [];
         let gameConfigs = { maps: [], modes: [], base: [], scavengers: [] };
         const CUSTOM_TWEAKS_KEY = 'nuttyb-custom-tweaks';
+        
+        // Simple state storage for changes tracking
+        let storedParts = null;
+        let copiedParts = new Set();
+        let totalParts = 0;
         const mainTweaksPrefixes = [ '!bset tweakdefs2 ', '!bset tweakunits ' ];
         const evolvingCommandersPrefixes = [ '!bset tweakunits1 ', '!bset tweakunits2 ', '!bset tweakunits3 ' ];
         const extraRaptorsPrefixes = [ '!bset tweakdefs4 ', '!bset tweakunits5 ' ];
@@ -430,7 +439,6 @@
         const customLeftColumn = document.getElementById('custom-left-column');
         const customRightColumn = document.getElementById('custom-right-column');
         const slotWarningContainer = document.getElementById('slot-warning-messages');
-        const lobbyNameDisplay = document.getElementById('lobby-name-display');
         const copyButtons = document.querySelectorAll('.copy-button');
         const dataTableBody = document.querySelector('#data-table tbody');
         const customTweakForm = document.getElementById('custom-tweak-form');
@@ -441,6 +449,110 @@
         const resetNoneBtn = document.getElementById('reset-none-btn');
         const resetDefaultBtn = document.getElementById('reset-default-btn');
         const MAX_SECTION_LENGTH = 51000;
+
+        // --- Simple Changes Tracking ---
+        function storeCurrentParts() {
+            const parts = [];
+            for (let i = 1; i <= 7; i++) {
+                const textArea = document.getElementById(`command-output-${i}`);
+                const section = document.getElementById(`part-${i}-section`);
+                if (textArea && section && section.style.display !== 'none') {
+                    parts.push(textArea.value);
+                }
+            }
+            storedParts = parts.join('\n');
+            updateChangesDisplay();
+        }
+
+        function checkIfAllPartsCopied() {
+            if (copiedParts.size === totalParts && totalParts > 0 && !storedParts) {
+                // All parts copied, automatically store
+                storeCurrentParts();
+                
+                // Show feedback
+                const changesCount = document.getElementById('changes-count');
+                if (changesCount) {
+                    changesCount.textContent = 'Tracking changes...';
+                    changesCount.style.color = '#4caf50';
+                    setTimeout(() => {
+                        changesCount.style.color = '';
+                    }, 2000);
+                }
+            }
+        }
+
+        function updateTotalPartsCount() {
+            totalParts = 0;
+            for (let i = 1; i <= 7; i++) {
+                const section = document.getElementById(`part-${i}-section`);
+                if (section && section.style.display !== 'none') {
+                    totalParts++;
+                }
+            }
+        }
+
+        function updateChangesDisplay() {
+            const changesSection = document.getElementById('changes-section');
+            const changesOutput = document.getElementById('changes-output');
+            const changesCount = document.getElementById('changes-count');
+            const changesDetails = document.getElementById('changes-details');
+
+            if (!storedParts) {
+                changesSection.style.display = 'none';
+                return;
+            }
+
+            changesSection.style.display = 'grid';
+
+            // Get current parts
+            const currentParts = [];
+            for (let i = 1; i <= 7; i++) {
+                const textArea = document.getElementById(`command-output-${i}`);
+                const section = document.getElementById(`part-${i}-section`);
+                if (textArea && section && section.style.display !== 'none') {
+                    currentParts.push(textArea.value);
+                }
+            }
+            const currentPartsStr = currentParts.join('\n');
+
+            // Simple line-by-line diff
+            const storedLines = storedParts.split('\n');
+            const currentLines = currentPartsStr.split('\n');
+            const changes = [];
+
+            // Find new lines (in current but not in stored)
+            currentLines.forEach(line => {
+                if (line.trim() && !storedLines.includes(line)) {
+                    changes.push(line);
+                }
+            });
+
+            // Find removed lines (in stored but not in current) and generate nil commands for tweaks
+            const tweakSlotRegex = /!bset\s+(tweakdefs\d+|tweakunits\d+)\s+/;
+            storedLines.forEach(line => {
+                if (line.trim() && !currentLines.includes(line)) {
+                    const match = line.match(tweakSlotRegex);
+                    if (match) {
+                        // This is a tweak command that was removed, generate nil command
+                        const slot = match[1];
+                        changes.push(`!bset ${slot} nil`);
+                    }
+                }
+            });
+
+            if (changes.length > 0) {
+                changesOutput.value = changes.join('\n');
+                
+                changesCount.textContent = `${changes.length} new command${changes.length === 1 ? '' : 's'}`;
+                changesDetails.innerHTML = '<strong>New commands detected:</strong><br>' + 
+                    changes.slice(0, 10).map(c => `• ${c.substring(0, 80)}${c.length > 80 ? '...' : ''}`).join('<br>') +
+                    (changes.length > 10 ? `<br>... and ${changes.length - 10} more` : '');
+            } else {
+                changesOutput.value = '# No new changes detected';
+                changesCount.textContent = 'No changes';
+                changesDetails.innerHTML = '<em>No new commands detected</em>';
+            }
+        }
 
         // --- Lua Templates and Generator Logic ---
         const luaQhpTemplate = `--NuttyB v1.52 __MULTIPLIER_TEXT__X QHP
@@ -1357,7 +1469,6 @@ end`;
             
             updateCustomOptionUI();
             const generatedData = generateCommands();
-            lobbyNameDisplay.textContent = generatedData.lobbyName;
             
             for (let i = 1; i <= 7; i++) {
                 const sectionDiv = document.getElementById(`part-${i}-section`);
@@ -1369,6 +1480,23 @@ end`;
                     textArea.value = '';
                     sectionDiv.style.display = 'none';
                 }
+            }
+
+            // Update total parts count
+            updateTotalPartsCount();
+            
+            // Reset copied parts tracking when output changes
+            copiedParts.clear();
+            
+            // Always show changes section
+            const changesSection = document.getElementById('changes-section');
+            if (changesSection) {
+                changesSection.style.display = 'grid';
+            }
+            
+            // Update changes display if we have stored parts
+            if (storedParts) {
+                updateChangesDisplay();
             }
         }
 
@@ -1495,10 +1623,23 @@ end`;
         copyButtons.forEach(button => button.addEventListener('click', event => {
             const targetTextArea = document.getElementById(event.target.dataset.target);
             const originalText = event.target.textContent;
+            const targetId = event.target.dataset.target;
+            
             navigator.clipboard.writeText(targetTextArea.value)
                 .then(() => {
                     event.target.textContent = 'Copied!';
                     setTimeout(() => { event.target.textContent = originalText; }, 2000);
+                    
+                    // Track copied parts (only for command-output parts)
+                    if (targetId && targetId.startsWith('command-output-')) {
+                        copiedParts.add(targetId);
+                        checkIfAllPartsCopied();
+                    }
+                    
+                    // Auto-patch when copying changes
+                    if (targetId === 'changes-output' && storedParts) {
+                        storeCurrentParts();
+                    }
                 }).catch(err => { console.error('Failed to copy: ', err); });
         }));
 
@@ -1585,6 +1726,8 @@ end`;
         
         customTweakForm.addEventListener('submit', addCustomTweak);
         tabButtons.forEach(button => button.addEventListener('click', switchTab));
+
+        // Changes tracking is now automatic - no manual buttons needed
 
         async function initializeApp() {
             try {
