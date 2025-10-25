@@ -941,6 +941,8 @@ end`;
             const presetCommands = [];
             const mapsSelect = document.getElementById('maps-select');
             const modesSelect = document.getElementById('modes-select');
+            const difficultySelect = document.getElementById('difficulty-select');
+            const currentModeSelect = document.getElementById('primary-mode-select');
 
             if (mapsSelect && mapsSelect.value !== "") {
                 const selectedMap = gameConfigs.maps[mapsSelect.value];
@@ -949,6 +951,18 @@ end`;
             if (modesSelect && modesSelect.value !== "") {
                 const selectedMode = gameConfigs.modes[modesSelect.value];
                 if (selectedMode && selectedMode.commands) presetCommands.push(...selectedMode.commands);
+            }
+
+            // Add difficulty commands based on selected mode
+            if (difficultySelect && difficultySelect.value !== "" && currentModeSelect) {
+                const difficulty = difficultySelect.value;
+                const mode = currentModeSelect.value;
+                
+                if (mode === 'Scavengers') {
+                    presetCommands.push(`!scav_difficulty ${difficulty}`);
+                } else {
+                    presetCommands.push(`!raptor_difficulty ${difficulty}`);
+                }
             }
 
             const standardCommands = [];
@@ -1032,8 +1046,15 @@ end`;
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
 
-            let renameCommand = isScavengers ? `$rename [Mod] NuttyB collective Scavengers ` : `$rename [Mod] collective NuttyB Raptors `;
+            let renameCommand = isScavengers ? `$rename [Mod] collective NuttyB Scavengers ` : `$rename [Mod] collective NuttyB Raptors `;
             const renameParts = [];
+
+            // Add difficulty to rename if selected
+            const difficultySelector = document.getElementById('difficulty-select');
+            if (difficultySelector && difficultySelector.value !== "") {
+                const difficultyText = difficultySelector.options[difficultySelector.selectedIndex].text;
+                renameParts.push(`[${difficultyText}]`);
+            }
 
             if (isScavengers) {
                 const scavHpSelect = document.getElementById('scav-hp-select');
@@ -1154,6 +1175,23 @@ end`;
             primaryModeSelect.addEventListener('change', (e) => updateOutput(e));
             primaryModeLabel.appendChild(primaryModeSelect);
             leftColumn.appendChild(primaryModeLabel);
+
+            const difficultyLabel = document.createElement('label');
+            difficultyLabel.textContent = 'Difficulty: ';
+            const difficultySelect = document.createElement('select');
+            difficultySelect.id = 'difficulty-select';
+            difficultySelect.innerHTML = `
+                <option value="">Default</option>
+                <option value="veryeasy">Very Easy</option>
+                <option value="easy">Easy</option>
+                <option value="normal">Normal</option>
+                <option value="hard">Hard</option>
+                <option value="veryhard">Very Hard</option>
+                <option value="epic" selected>Epic</option>
+            `;
+            difficultySelect.addEventListener('change', updateOutput);
+            difficultyLabel.appendChild(difficultySelect);
+            leftColumn.appendChild(difficultyLabel);
 
             const scavOnlyContainer = document.createElement('div');
             scavOnlyContainer.id = 'scav-only-options';
@@ -1495,6 +1533,13 @@ end`;
                     }
                 }
             });
+            
+            // Reset difficulty selector
+            const difficultySelect = document.getElementById('difficulty-select');
+            if (difficultySelect) {
+                difficultySelect.value = "";
+            }
+            
             updateOutput();
         });
 
@@ -1527,6 +1572,12 @@ end`;
             const modesSelect = document.getElementById('modes-select');
             if(modesSelect && modesSelect.options.length > 0) {
                 modesSelect.selectedIndex = 0;
+            }
+
+            // Reset difficulty selector to default
+            const difficultySelect = document.getElementById('difficulty-select');
+            if (difficultySelect) {
+                difficultySelect.value = "epic";
             }
             
             updateOutput();
