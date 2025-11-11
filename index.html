@@ -284,7 +284,7 @@
             <button class="tab-button active" data-tab="config">Configuration</button>
             <button class="tab-button" data-tab="data">Data</button>
             <button class="tab-button" data-tab="custom">Custom</button>
-            <a class="tab-button" href="https://github.com/BAR-NuttyB-collective/NuttyB-Raptors/wiki" target="_blank" rel="noopener">WIKI</a>
+            <a class="tab-button" href="https://github.com/BAR-NuttyB-collective/NuttyB/wiki" target="_blank" rel="noopener">WIKI</a>
         </div>
 
         <div id="config-tab" class="tab-content active">
@@ -1158,7 +1158,7 @@ end`;
             const primaryModeSelect = document.getElementById('primary-mode-select');
             const isScavengers = primaryModeSelect && primaryModeSelect.value === 'Scavengers';
 
-            let renameCommand = isScavengers ? `$rename [Mod] collective NuttyB Scavengers ` : `$rename [Mod] collective NuttyB Raptors `;
+            let renameCommand = isScavengers ? `$rename [Mod] collective NuttyB Scavengers ` : `$rename [Mod] Collective NuttyB `;
             const renameParts = [];
 
             // Add difficulty to rename if selected
