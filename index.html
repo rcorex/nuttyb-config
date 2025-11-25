@@ -505,24 +505,25 @@
             changesSection.style.display = 'grid';
 
             // Get current parts
-            const currentParts = [];
+            const currentLines = [];
             for (let i = 1; i <= 7; i++) {
                 const textArea = document.getElementById(`command-output-${i}`);
                 const section = document.getElementById(`part-${i}-section`);
                 if (textArea && section && section.style.display !== 'none') {
-                    currentParts.push(textArea.value);
+                    const areaLines = textArea.value.split("\n")
+                    areaLines.forEach((n) => {
+                       currentLines.push(n.trim()); 
+                    });
                 }
             }
-            const currentPartsStr = currentParts.join('\n');
 
             // Simple line-by-line diff
             const storedLines = storedParts.split('\n');
-            const currentLines = currentPartsStr.split('\n');
             const changes = [];
 
             // Find new lines (in current but not in stored)
             currentLines.forEach(line => {
-                if (line.trim() && !storedLines.includes(line)) {
+                if (!storedLines.includes(line)) {
                     changes.push(line);
                 }
             });
@@ -530,11 +531,17 @@
             // Find removed lines (in stored but not in current) and generate nil commands for tweaks
             const tweakSlotRegex = /!bset\s+(tweakdefs\d+|tweakunits\d+)\s+/;
             storedLines.forEach(line => {
-                if (line.trim() && !currentLines.includes(line)) {
-                    const match = line.match(tweakSlotRegex);
-                    if (match) {
-                        // This is a tweak command that was removed, generate nil command
-                        const slot = match[1];
+                const match = line.match(tweakSlotRegex)
+                if (match) {
+                    let hasCurrentLine = false;
+                    const slot = match[1];
+                    currentLines.forEach((cline) => {
+                        if (cline.startsWith(`!bset ${slot}`)) {
+                            hasCurrentLine = true;
+                        }
+                    })
+
+                    if (!hasCurrentLine) {
                         changes.push(`!bset ${slot} nil`);
                     }
                 }
