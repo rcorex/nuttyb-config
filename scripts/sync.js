@@ -3,15 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-let luafmt;
-try {
-  luafmt = require('lua-format');
-} catch (e) {
-  // lua-format not installed, will use fallback
-}
+const luafmt = require('lua-format');
 
 const DEFAULT_OWNER = 'BAR-NuttyB-collective';
-const DEFAULT_REPO = 'NuttyB-Raptors';
+const DEFAULT_REPO = 'NuttyB';
 
 function log(msg) {
   process.stdout.write(`${msg}\n`);
