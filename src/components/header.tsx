@@ -3,6 +3,7 @@
 import React from 'react';
 
 import { Button, Flex, Title } from '@mantine/core';
+import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Link, LINKS } from '@/lib/navigation';
@@ -22,7 +23,7 @@ const Header: React.FC = () => {
                     {links.map((link) => {
                         return (
                             <Button
-                                component='a'
+                                component={NextLink}
                                 href={link.href}
                                 key={link.title}
                                 variant={

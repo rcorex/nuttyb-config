@@ -4,6 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import type { LuaFile } from '@/types/types';
 
+// Get basePath from Next.js config at build time
+const basePath = process.env.__NEXT_ROUTER_BASEPATH || '';
+
 interface LuaBundle {
     sha: string;
     files: LuaFile[];
@@ -44,7 +47,9 @@ export function LuaBundleProvider({ children }: LuaBundleProviderProps) {
 
         async function fetchLuaBundle() {
             try {
-                const response = await fetch('/data/lua-bundle.json');
+                const response = await fetch(
+                    `${basePath}/data/lua-bundle.json`
+                );
                 if (!response.ok) {
                     throw new Error(
                         `Failed to fetch Lua bundle: ${response.status}`
