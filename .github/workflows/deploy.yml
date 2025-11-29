@@ -67,9 +67,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          # Automatically inject basePath, output: 'export', and images.unoptimized in next.config.ts
-          static_site_generator: next
 
       - name: Restore cache
         uses: actions/cache@v4
