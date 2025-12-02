@@ -4,7 +4,7 @@ import {
     allocateCustomTweakSlots,
     packLuaSourcesIntoSlots,
 } from './slot-packer';
-import type { LuaFile } from '../../types/types';
+import type { LuaFile, TweakValue } from '../../types/types';
 import {
     CONFIGURATION_MAPPING,
     MAX_COMMAND_LENGTH,
@@ -82,22 +82,30 @@ export function buildLobbySections(
     for (const configKey in configuration) {
         const configValue = configuration[configKey as keyof Configuration];
         const mapping = CONFIGURATION_MAPPING[configKey as keyof Configuration];
-        const mappedPaths = mapping.values[
+        const tweakValue = mapping.values[
             `${configValue}` as keyof typeof mapping.values
-        ] as string[] | undefined;
+        ] as TweakValue | undefined;
 
-        if (!mappedPaths || mappedPaths.length === 0) continue;
+        if (!tweakValue) continue;
 
-        if (mapping.type === 'command') {
-            // Raw commands - add directly (with placeholder interpolation)
+        // Process commands
+        const commands = tweakValue.command;
+        if (commands && commands.length > 0) {
             rawCommands.push(
-                ...mappedPaths.map((cmd) =>
+                ...commands.map((cmd) =>
                     interpolateCommand(cmd, configuration.mode)
                 )
             );
-        } else {
-            // Lua files - collect raw sources
-            for (const path of mappedPaths) {
+        }
+
+        // Process Lua files (tweakdefs and tweakunits)
+        for (const [type, paths] of [
+            ['tweakdefs', tweakValue.tweakdefs],
+            ['tweakunits', tweakValue.tweakunits],
+        ] as const) {
+            if (!paths || paths.length === 0) continue;
+
+            for (const path of paths) {
                 const luaFilePath = path.replace(/^~/, '');
                 const luaContent = luaFileMap.get(luaFilePath);
 
@@ -109,7 +117,7 @@ export function buildLobbySections(
                 }
 
                 const trimmedSource = luaContent.trim();
-                if (mapping.type === 'tweakdefs') {
+                if (type === 'tweakdefs') {
                     tweakdefsSources.push(trimmedSource);
                 } else {
                     tweakunitsSources.push(trimmedSource);

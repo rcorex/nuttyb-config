@@ -11,7 +11,7 @@ import FileList from '@/components/tabs/data/file-list';
 import TypeBadge from '@/components/tabs/data/type-badge';
 import { encode } from '@/lib/base64';
 import { CONFIGURATION_MAPPING } from '@/lib/data/configuration-mapping';
-import { LuaFile, TweakType } from '@/types/types';
+import type { LuaFile, TweakType } from '@/types/types';
 
 interface ConfigValueEntry {
     value: string;
@@ -23,7 +23,7 @@ interface ConfigValueEntry {
 interface ConfigOptionEntry {
     configKey: string;
     description: string;
-    type: TweakType;
+    types: TweakType[];
     values: ConfigValueEntry[];
 }
 
@@ -33,21 +33,30 @@ function buildConfigurationView(luaFiles: LuaFile[]): ConfigOptionEntry[] {
 
     for (const [configKey, mapping] of Object.entries(CONFIGURATION_MAPPING)) {
         const valueEntries: ConfigValueEntry[] = [];
+        const typesUsed = new Set<TweakType>();
 
-        for (const [valueKey, paths] of Object.entries(mapping.values)) {
-            if (!paths) {
+        for (const [valueKey, tweakValue] of Object.entries(mapping.values)) {
+            if (!tweakValue) {
                 valueEntries.push({ value: valueKey, data: [] });
                 continue;
             }
 
-            const isLuaFile = mapping.type !== 'command';
+            const tv = tweakValue;
+            const encodedData: string[] = [];
+            const luaFilePaths: string[] = [];
+            const missingFiles: string[] = [];
+            const commandData: string[] = [];
 
-            if (isLuaFile) {
-                const encodedData: string[] = [];
-                const luaFilePaths: string[] = [];
-                const missingFiles: string[] = [];
+            // Process commands
+            if (tv.command && tv.command.length > 0) {
+                typesUsed.add('command');
+                commandData.push(...tv.command);
+            }
 
-                for (const path of paths) {
+            // Process tweakdefs Lua files
+            if (tv.tweakdefs && tv.tweakdefs.length > 0) {
+                typesUsed.add('tweakdefs');
+                for (const path of tv.tweakdefs) {
                     const cleanPath = path.replace(/^~/, '');
                     const content = luaFileMap.get(cleanPath);
                     luaFilePaths.push(cleanPath);
@@ -58,23 +67,41 @@ function buildConfigurationView(luaFiles: LuaFile[]): ConfigOptionEntry[] {
                         missingFiles.push(cleanPath);
                     }
                 }
-
-                valueEntries.push({
-                    value: valueKey,
-                    data: encodedData,
-                    luaFilePaths,
-                    missingFiles:
-                        missingFiles.length > 0 ? missingFiles : undefined,
-                });
-            } else {
-                valueEntries.push({ value: valueKey, data: paths });
             }
+
+            // Process tweakunits Lua files
+            if (tv.tweakunits && tv.tweakunits.length > 0) {
+                typesUsed.add('tweakunits');
+                for (const path of tv.tweakunits) {
+                    const cleanPath = path.replace(/^~/, '');
+                    const content = luaFileMap.get(cleanPath);
+                    luaFilePaths.push(cleanPath);
+
+                    if (content) {
+                        encodedData.push(encode(content.trim()));
+                    } else {
+                        missingFiles.push(cleanPath);
+                    }
+                }
+            }
+
+            // Combine data: commands first, then encoded Lua
+            const allData = [...commandData, ...encodedData];
+
+            valueEntries.push({
+                value: valueKey,
+                data: allData,
+                luaFilePaths:
+                    luaFilePaths.length > 0 ? luaFilePaths : undefined,
+                missingFiles:
+                    missingFiles.length > 0 ? missingFiles : undefined,
+            });
         }
 
         entries.push({
             configKey,
             description: mapping.description,
-            type: mapping.type,
+            types: [...typesUsed],
             values: valueEntries,
         });
     }
@@ -98,7 +125,11 @@ export default function Page() {
         };
 
         for (const entry of configEntries) {
-            groups[entry.type].push(entry);
+            // Entry can belong to multiple groups if it has multiple types
+            for (const type of entry.types) {
+                groups[type].push(entry);
+            }
+            // If no types detected (empty values), skip
         }
 
         return groups;

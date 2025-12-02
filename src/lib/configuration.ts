@@ -8,7 +8,11 @@ export const DIFFICULTIES = [
     'Very Hard',
     'Epic',
 ] as const;
-export const EXTRAS = ['None', 'Mini Bosses'] as const;
+export const EXTRAS = [
+    'None',
+    'Mini Bosses',
+    'Experimental Wave Challenge',
+] as const;
 export const MAPS = [
     'Full Metal Plate (12P)',
     'Raptor Crater (16P)',

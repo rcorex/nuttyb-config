@@ -12,6 +12,7 @@ import {
     getAvailableSlotCount,
 } from '@/lib/commands/custom-tweaks';
 import { CONFIGURATION_MAPPING } from '@/lib/data/configuration-mapping';
+import type { TweakValue } from '@/types/types';
 
 /**
  * Calculate used slots from standard configuration options.
@@ -34,19 +35,20 @@ function calculateStandardSlotUsage(
             CONFIGURATION_MAPPING[
                 configKey as keyof typeof CONFIGURATION_MAPPING
             ];
-        const mappedPaths = mapping.values[
+        const tweakValue = mapping.values[
             `${configValue}` as keyof typeof mapping.values
-        ] as string[] | undefined;
+        ] as TweakValue | undefined;
 
-        if (!mappedPaths || mappedPaths.length === 0) continue;
+        if (!tweakValue) continue;
 
-        if (mapping.type === 'tweakdefs') {
-            // Count Lua file references (starting with ~)
-            tweakdefsCount += mappedPaths.filter((p) =>
+        // Count Lua file references (starting with ~) for each type
+        if (tweakValue.tweakdefs) {
+            tweakdefsCount += tweakValue.tweakdefs.filter((p) =>
                 p.startsWith('~')
             ).length;
-        } else if (mapping.type === 'tweakunits') {
-            tweakunitsCount += mappedPaths.filter((p) =>
+        }
+        if (tweakValue.tweakunits) {
+            tweakunitsCount += tweakValue.tweakunits.filter((p) =>
                 p.startsWith('~')
             ).length;
         }

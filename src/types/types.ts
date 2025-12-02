@@ -10,16 +10,33 @@ export type ExtractValues<T> = T extends readonly (infer U)[]
 // Convert boolean to string literals for Record compatibility
 export type StringifyBooleans<T> = T extends boolean ? `${T}` : T;
 
+/**
+ * The three output types for tweak configuration:
+ * - 'command': Raw lobby commands (e.g., !preset, !map)
+ * - 'tweakdefs': Lua code for tweakdefs slots
+ * - 'tweakunits': Lua code for tweakunits slots
+ */
 export type TweakType = 'tweakdefs' | 'tweakunits' | 'command';
 
-// Hierarchical mapping: parameter -> possible value -> mapped string
+/**
+ * A value that can produce any combination of output types.
+ * Empty arrays are treated as undefined during processing.
+ */
+export type TweakValue = Partial<Record<TweakType, string[]>>;
+
+/**
+ * Hierarchical mapping: configuration key -> possible values -> outputs by type.
+ * Each configuration option maps its possible values to TweakValue objects
+ * that can contain commands, tweakdefs, and/or tweakunits.
+ */
 export type ValueMapping = {
     [K in keyof Configuration]: {
+        description: string;
         values: Record<
             StringifyBooleans<ExtractValues<Configuration[K]>>,
-            string[] | undefined
+            TweakValue | undefined
         >;
-    } & { description: string; type: TweakType };
+    };
 };
 
 export interface LuaFile {
