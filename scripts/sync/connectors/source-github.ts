@@ -1,4 +1,4 @@
-import { LuaFile } from '../types';
+import { LuaFile } from '@/types/types';
 
 // Github types
 export interface GitHubCommit {
@@ -35,6 +35,11 @@ export interface GitHubTreeResponse {
     truncated: boolean;
 }
 
+const HEADERS = {
+    'User-Agent': 'nuttyb-configurator',
+    Accept: 'application/vnd.github.v3+json',
+} as const;
+
 /**
  * Fetches latest commit hash from the specified GitHub repository and branch.
  * @param owner Name of repository owner
@@ -48,12 +53,8 @@ export async function getLatestCommitHash(
     branch: string
 ): Promise<string> {
     const url = `https://api.github.com/repos/${owner}/${name}/commits/${branch}`;
-    const headers = {
-        'User-Agent': 'nuttyb-configurator',
-        Accept: 'application/vnd.github.v3+json',
-    };
 
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, { headers: HEADERS });
 
     if (!response.ok) {
         throw new Error(
@@ -72,12 +73,8 @@ async function fetchLuaFileTree(
     branch: string
 ): Promise<string[]> {
     const url = `https://api.github.com/repos/${owner}/${name}/git/trees/${branch}?recursive=1`;
-    const headers = {
-        'User-Agent': 'nuttyb-configurator',
-        Accept: 'application/vnd.github.v3+json',
-    };
 
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, { headers: HEADERS });
 
     if (!response.ok) {
         throw new Error(
