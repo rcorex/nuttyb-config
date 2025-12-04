@@ -16,10 +16,16 @@ The app will be available at http://localhost:3000
 
 ## Sync
 
-This repo can build `public/data/lua-bundle.json` from all `.lua` files in `NuttyB-Raptors/lua/` using a Node.js script in `scripts/sync.ts`. To run the sync process, execute
+This repo can build `public/data/lua-bundle.json` from all `.lua` files in `NuttyB-Raptors/lua/` using a Node.js script in `scripts/sync/sync.ts`. To run the sync process, execute
 
 ```bash
 bun sync
+```
+
+Sync script supports pulling latest Lua files from either a local path or a GitHub repository. For more details, see the script's command-line help:
+
+```bash
+bun sync --help
 ```
 
 ### Prerequisites

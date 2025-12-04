@@ -1,10 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { Bundle } from '../types';
+import { LuaFile } from '@/types/types';
 
 const DATA_STORE_PATH = './public/data' as const;
 const BUNDLE_FILE_NAME = 'lua-bundle.json' as const;
+
+export interface Bundle {
+    sha: string;
+    files: LuaFile[];
+}
 
 export function getSavedBundle(): Bundle | undefined {
     const p = path.join(DATA_STORE_PATH, BUNDLE_FILE_NAME);
@@ -32,6 +37,8 @@ export function saveBundle(bundle: Bundle): void {
 
         fs.writeFileSync(p, JSON.stringify(bundle, null, 4), 'utf8');
     } catch (error) {
-        console.error(`Failed to save file ${p}:`, (error as Error).message);
+        throw new Error(
+            `Failed to save file ${p}: ${(error as Error).message}`
+        );
     }
 }
