@@ -1,9 +1,18 @@
 import type { LuaFile } from '@/types/types';
 
-import { fetchLua, getLatestCommitHash } from './sync-utils/github';
-import { deleteData, getSavedBundle, saveBundle } from './sync-utils/local';
-import { log } from './sync-utils/logger';
-import { minify } from './sync-utils/minificator';
+import { fetchLua, getLatestCommitHash } from './connectors/github';
+import {
+    deleteData,
+    getSavedBundle,
+    saveBundle,
+} from './connectors/target-store';
+import { log } from './utils/logger';
+import { minify } from './utils/minificator';
+
+// Default GitHub repository to pull from
+const REPO_OWNER = 'BAR-NuttyB-collective';
+const REPO_NAME = 'NuttyB';
+const REPO_BRANCH = 'main';
 
 async function main() {
     log('Sync started');
@@ -13,7 +22,11 @@ async function main() {
 
     log('Reading commit hashes');
     const commitHashLocal = savedBundle ? savedBundle.sha : undefined;
-    const commitHashRemote = await getLatestCommitHash();
+    const commitHashRemote = await getLatestCommitHash(
+        REPO_OWNER,
+        REPO_NAME,
+        REPO_BRANCH
+    );
 
     if (!commitHashRemote) throw new Error('Failed to retrieve remote commit');
 
@@ -26,7 +39,7 @@ async function main() {
     deleteData();
 
     log('Fetching Lua files from GitHub');
-    const fileData = await fetchLua();
+    const fileData = await fetchLua(REPO_OWNER, REPO_NAME, REPO_BRANCH);
 
     log('Generating Lua bundle');
     const bundle: { sha: string; files: LuaFile[] } = {

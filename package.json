@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync": "bun run scripts/sync.ts",
+    "sync": "bun run scripts/sync/sync.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
