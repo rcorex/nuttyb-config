@@ -29,8 +29,8 @@ const nextConfig: NextConfig = {
     // Static export for GitHub Pages
     output: 'export',
     // Base path for GitHub Pages subdirectory deployment
-    // Deployed to: https://goldjee.github.io/NuttyB-Raptors-Configurator/
-    basePath: isGitHubPages ? '/NuttyB-Raptors-Configurator' : '',
+    // Deployed to: https://bar-nuttyb-collective.github.io
+    basePath: isGitHubPages ? '/configurator' : '',
     // Disable image optimization (not supported in static export)
     images: {
         unoptimized: true,
