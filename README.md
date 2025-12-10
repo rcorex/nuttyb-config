@@ -4,6 +4,12 @@ NuttyB Raptor Configuration Generator for Beyond All Reason
 
 - Code is deployed to https://bar-nuttyb-collective.github.io/configurator/
 
+## Install dependencies
+
+```bash
+bun install
+```
+
 ## Run locally (live reload)
 
 Use a simple static server with live reload for development.
