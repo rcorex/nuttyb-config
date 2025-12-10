@@ -4,15 +4,10 @@ NuttyB Raptor Configuration Generator for Beyond All Reason
 
 - Code is deployed to https://bar-nuttyb-collective.github.io/configurator/
 
-- tweakdata.txt is used for tweaks
-
-## Prerequisites
-node/bun
-
-or with mise-en-place: <https://mise.jdx.dev>
+## Install dependencies
 
 ```bash
-mise install
+bun install
 ```
 
 ## Run locally (live reload)
@@ -20,63 +15,32 @@ mise install
 Use a simple static server with live reload for development.
 
 ```bash
-npx live-server
-# or
-bunx live-server
+bun dev
 ```
 
-- Open in the browser:
-  - Or open a specific page like http://localhost:8080/index.html or http://localhost:8080/encoder-hp.html
-
-- Notes:
-  - Adds live reload automatically when files in the repository root change.
-  - If you do not want the browser to auto-open, add `--no-browser`.
-  - If port 8080 is in use, change it with `--port <otherPort>`.
+The app will be available at http://localhost:3000
 
 ## Sync
 
-This repo can build `tweakdata.txt` from all `.lua` files in `NuttyB/lua/` using a node script in `scripts/sync.js`.
-
-### Quick start
-
-- Dry-run (show what would change):
+This repo can build `public/data/lua-bundle.json` from all `.lua` files in `NuttyB-Raptors/lua/` using a Node.js script in `scripts/sync/sync.ts`. To run the sync process, execute
 
 ```bash
-bun run ./scripts/sync.js --dry-run
+bun sync
 ```
 
-- Perform sync (reads all `lua/**/*.lua` from the `main` branch, minifies and base64url-encodes, writes `tweakdata.txt`):
+Sync script supports pulling latest Lua files from either a local path or a GitHub repository. For more details, see the script's command-line help:
 
 ```bash
-bun run ./scripts/sync.js
+bun sync --help
 ```
 
-- Use a local NuttyB checkout instead of GitHub:
+### Prerequisites
+- Bun
 
-```bash
-bun run ./scripts/sync.js --local-path ../NuttyB
-```
+### How it works
 
-- Choose a different branch:
+- Reads all `.lua` files under `lua/` from the NuttyB collective repo.
+- Minifies Lua source code.
+- Encodes result with Base64URL.
 
-```bash
-bun run ./scripts/sync.js --branch dev
-```
-  
-- Choose a different fork or repo:
-
-```bash
-bun run ./scripts/sync.js --owner myfork --repo my-raptors
-```
-
-### Script options
-
-```bash
-bun run scripts/sync.js [--dry-run] [--owner <name>] [--repo <name>] [--branch <name>] [--local-path <path>]
-```
-
-- `--dry-run`: Show actions without writing files.
-- `--owner <name>`: Repository owner (default `BAR-NuttyB-collective`).
-- `--repo <name>`: Repository name (default `NuttyB`).
-- `--branch <name>`: Branch to pull from (default `main`).
-- `--local-path <path>`: Use a local NuttyB repository checkout. Expects a `lua/` directory inside `<path>`. When set, `--owner`, `--repo`, and `--branch` are ignored.
+The app consolidates similar tweaks (tweakunits/tweakdefs) to save up tweak slots.

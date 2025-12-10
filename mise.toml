@@ -1,6 +1,0 @@
-[settings.npm]
-bun = true
-
-[tools]
-bun = "latest"
-"npm:lua-format" = "latest"
