@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "sync": "bun run scripts/sync/sync.ts",
+    "bundle-test": "bun run scripts/bundle-test/bundle-test.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
