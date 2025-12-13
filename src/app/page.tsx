@@ -18,8 +18,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 /**
  * Root page behavior:
- * - GitHub Pages (basePath='/configurator'): Render configurator directly here
- *   to avoid redirect to /configurator/configurator
+ * - GitHub Pages (basePath is set): Render configurator directly here
+ *   to avoid redirect to /{basePath}/configurator
  * - Development (no basePath): Redirect to /configurator
  */
 export default function RootPage() {
@@ -27,14 +27,14 @@ export default function RootPage() {
 
     useEffect(() => {
         // Only redirect in development (when basePath is not set)
-        if (basePath !== '/configurator') {
+        if (!basePath) {
             router.replace(LINKS.configurator.href);
         }
     }, [router]);
 
-    // When basePath is '/configurator', the URL /configurator/ IS our root
+    // When basePath is set, the URL /{basePath}/ IS our root
     // Render configurator here to avoid double-path navigation
-    if (basePath === '/configurator') {
+    if (basePath) {
         return <ConfiguratorPage />;
     }
 

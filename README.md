@@ -4,15 +4,20 @@ NuttyB Raptor Configuration Generator for Beyond All Reason
 
 - Code is deployed to https://bar-nuttyb-collective.github.io/configurator/
 
-## Install dependencies
+## Local development
+
+### Prerequisites
+- Install Bun.
+- Clone this repository.
+- Install dependencies.
 
 ```bash
 bun install
 ```
 
-## Run locally (live reload)
+### Run locally (live reload)
 
-Use a simple static server with live reload for development.
+Use a Next web server with live reload for development.
 
 ```bash
 bun dev
@@ -20,7 +25,7 @@ bun dev
 
 The app will be available at http://localhost:3000
 
-## Sync
+### Sync Lua data
 
 This repo can build `public/data/lua-bundle.json` from all `.lua` files in `NuttyB-Raptors/lua/` using a Node.js script in `scripts/sync/sync.ts`. To run the sync process, execute
 
@@ -34,13 +39,14 @@ Sync script supports pulling latest Lua files from either a local path or a GitH
 bun sync --help
 ```
 
-### Prerequisites
-- Bun
+### Verify Lua bundle
 
-### How it works
+To verify the generated Lua bundle, run the following command:
 
-- Reads all `.lua` files under `lua/` from the NuttyB collective repo.
-- Minifies Lua source code.
-- Encodes result with Base64URL.
+```bash
+bun run bundle-test
+```
 
-The app consolidates similar tweaks (tweakunits/tweakdefs) to save up tweak slots.
+### Deployment (GitHub Pages)
+
+Deployment is automated using GitHub Actions. Pushes to the `main` branch will trigger a build and deploy the site to GitHub Pages. By default, it uses repository name to define base path for the web application. If you want to use a custom base path, you can set the `BASE_PATH` repository variable in your repository settings. Note that you should not include leading slash in the `BASE_PATH` value.

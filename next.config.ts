@@ -20,20 +20,23 @@ function getGitSha(): string {
  */
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
-/** Base path for GitHub Pages subdirectory deployment */
-const BASE_PATH = '/configurator';
+/**
+ * Base path for GitHub Pages subdirectory deployment.
+ * Read from NEXT_PUBLIC_BASE_PATH env var (set in deploy.yml).
+ * Falls back to empty string for development builds.
+ */
+const basePath = isGitHubPages ? process.env.NEXT_PUBLIC_BASE_PATH || '' : '';
 
 const nextConfig: NextConfig = {
     /* config options here */
     reactCompiler: true,
     env: {
         NEXT_PUBLIC_GIT_SHA: getGitSha(),
-        NEXT_PUBLIC_BASE_PATH: isGitHubPages ? BASE_PATH : '',
+        NEXT_PUBLIC_BASE_PATH: basePath,
     },
     // Static export for GitHub Pages
     output: 'export',
-    // Deployed to: https://bar-nuttyb-collective.github.io/configurator
-    basePath: isGitHubPages ? BASE_PATH : '',
+    basePath: basePath,
     // Disable image optimization (not supported in static export)
     images: {
         unoptimized: true,

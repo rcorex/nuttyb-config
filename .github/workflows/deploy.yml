@@ -58,6 +58,8 @@ jobs:
         run: bun run build
         env:
           GITHUB_PAGES: 'true'
+          # Use BASE_PATH variable if set, otherwise derive from repository name
+          NEXT_PUBLIC_BASE_PATH: ${{ vars.BASE_PATH != '' && format('/{0}', vars.BASE_PATH) || format('/{0}', github.event.repository.name) }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
